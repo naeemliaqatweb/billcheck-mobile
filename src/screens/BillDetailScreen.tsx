@@ -154,12 +154,9 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
   const handleDownloadPdf = async () => {
     setIsDownloadingPdf(true);
     try {
-      // 1. Fetch authentic official duplicate bill from backend API
-      await ApiService.fetchOfficialBillPdfDocument(activeBill.company, activeBill.referenceNo, activeBill.consumerId);
-      // 2. Open Official In-App Bill Modal directly inside the app
-      setShowOfficialModal(true);
+      await BillPdfService.requestOfficialBillPdf(activeBill);
     } catch {
-      setShowOfficialModal(true);
+      handleOpenDuplicateOnline();
     } finally {
       setIsDownloadingPdf(false);
     }
@@ -663,7 +660,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
             isUrdu={isUrdu}
           >
             <OfficialPortalCard
-              bill={bill}
+              bill={activeBill}
               portalUrl={portalUrl}
               officialSite={officialSite}
               darkMode={darkMode}
@@ -796,7 +793,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
       {/* In-App Authentic Official Bill Modal */}
       <OfficialBillModal
         visible={showOfficialModal}
-        bill={bill}
+        bill={activeBill}
         language={language}
         darkMode={darkMode}
         onClose={() => setShowOfficialModal(false)}

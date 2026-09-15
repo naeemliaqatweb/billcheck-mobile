@@ -55,31 +55,23 @@ export const BillPdfService = {
   },
 
   /**
-   * Sends an official request to the provider server and opens the authentic duplicate bill PDF / document.
+   * Directly opens the authentic official duplicate bill in the system browser / print preview engine.
    */
   async requestOfficialBillPdf(bill: BillData): Promise<DownloadPdfResult> {
     const cleanRef = bill.referenceNo.replace(/[^0-9a-zA-Z]/g, '').trim();
     const officialUrl = this.getOfficialPortalDuplicateUrl(bill.company, cleanRef);
     const fileName = `Official_Bill_${bill.company}_${cleanRef}.pdf`;
 
-    // 1. Send live request to official provider endpoint
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
-
-      // Ping / verify provider gateway
-      await fetch(officialUrl, {
-        method: 'HEAD',
-        signal: controller.signal,
-      }).catch(() => {});
-
-      clearTimeout(timeoutId);
+      const supported = await Linking.canOpenURL(officialUrl);
+      if (supported) {
+        await Linking.openURL(officialUrl);
+      } else {
+        await Linking.openURL(officialUrl);
+      }
     } catch {
-      // ignore network ping errors and proceed with direct open
+      await Linking.openURL(officialUrl).catch(() => {});
     }
-
-    // 2. Open authentic duplicate bill directly in native browser / PDF print engine
-    await Linking.openURL(officialUrl);
 
     return {
       success: true,
