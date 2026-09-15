@@ -11,8 +11,8 @@ const BACKEND_URLS = [
 ];
 
 
-// Cache fresh for 6 hours (same bill won't change in 6hrs)
-const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+// Cache fresh for 12 hours (utility bills only update once per month)
+const CACHE_TTL_MS = 12 * 60 * 60 * 1000;
 
 /**
  * Generates a simulated 13-month bill history for offline/fallback use.
@@ -86,10 +86,10 @@ export const ApiService = {
     // ── Cache-first: skip API if fresh cache exists ─────────────────────────
     if (!forceRefresh) {
       const cached = await StorageService.getCachedBill(company, cleanRef);
-      if (cached && cached.fetchedAt && cached.payableWithinDueDate > 0 && !cached.isMockData) {
+      if (cached && cached.fetchedAt && !cached.isMockData) {
         const age = Date.now() - new Date(cached.fetchedAt as string).getTime();
         if (age < CACHE_TTL_MS) {
-          return cached; // ← return valid cached, no API call
+          return cached; // ← return valid cached, 0 network/0 Vercel calls
         }
       }
     }
