@@ -149,28 +149,30 @@ export const AddBillFormFields: React.FC<AddBillFormFieldsProps> = ({
                   )}
                 </View>
 
-                <Text
-                  style={[
-                    styles.gridCodeText,
-                    darkMode ? styles.darkText : styles.lightText,
-                    isSelected && {
-                      color: darkMode ? '#3FFF8B' : '#006D35',
-                    },
-                  ]}
-                  numberOfLines={1}
-                >
-                  {provider.name}
-                </Text>
+                <View style={styles.gridInfoCol}>
+                  <Text
+                    style={[
+                      styles.gridCodeText,
+                      darkMode ? styles.darkText : styles.lightText,
+                      isSelected && {
+                        color: darkMode ? '#3FFF8B' : '#006D35',
+                      },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {provider.name}
+                  </Text>
 
-                <Text
-                  style={[
-                    styles.gridRegionText,
-                    darkMode ? styles.darkSub : styles.lightSub,
-                  ]}
-                  numberOfLines={1}
-                >
-                  {provider.region ? provider.region.split(',')[0] : provider.fullName}
-                </Text>
+                  <Text
+                    style={[
+                      styles.gridRegionText,
+                      darkMode ? styles.darkSub : styles.lightSub,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {provider.region ? provider.region.split(',')[0] : provider.fullName}
+                  </Text>
+                </View>
               </TouchableOpacity>
             );
           })}

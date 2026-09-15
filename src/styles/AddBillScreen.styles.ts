@@ -202,24 +202,24 @@ export const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // Provider Grid inside Add Bill
+  // 2-Column Inline Provider Grid inside Add Bill
   providerGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 8,
     marginTop: 6,
   },
   gridCard: {
-    width: '31.3%',
+    width: '48.5%', // Exactly 2 inline cards per row
     borderRadius: 12,
     borderWidth: 1.5,
     paddingVertical: 10,
-    paddingHorizontal: 4,
+    paddingHorizontal: 8,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 8,
     position: 'relative',
-    marginBottom: 2,
+    marginBottom: 8,
   },
   gridCardGas: {
     width: '48.5%',
@@ -241,29 +241,33 @@ export const styles = StyleSheet.create({
     borderColor: '#059669',
   },
   gridLogoBox: {
-    width: 36,
-    height: 36,
+    width: 38,
+    height: 38,
     borderRadius: 10,
     padding: 3,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 5,
     borderWidth: 1,
+    flexShrink: 0,
   },
   gridLogoImg: {
     width: '100%',
     height: '100%',
   },
+  gridInfoCol: {
+    flex: 1,
+    minWidth: 0,
+    justifyContent: 'center',
+  },
   gridCodeText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '800',
-    textAlign: 'center',
     letterSpacing: -0.2,
   },
   gridRegionText: {
-    fontSize: 8.5,
-    marginTop: 2,
-    textAlign: 'center',
+    fontSize: 9.5,
+    marginTop: 1,
+    lineHeight: 13,
   },
   gridActiveCheckBadge: {
     position: 'absolute',
