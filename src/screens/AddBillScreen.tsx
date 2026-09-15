@@ -11,6 +11,7 @@ import { ApiService } from '../services/api';
 import { StorageService } from '../services/storage';
 import { AppIcon } from '../components/AppIcon';
 import { CustomPopup, PopupConfig } from '../components/CustomPopup';
+import { RefGuideModal } from '../components/RefGuideModal';
 import { AddBillTopHeader } from '../components/addbill/AddBillTopHeader';
 import { AddBillSubtitleSection } from '../components/addbill/AddBillSubtitleSection';
 import { AddBillTypeSelector } from '../components/addbill/AddBillTypeSelector';
@@ -50,6 +51,7 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
   const [nickname, setNickname] = useState('');
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [showRefGuideModal, setShowRefGuideModal] = useState(false);
   const [popup, setPopup] = useState<PopupConfig>({
     visible: false,
     title: '',
@@ -152,7 +154,7 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
   const handleScanQrDemo = () => {
     const sampleRef =
       selectedProvider.code === 'LESCO'
-        ? '08115240293810'
+        ? '15115371598719'
         : selectedProvider.code === 'KELECTRIC' || selectedProvider.code === 'KE'
         ? '0400012345678'
         : selectedProvider.code === 'SNGPL'
@@ -177,16 +179,7 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
   };
 
   const showHelpGuide = () => {
-    setPopup({
-      visible: true,
-      type: 'info',
-      title: t.whereToFindRefTitle,
-      message: isUrdu
-        ? `${selectedProvider.name} کے بل پر ریفرنس نمبر:\n1. بل کے اوپری بائیں یا درمیانی حصے میں دیکھیں۔\n2. وہاں 14 ہندسوں کا ریفرنس نمبر لکھا ہوتا ہے (جیسے 08 11524 0293810)۔\n3. کے-الیکٹرک یا گیس کے لیے اپنا 10 سے 11 ہندسوں کا اکاؤنٹ / کنزیومر نمبر درج کریں۔`
-        : `Where to find ${selectedProvider.name} Reference Number:\n1. Check the top-left or upper-middle box of your physical utility bill.\n2. Look for the 14-digit number labeled "REFERENCE NO" (e.g. 08 11524 0293810).\n3. For K-Electric or Gas, enter your 10 to 11-digit Consumer / Account number.`,
-      primaryText: isUrdu ? 'سمجھ گیا' : 'Got it',
-      onClose: () => setPopup((p) => ({ ...p, visible: false })),
-    });
+    setShowRefGuideModal(true);
   };
 
   return (
@@ -244,6 +237,7 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
           onChangeNickname={setNickname}
           darkMode={darkMode}
           isUrdu={isUrdu}
+          onOpenRefGuide={() => setShowRefGuideModal(true)}
           labels={{
             selectDistCompany: t.selectDistCompany,
             discoSngplBadge: t.discoSngplBadge,
@@ -268,6 +262,7 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
           isUrdu={isUrdu}
           guideTitle={t.whereToFindRefTitle}
           guideSubtitle={t.whereToFindRefSub}
+          onOpenRefGuide={() => setShowRefGuideModal(true)}
         />
 
         {/* ── Action Buttons & Security Footer ── */}
@@ -281,6 +276,14 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
           encryptedNoticeText={t.encryptedNotice}
         />
       </ScrollView>
+
+      {/* Reference Number Help Modal with Genuine Crop */}
+      <RefGuideModal
+        visible={showRefGuideModal}
+        onClose={() => setShowRefGuideModal(false)}
+        darkMode={darkMode}
+        language={language}
+      />
 
       {/* Global Dialog */}
       <CustomPopup {...popup} darkMode={darkMode} isUrdu={isUrdu} />

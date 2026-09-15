@@ -22,6 +22,7 @@ interface ReferenceInputCardProps {
   loading: boolean;
   darkMode: boolean;
   isUrdu: boolean;
+  onOpenRefGuide?: () => void;
   labels: {
     referenceNumber: string;
     consumerId: string;
@@ -40,6 +41,7 @@ export const ReferenceInputCard: React.FC<ReferenceInputCardProps> = ({
   loading,
   darkMode,
   isUrdu,
+  onOpenRefGuide,
   labels,
 }) => {
   const requiredLength = selectedProvider.refLength || (utilityType === 'electricity' ? 14 : 10);
@@ -107,16 +109,40 @@ export const ReferenceInputCard: React.FC<ReferenceInputCardProps> = ({
         showCounter={true}
       />
 
-      {/* Where to find Info Box */}
-      <View style={styles.refInfoBox}>
+      {/* Where to find Info Box - Clickable to open RefGuideModal */}
+      <TouchableOpacity
+        style={styles.refInfoBox}
+        onPress={onOpenRefGuide}
+        activeOpacity={onOpenRefGuide ? 0.8 : 1}
+      >
         <View style={styles.refInfoTitleRow}>
-          <AppIcon name="info" size={14} color="#38BDF8" />
-          <Text style={styles.refInfoTitle}>{labels.whereToFindRef}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+            <AppIcon name="info" size={14} color="#38BDF8" />
+            <Text style={styles.refInfoTitle}>{labels.whereToFindRef}</Text>
+          </View>
+          {onOpenRefGuide && (
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 4,
+                backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                paddingHorizontal: 8,
+                paddingVertical: 3,
+                borderRadius: 6,
+              }}
+            >
+              <AppIcon name="image" size={12} color="#38BDF8" />
+              <Text style={{ fontSize: 10, color: '#38BDF8', fontWeight: '700' }}>
+                {isUrdu ? 'تصویر دیکھیں' : 'View Guide'}
+              </Text>
+            </View>
+          )}
         </View>
         <Text style={[styles.refInfoDesc, darkMode ? styles.darkSub : styles.lightSub, isUrdu && styles.rtlText]}>
           {labels.refExplanation}
         </Text>
-      </View>
+      </TouchableOpacity>
 
       {/* Check Bill Button — ONLY VISIBLE WHEN EXACTLY 14 DIGITS ENTERED */}
       {isComplete ? (

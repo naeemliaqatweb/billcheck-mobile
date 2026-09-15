@@ -13,6 +13,7 @@ import { getProviderLogo } from '../constants/providerLogos';
 import { TRANSLATIONS, Language } from '../i18n/translations';
 import { AppIcon } from '../components/AppIcon';
 import { CustomPopup, PopupConfig } from '../components/CustomPopup';
+import { RefGuideModal } from '../components/RefGuideModal';
 import { styles } from '../styles/SelectProviderScreen.styles';
 
 interface SelectProviderScreenProps {
@@ -36,6 +37,7 @@ export const SelectProviderScreen: React.FC<SelectProviderScreenProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [refreshing, setRefreshing] = useState(false);
+  const [showRefGuideModal, setShowRefGuideModal] = useState(false);
   const [popup, setPopup] = useState<PopupConfig>({
     visible: false,
     title: '',
@@ -75,16 +77,7 @@ export const SelectProviderScreen: React.FC<SelectProviderScreenProps> = ({
   }, [searchQuery, filterType]);
 
   const showHelpGuide = () => {
-    setPopup({
-      visible: true,
-      type: 'info',
-      title: isUrdu ? 'کمپنی کا انتخاب گائیڈ' : 'Utility Provider Guide',
-      message: isUrdu
-        ? '1. اپنے کاغذ والے بل کے اوپر بائیں کونے پر اپنی کمپنی کا نام (مثلاً LESCO, K-Electric, FESCO یا SNGPL) دیکھیں۔\n2. لسٹ میں سے اپنی کمپنی پر کلک کریں۔\n3. اگلے مرحلے میں اپنا 14 ہندسوں کا ریفرنس نمبر درج کریں۔'
-        : '1. Check the top-left or header logo on your physical utility bill to identify your company (e.g. LESCO, K-Electric, IESCO, SNGPL).\n2. Tap the company from the grid below.\n3. Enter your 14-digit reference number on the next screen to fetch your live bill.',
-      primaryText: isUrdu ? 'سمجھ گیا' : 'Got it',
-      onClose: () => setPopup((p) => ({ ...p, visible: false })),
-    });
+    setShowRefGuideModal(true);
   };
 
   const getCityShort = (region: string): string => {
@@ -602,6 +595,14 @@ export const SelectProviderScreen: React.FC<SelectProviderScreenProps> = ({
           <Text style={styles.brandStampText}>{t.poweredByArcloom}</Text>
         </View>
       </ScrollView>
+
+      {/* Reference Number Help Modal with Genuine Crop */}
+      <RefGuideModal
+        visible={showRefGuideModal}
+        onClose={() => setShowRefGuideModal(false)}
+        darkMode={darkMode}
+        language={language}
+      />
 
       {/* Global Dialog */}
       <CustomPopup {...popup} darkMode={darkMode} isUrdu={isUrdu} />

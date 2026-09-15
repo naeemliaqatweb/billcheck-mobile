@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { ProviderInfo } from '../../constants/providers';
 import { AppIcon } from '../AppIcon';
 import { styles } from '../../styles/AddBillScreen.styles';
@@ -11,6 +11,7 @@ interface AddBillMockupGuideProps {
   isUrdu: boolean;
   guideTitle: string;
   guideSubtitle: string;
+  onOpenRefGuide?: () => void;
 }
 
 export const AddBillMockupGuide: React.FC<AddBillMockupGuideProps> = ({
@@ -20,6 +21,7 @@ export const AddBillMockupGuide: React.FC<AddBillMockupGuideProps> = ({
   isUrdu,
   guideTitle,
   guideSubtitle,
+  onOpenRefGuide,
 }) => {
   return (
     <View style={[styles.guideCard, darkMode ? styles.darkCard : styles.lightBox]}>
@@ -47,14 +49,44 @@ export const AddBillMockupGuide: React.FC<AddBillMockupGuideProps> = ({
             {guideSubtitle}
           </Text>
         </View>
+        {onOpenRefGuide && (
+          <TouchableOpacity
+            onPress={onOpenRefGuide}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 4,
+              backgroundColor: darkMode ? '#1E293B' : '#E0F2FE',
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: darkMode ? '#334155' : '#BAE6FD',
+            }}
+            activeOpacity={0.7}
+          >
+            <AppIcon name="image" size={14} color="#0284C7" />
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: '700',
+                color: '#0284C7',
+              }}
+            >
+              {isUrdu ? 'بل کی تصویر' : 'View Image'}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
 
-      {/* Illustrative Mockup Bill Snippet */}
-      <View
+      {/* Illustrative Mockup Bill Snippet - Clickable to open Ref Guide Modal */}
+      <TouchableOpacity
         style={[
           styles.billMockupBox,
           darkMode ? styles.darkBox : { backgroundColor: '#FFFFFF', borderColor: '#CBD5E1' },
         ]}
+        onPress={onOpenRefGuide}
+        activeOpacity={onOpenRefGuide ? 0.85 : 1}
       >
         <View style={styles.mockupTopNavyBar}>
           <View style={styles.mockupTopLeft}>
@@ -96,7 +128,7 @@ export const AddBillMockupGuide: React.FC<AddBillMockupGuideProps> = ({
           <View style={styles.mockupHighlightCol}>
             <Text style={styles.mockupHighlightLabel}>● REF NO.</Text>
             <Text style={styles.mockupHighlightVal}>
-              {referenceNo.length > 6 ? referenceNo : '08 11524 0293810'}
+              {referenceNo.length > 6 ? referenceNo : '15 11537 1598719'}
             </Text>
           </View>
 
@@ -129,9 +161,14 @@ export const AddBillMockupGuide: React.FC<AddBillMockupGuideProps> = ({
           >
             Name: MUHAMMAD TARIQ
           </Text>
-          <Text style={styles.mockupFooterDue}>Due Date: 28-MAR-2025</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <AppIcon name="help-circle" size={12} color="#0284C7" />
+            <Text style={{ fontSize: 10, color: '#0284C7', fontWeight: '600' }}>
+              {isUrdu ? 'تصویر دیکھنے کے لیے کلک کریں' : 'Tap to see bill photo'}
+            </Text>
+          </View>
         </View>
-      </View>
+      </TouchableOpacity>
     </View>
   );
 };
