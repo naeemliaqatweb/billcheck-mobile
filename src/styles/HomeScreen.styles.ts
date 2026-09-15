@@ -38,14 +38,67 @@ export const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 14,
     paddingBottom: 8,
+  },
+  headerTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  headerLogoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  headerRightActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  headerActionBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerActionBtnDark: {
+    backgroundColor: '#1E293B',
+    borderColor: '#334155',
+  },
+  headerActionBtnLight: {
+    backgroundColor: '#F1F5F9',
+    borderColor: '#E2E8F0',
+  },
+  headerLangBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  headerLangBtnDark: {
+    backgroundColor: '#1E293B',
+    borderColor: '#334155',
+  },
+  headerLangBtnLight: {
+    backgroundColor: '#F1F5F9',
+    borderColor: '#E2E8F0',
+  },
+  headerLangText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   badgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 6,
+    gap: 6,
+    marginBottom: 4,
   },
   brandBadge: {
     backgroundColor: COLORS.primaryDark,
@@ -57,18 +110,29 @@ export const styles = StyleSheet.create({
     borderRadius: 6,
     letterSpacing: 0.5,
   },
-  langBadge: {
-    fontSize: 12,
-    fontWeight: '600',
+  verifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  verifiedText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: COLORS.primary,
   },
   appTitle: {
-    fontSize: 26,
-    fontWeight: '800',
-    letterSpacing: -0.5,
+    fontSize: 22,
+    fontWeight: '900',
+    letterSpacing: -0.3,
   },
   appSubtitle: {
-    fontSize: 13,
-    marginTop: 2,
+    fontSize: 12.5,
+    marginTop: 3,
+    lineHeight: 17,
   },
   darkText: {
     color: COLORS.darkText,

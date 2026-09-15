@@ -29,6 +29,9 @@ interface HomeScreenProps {
   savedMeters: SavedMeter[];
   onBillChecked: (bill: BillData) => void;
   onRefreshSaved: () => void;
+  onToggleLanguage?: (lang: Language) => void;
+  onToggleTheme?: (isDark: boolean) => void;
+  onNavigateAnalytics?: () => void;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
@@ -37,6 +40,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   savedMeters,
   onBillChecked,
   onRefreshSaved,
+  onToggleLanguage,
+  onToggleTheme,
 }) => {
   const t = TRANSLATIONS[language];
   const isUrdu = language === 'ur';
@@ -171,22 +176,79 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       >
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.badgeRow}>
-            <Text style={styles.brandBadge}>BILLCHECK PK</Text>
-            <Text style={[styles.langBadge, darkMode ? styles.darkSub : styles.lightSub]}>
-              {isUrdu ? 'اردو' : 'English'}
-            </Text>
+          {/* Top Row: App Brand on Left, Action Icons on Right */}
+          <View style={styles.headerTopRow}>
+            <View style={styles.headerLogoRow}>
+              <Image
+                source={require('../assets/images/app-logo.png')}
+                style={{ width: 36, height: 36, borderRadius: 8 }}
+                resizeMode="contain"
+              />
+              <View>
+                <View style={styles.badgeRow}>
+                  <Text style={styles.brandBadge}>BILLCHECK PK</Text>
+                  <View style={styles.verifiedBadge}>
+                    <AppIcon name="shield-check" size={11} color="#10B981" />
+                    <Text style={styles.verifiedText}>Verified</Text>
+                  </View>
+                </View>
+                <Text style={[styles.appTitle, darkMode ? styles.darkText : styles.lightText, isUrdu && styles.rtlText]}>
+                  {t.appName}
+                </Text>
+              </View>
+            </View>
+
+            {/* Header Right Action Icons */}
+            <View style={styles.headerRightActions}>
+              {/* Language Switcher */}
+              {onToggleLanguage && (
+                <TouchableOpacity
+                  style={[
+                    styles.headerLangBtn,
+                    darkMode ? styles.headerLangBtnDark : styles.headerLangBtnLight,
+                  ]}
+                  onPress={() => onToggleLanguage(language === 'en' ? 'ur' : 'en')}
+                  activeOpacity={0.7}
+                >
+                  <AppIcon name="globe" size={14} color="#0284C7" />
+                  <Text style={[styles.headerLangText, darkMode ? styles.darkText : styles.lightText]}>
+                    {isUrdu ? 'EN' : 'اردو'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {/* Theme Toggle (Moon/Sun) */}
+              {onToggleTheme && (
+                <TouchableOpacity
+                  style={[
+                    styles.headerActionBtn,
+                    darkMode ? styles.headerActionBtnDark : styles.headerActionBtnLight,
+                  ]}
+                  onPress={() => onToggleTheme(!darkMode)}
+                  activeOpacity={0.7}
+                >
+                  <AppIcon
+                    name={darkMode ? 'sun' : 'moon'}
+                    size={16}
+                    color={darkMode ? '#F59E0B' : '#64748B'}
+                  />
+                </TouchableOpacity>
+              )}
+
+              {/* Quick Add Meter Button */}
+              <TouchableOpacity
+                style={[
+                  styles.headerActionBtn,
+                  { backgroundColor: '#059669', borderColor: '#059669' },
+                ]}
+                onPress={() => setAddMeterVisible(true)}
+                activeOpacity={0.7}
+              >
+                <AppIcon name="plus" size={18} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
           </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <Image
-              source={require('../assets/images/app-logo.png')}
-              style={{ width: 38, height: 38, borderRadius: 8 }}
-              resizeMode="contain"
-            />
-            <Text style={[styles.appTitle, darkMode ? styles.darkText : styles.lightText, isUrdu && styles.rtlText]}>
-              {t.appName}
-            </Text>
-          </View>
+
           <Text style={[styles.appSubtitle, darkMode ? styles.darkSub : styles.lightSub, isUrdu && styles.rtlText]}>
             {t.tagline}
           </Text>

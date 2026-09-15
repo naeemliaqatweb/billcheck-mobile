@@ -13,6 +13,7 @@ import { StorageService } from '../services/storage';
 import { ApiService } from '../services/api';
 import { AppIcon } from '../components/AppIcon';
 import { CustomPopup, PopupConfig } from '../components/CustomPopup';
+import { AddMeterModal } from '../components/AddMeterModal';
 import { styles } from '../styles/SavedBillsScreen.styles';
 
 interface SavedBillsScreenProps {
@@ -33,6 +34,8 @@ export const SavedBillsScreen: React.FC<SavedBillsScreenProps> = ({
   const t = TRANSLATIONS[language];
   const isUrdu = language === 'ur';
   const [loadingMeterId, setLoadingMeterId] = useState<string | null>(null);
+  const [refreshingAll, setRefreshingAll] = useState<boolean>(false);
+  const [addMeterVisible, setAddMeterVisible] = useState<boolean>(false);
   const [popup, setPopup] = useState<PopupConfig>({
     visible: false,
     title: '',
@@ -76,6 +79,41 @@ export const SavedBillsScreen: React.FC<SavedBillsScreenProps> = ({
     }
   };
 
+  const handleRefreshAll = async () => {
+    if (savedMeters.length === 0) return;
+    setRefreshingAll(true);
+    try {
+      for (const meter of savedMeters) {
+        try {
+          const fresh = await ApiService.fetchBill(meter.company, meter.referenceNumber, false);
+          if (fresh) {
+            await StorageService.cacheBill(fresh);
+            await StorageService.saveMeter({
+              ...meter,
+              lastBillAmount: fresh.payableWithinDueDate,
+              lastDueDate: fresh.dueDate,
+              lastBillStatus: fresh.billStatus,
+              lastCheckedDate: new Date().toISOString().split('T')[0],
+            });
+          }
+        } catch {
+          // ignore single failure
+        }
+      }
+      onRefreshSaved();
+    } finally {
+      setRefreshingAll(false);
+    }
+  };
+
+  const handleMeterAdded = (freshBill?: BillData) => {
+    setAddMeterVisible(false);
+    onRefreshSaved();
+    if (freshBill) {
+      onSelectMeter(freshBill);
+    }
+  };
+
   return (
     <View style={[styles.outerContainer, darkMode ? styles.darkBg : styles.lightBg]}>
       <ScrollView
@@ -84,15 +122,48 @@ export const SavedBillsScreen: React.FC<SavedBillsScreenProps> = ({
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-            <AppIcon name="star" size={24} color="#059669" />
-            <Text style={[styles.title, darkMode ? styles.darkText : styles.lightText, isUrdu && styles.rtlText]}>
-              {t.savedMetersTitle}
-            </Text>
+          <View style={styles.headerTopRow}>
+            <View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <AppIcon name="star" size={24} color="#059669" />
+                <Text style={[styles.title, darkMode ? styles.darkText : styles.lightText, isUrdu && styles.rtlText]}>
+                  {t.savedMetersTitle}
+                </Text>
+              </View>
+              <Text style={[styles.subtitle, darkMode ? styles.darkSub : styles.lightSub, isUrdu && styles.rtlText]}>
+                {savedMeters.length} {t.totalSaved}
+              </Text>
+            </View>
+
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                style={[
+                  styles.headerActionBtn,
+                  darkMode ? styles.headerActionBtnDark : styles.headerActionBtnLight,
+                ]}
+                onPress={handleRefreshAll}
+                disabled={refreshingAll}
+                activeOpacity={0.7}
+              >
+                {refreshingAll ? (
+                  <ActivityIndicator size="small" color="#059669" />
+                ) : (
+                  <AppIcon name="refresh" size={16} color="#059669" />
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.headerActionBtn,
+                  { backgroundColor: '#059669', borderColor: '#059669' },
+                ]}
+                onPress={() => setAddMeterVisible(true)}
+                activeOpacity={0.7}
+              >
+                <AppIcon name="plus" size={18} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
           </View>
-          <Text style={[styles.subtitle, darkMode ? styles.darkSub : styles.lightSub, isUrdu && styles.rtlText]}>
-            {savedMeters.length} {t.totalSaved}
-          </Text>
         </View>
 
         {savedMeters.length === 0 ? (
@@ -183,6 +254,14 @@ export const SavedBillsScreen: React.FC<SavedBillsScreenProps> = ({
         {...popup}
         darkMode={darkMode}
         isUrdu={isUrdu}
+      />
+
+      <AddMeterModal
+        visible={addMeterVisible}
+        onClose={() => setAddMeterVisible(false)}
+        onAdded={handleMeterAdded}
+        language={language}
+        darkMode={darkMode}
       />
     </View>
   );

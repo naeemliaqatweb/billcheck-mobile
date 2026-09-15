@@ -11,6 +11,7 @@ import { BillDetailScreen } from './src/screens/BillDetailScreen';
 import { SavedBillsScreen } from './src/screens/SavedBillsScreen';
 import { HistoryScreen } from './src/screens/HistoryScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
+import { SplashScreen } from './src/screens/SplashScreen';
 import { BillData, SavedMeter } from './src/types/bill';
 import { TRANSLATIONS, Language } from './src/i18n/translations';
 import { StorageService } from './src/services/storage';
@@ -21,6 +22,7 @@ import { styles } from './src/styles/App.styles';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabName>('home');
+  const [showSplash, setShowSplash] = useState<boolean>(true);
   const [language, setLanguage] = useState<Language>('en');
   const [darkMode, setDarkMode] = useState<boolean>(true);
   const [currentBill, setCurrentBill] = useState<BillData | null>(null);
@@ -119,6 +121,9 @@ export default function App() {
             savedMeters={savedMeters}
             onBillChecked={handleBillChecked}
             onRefreshSaved={handleRefreshSaved}
+            onToggleLanguage={handleToggleLanguage}
+            onToggleTheme={handleToggleTheme}
+            onNavigateAnalytics={() => setActiveTab('analytics')}
           />
         );
       case 'saved':
@@ -155,6 +160,14 @@ export default function App() {
         return null;
     }
   };
+
+  if (showSplash) {
+    return (
+      <SafeAreaProvider>
+        <SplashScreen onFinish={() => setShowSplash(false)} />
+      </SafeAreaProvider>
+    );
+  }
 
   return (
     <SafeAreaProvider>

@@ -55,15 +55,24 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-            <AppIcon name="settings" size={24} color="#F59E0B" />
-            <Text style={[styles.title, darkMode ? styles.darkText : styles.lightText, isUrdu && styles.rtlText]}>
-              {t.settingsTitle}
-            </Text>
+          <View style={styles.headerTopRow}>
+            <View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <AppIcon name="settings" size={24} color="#F59E0B" />
+                <Text style={[styles.title, darkMode ? styles.darkText : styles.lightText, isUrdu && styles.rtlText]}>
+                  {t.settingsTitle}
+                </Text>
+              </View>
+              <Text style={[styles.subtitle, darkMode ? styles.darkSub : styles.lightSub, isUrdu && styles.rtlText]}>
+                {t.appPreferences}
+              </Text>
+            </View>
+            <View style={styles.versionBadge}>
+              <Text style={[styles.headerVersionText, darkMode ? styles.darkSub : styles.lightSub]}>
+                v1.0.0
+              </Text>
+            </View>
           </View>
-          <Text style={[styles.subtitle, darkMode ? styles.darkSub : styles.lightSub, isUrdu && styles.rtlText]}>
-            {t.appPreferences}
-          </Text>
         </View>
 
         {/* Preferences Section */}

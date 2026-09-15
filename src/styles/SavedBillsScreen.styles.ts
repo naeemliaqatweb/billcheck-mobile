@@ -22,12 +22,38 @@ export const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 12,
   },
+  headerTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  headerActionBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerActionBtnDark: {
+    backgroundColor: '#1E293B',
+    borderColor: '#334155',
+  },
+  headerActionBtnLight: {
+    backgroundColor: '#F1F5F9',
+    borderColor: '#E2E8F0',
+  },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '800',
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: 12.5,
     marginTop: 2,
   },
   darkText: {

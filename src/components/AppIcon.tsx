@@ -39,12 +39,14 @@ import {
   Sparkles,
   Shield,
   Moon,
+  Sun,
   Lock,
   Building2,
   Megaphone,
   Eye,
   EyeOff,
   CheckCircle2,
+  Terminal,
   LucideIcon,
 } from 'lucide-react-native';
 
@@ -175,12 +177,18 @@ const ICON_MAP: Record<string, LucideIcon> = {
   document: FileText,
   sparkles: Sparkles,
   shield: Shield,
+  'shield-check': ShieldCheck,
   moon: Moon,
+  dark: Moon,
+  sun: Sun,
+  light: Sun,
+  theme: Sun,
   lock: Lock,
   business: Building2,
   megaphone: Megaphone,
   eye: Eye,
   'eye-off': EyeOff,
+  terminal: Terminal,
 };
 
 export const AppIcon: React.FC<AppIconProps> = ({

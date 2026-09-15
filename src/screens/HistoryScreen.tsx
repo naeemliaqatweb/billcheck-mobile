@@ -42,13 +42,30 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
     currentBill ? `${currentBill.company}_${currentBill.referenceNo}` : (savedMeters[0]?.id || null)
   );
   const [loading, setLoading] = useState<boolean>(false);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
 
   useEffect(() => {
-    if (currentBill) {
-      setActiveBill(currentBill);
-    } else if (savedMeters.length > 0) {
-      loadMeterData(savedMeters[0]);
-    }
+    const initHistory = async () => {
+      if (currentBill && currentBill.history12Months && currentBill.history12Months.length > 0) {
+        setActiveBill(currentBill);
+        setSelectedMeterId(`${currentBill.company}_${currentBill.referenceNo}`);
+        return;
+      }
+
+      if (savedMeters.length > 0) {
+        await loadMeterData(savedMeters[0]);
+        return;
+      }
+
+      // Check last checked bill from storage
+      const lastChecked = await StorageService.getLastCheckedBill();
+      if (lastChecked && lastChecked.history12Months && lastChecked.history12Months.length > 0) {
+        setActiveBill(lastChecked);
+        setSelectedMeterId(`${lastChecked.company}_${lastChecked.referenceNo}`);
+      }
+    };
+
+    initHistory();
   }, [currentBill, savedMeters]);
 
   const loadMeterData = async (meter: SavedMeter) => {
@@ -66,6 +83,38 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
       if (fresh) {
         await StorageService.cacheBill(fresh);
         setActiveBill(fresh);
+      }
+    } catch {
+      // fallback
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRefreshActiveMeter = async () => {
+    if (!activeBill) return;
+    setRefreshing(true);
+    try {
+      const fresh = await ApiService.fetchBill(activeBill.company, activeBill.referenceNo, false);
+      if (fresh) {
+        await StorageService.cacheBill(fresh);
+        setActiveBill(fresh);
+      }
+    } catch {
+      // fallback
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleLoadDemoMeter = async () => {
+    setLoading(true);
+    try {
+      const demoBill = await ApiService.fetchBill('LESCO', '15115371598719', false);
+      if (demoBill) {
+        await StorageService.cacheBill(demoBill);
+        setActiveBill(demoBill);
+        setSelectedMeterId('LESCO_15115371598719');
       }
     } catch {
       // fallback
@@ -101,17 +150,41 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
     >
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerTitleRow}>
-          <AppIcon name="stats" size={24} color="#6366F1" />
-          <Text style={[styles.title, darkMode ? styles.darkText : styles.lightText, isUrdu && styles.rtlText]}>
-            {t.analyticsTitle}
-          </Text>
+        <View style={styles.headerTopRow}>
+          <View style={{ flex: 1 }}>
+            <View style={styles.headerTitleRow}>
+              <AppIcon name="stats" size={24} color="#6366F1" />
+              <Text style={[styles.title, darkMode ? styles.darkText : styles.lightText, isUrdu && styles.rtlText]}>
+                {t.analyticsTitle}
+              </Text>
+            </View>
+            <Text style={[styles.subtitle, darkMode ? styles.darkSub : styles.lightSub, isUrdu && styles.rtlText]} numberOfLines={1}>
+              {activeBill
+                ? `${activeBill.company} • ${cleanConsumerName}`
+                : (isUrdu ? 'آپ کے بجلی و گیس بلوں کا 12 ماہ کا مکمل تجزیہ' : '12-Month Real Consumption & Cost Analytics')}
+            </Text>
+          </View>
+
+          {activeBill && (
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                style={[
+                  styles.headerActionBtn,
+                  darkMode ? styles.headerActionBtnDark : styles.headerActionBtnLight,
+                ]}
+                onPress={handleRefreshActiveMeter}
+                disabled={refreshing}
+                activeOpacity={0.7}
+              >
+                {refreshing ? (
+                  <ActivityIndicator size="small" color="#6366F1" />
+                ) : (
+                  <AppIcon name="refresh" size={16} color="#6366F1" />
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
-        <Text style={[styles.subtitle, darkMode ? styles.darkSub : styles.lightSub, isUrdu && styles.rtlText]}>
-          {activeBill
-            ? `${activeBill.company} • ${cleanConsumerName}`
-            : (isUrdu ? 'آپ کے بجلی و گیس بلوں کا 12 ماہ کا مکمل تجزیہ' : '12-Month Real Consumption & Cost Analytics')}
-        </Text>
       </View>
 
       {/* Meter Switcher Tabs */}
@@ -174,17 +247,27 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
           </Text>
           <Text style={[styles.emptyDesc, darkMode ? styles.darkSub : styles.lightSub, isUrdu && styles.rtlText]}>
             {isUrdu
-              ? 'اپنا پہلا بل ہوم اسکرین پر چیک کریں یا محفوظ کریں تاکہ 12 ماہ کے ریئل یونٹس، خرچ اور گراف کا لائیو جائزہ یہاں دیکھ سکیں۔'
-              : 'Check or save a utility bill from the Home screen to view real 12-month usage trends, cost comparisons, and insights.'}
+              ? 'اپنا پہلا بل ہوم اسکرین پر چیک کریں یا نیچے دیے گئے بٹن سے لیسکو کا ریئل 12 ماہ کا کنزمپشن تجزیہ لائیو دیکھیں۔'
+              : 'Check or save a utility bill from the Home screen, or load the real LESCO meter analytics below to view 12-month usage trends & charts.'}
           </Text>
-          {onNavigateHome && (
-            <TouchableOpacity style={styles.checkBillBtn} onPress={onNavigateHome} activeOpacity={0.8}>
-              <AppIcon name="search" size={16} color="#FFFFFF" />
-              <Text style={styles.checkBillBtnText}>
-                {isUrdu ? 'بل چیک کریں' : 'Check a Bill Now'}
+
+          <View style={styles.emptyBtnWrap}>
+            <TouchableOpacity style={styles.demoMeterBtn} onPress={handleLoadDemoMeter} activeOpacity={0.8}>
+              <AppIcon name="zap" size={16} color="#FFFFFF" />
+              <Text style={styles.demoMeterBtnText}>
+                {isUrdu ? 'لیسکو کا 12 ماہ کا ریئل ڈیٹا لوڈ کریں (15115371598719)' : 'Load Live LESCO 12-Mo Analytics (15115371598719)'}
               </Text>
             </TouchableOpacity>
-          )}
+
+            {onNavigateHome && (
+              <TouchableOpacity style={styles.checkBillBtn} onPress={onNavigateHome} activeOpacity={0.8}>
+                <AppIcon name="search" size={16} color="#FFFFFF" />
+                <Text style={styles.checkBillBtnText}>
+                  {isUrdu ? 'ہوم اسکرین سے نیا بل چیک کریں' : 'Check Another Bill from Home'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       ) : (
         <>

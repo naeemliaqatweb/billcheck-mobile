@@ -5,6 +5,7 @@ import { Language } from '../i18n/translations';
 const KEYS = {
   SAVED_METERS: '@pakbill_saved_meters',
   BILL_CACHE_PREFIX: '@pakbill_cache_',
+  LAST_CHECKED_BILL: '@pakbill_last_checked_bill',
   LANGUAGE: '@pakbill_language',
   THEME: '@pakbill_theme',
 };
@@ -58,6 +59,25 @@ export const StorageService = {
         fetchedAt: bill.fetchedAt || new Date().toISOString(),
       };
       await AsyncStorage.setItem(key, JSON.stringify(payload));
+      await AsyncStorage.setItem(KEYS.LAST_CHECKED_BILL, JSON.stringify(payload));
+    } catch {
+      // ignore
+    }
+  },
+
+  // Get last checked bill
+  async getLastCheckedBill(): Promise<(BillData & { fetchedAt?: string }) | null> {
+    try {
+      const json = await AsyncStorage.getItem(KEYS.LAST_CHECKED_BILL);
+      return json ? JSON.parse(json) : null;
+    } catch {
+      return null;
+    }
+  },
+
+  async setLastCheckedBill(bill: BillData): Promise<void> {
+    try {
+      await AsyncStorage.setItem(KEYS.LAST_CHECKED_BILL, JSON.stringify(bill));
     } catch {
       // ignore
     }

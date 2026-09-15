@@ -21,12 +21,28 @@ export const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 12,
   },
+  headerTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  versionBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.25)',
+  },
+  headerVersionText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '800',
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: 12.5,
     marginTop: 2,
   },
   darkText: {
