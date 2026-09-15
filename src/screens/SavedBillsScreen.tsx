@@ -443,6 +443,7 @@ export const SavedBillsScreen: React.FC<SavedBillsScreenProps> = ({
                 onCheckBill={handleOpenMeter}
                 onDownloadPdf={handleDownloadPdf}
                 onDeleteMeter={handleDelete}
+                onStatusChange={onRefreshSaved}
               />
             ))
           )}

@@ -240,6 +240,27 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
     }
   };
 
+  const handleTogglePaidStatus = async () => {
+    const nextStatus: 'paid' | 'unpaid' = activeBill.billStatus === 'paid' ? 'unpaid' : 'paid';
+    const updated = { ...activeBill, billStatus: nextStatus };
+    setActiveBill(updated);
+    await StorageService.cacheBill(updated);
+    await StorageService.saveMeter({
+      id: `${activeBill.company}_${activeBill.referenceNo}`,
+      nickname: `${activeBill.company} (${activeBill.consumerName.split(' ')[0]})`,
+      company: activeBill.company,
+      referenceNumber: activeBill.referenceNo,
+      utilityType: activeBill.utilityType,
+      consumerName: activeBill.consumerName,
+      consumerAddress: activeBill.consumerAddress,
+      lastCheckedDate: new Date().toISOString().split('T')[0],
+      lastBillAmount: activeBill.payableWithinDueDate,
+      lastDueDate: activeBill.dueDate,
+      lastBillStatus: nextStatus,
+      lastBillMonth: activeBill.billMonth,
+    });
+  };
+
   return (
     <View style={[styles.container, darkMode ? styles.darkBg : styles.lightBg]}>
       {/* Official Top Navigation Bar (Deep Navy #0F1C2C) */}
@@ -329,13 +350,17 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
                   </View>
                 </View>
 
-                {/* Status Chip */}
+                {/* Status Chip (Tap to Toggle Paid/Unpaid) */}
                 <View style={styles.statusChipColumn}>
-                  <View
+                  <TouchableOpacity
+                    onPress={handleTogglePaidStatus}
+                    activeOpacity={0.75}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     style={[
                       styles.statusChip,
                       activeBill.billStatus === 'paid' ? styles.statusChipPaid : styles.statusChipUnpaid,
                     ]}
+                    accessibilityLabel="Toggle Bill Paid Status"
                   >
                     <View
                       style={activeBill.billStatus === 'paid' ? styles.statusDotPaid : styles.statusDotUnpaid}
@@ -347,7 +372,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
                     >
                       {activeBill.billStatus === 'paid' ? t.statusPaid : t.statusUnpaid}
                     </Text>
-                  </View>
+                  </TouchableOpacity>
                   <Text style={styles.statusSubText}>{t.withinDueDate}</Text>
                 </View>
               </View>

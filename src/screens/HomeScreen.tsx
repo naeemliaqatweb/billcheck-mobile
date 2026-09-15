@@ -419,6 +419,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   isDownloadingPdf={downloadingMeterId === meter.id}
                   onCheckBill={handleCheckSavedBill}
                   onDownloadPdf={handleDownloadPdf}
+                  onStatusChange={onRefreshSaved}
                 />
               ))
             )}

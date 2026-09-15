@@ -370,6 +370,27 @@ async function fetchDirectFromPitc(company: string, cleanRef: string): Promise<B
       ? `${cleanRef.substring(0, 2)} ${cleanRef.substring(2, 7)} ${cleanRef.substring(7, 14)} U`
       : cleanRef;
 
+    // Detect paid stamp, watermark, cleared balance or overdue state
+    const isPaid =
+      payableWithinDueDate === 0 ||
+      html.includes('PAID') ||
+      html.includes('Paid') ||
+      html.includes('paid-stamp') ||
+      html.includes('stamp-paid') ||
+      html.includes('PAYMENT RECEIVED') ||
+      html.includes('Payment Received') ||
+      html.includes('ادا شدہ');
+
+    let dynamicStatus: 'paid' | 'unpaid' | 'overdue' = 'unpaid';
+    if (isPaid) {
+      dynamicStatus = 'paid';
+    } else if (dueDate) {
+      const parsedDue = parseDueDate(dueDate);
+      if (parsedDue && parsedDue.getTime() < Date.now()) {
+        dynamicStatus = 'overdue';
+      }
+    }
+
     const bill: BillData = {
       referenceNo: cleanRef,
       formattedRefNo: formattedRef,
@@ -390,7 +411,7 @@ async function fetchDirectFromPitc(company: string, cleanRef: string): Promise<B
       unitsConsumed: units,
       previousReading: prevReading,
       presentReading: presentReading,
-      billStatus: 'unpaid',
+      billStatus: dynamicStatus,
       meterNo,
       tariff,
       connectedLoad: '2.0 kW',
@@ -409,5 +430,43 @@ async function fetchDirectFromPitc(company: string, cleanRef: string): Promise<B
     console.warn('[DirectScraper] Direct on-device fetch failed:', err);
     return null;
   }
+}
+
+/**
+ * Utility date parser supporting multiple Pakistani DISCO due date formats.
+ * e.g. "11 SEP 26", "11-SEP-2026", "2026-09-11", "11/09/2026"
+ */
+export function parseDueDate(dateStr?: string): Date | null {
+  if (!dateStr) return null;
+  const clean = dateStr.trim().toUpperCase();
+
+  const monMap: Record<string, number> = {
+    JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5,
+    JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11,
+  };
+
+  const textMatch = clean.match(/(\d{1,2})[\s\-\/]+(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[\s\-\/]+(\d{2,4})/i);
+  if (textMatch) {
+    const day = parseInt(textMatch[1], 10);
+    const month = monMap[textMatch[2].toUpperCase()];
+    let year = parseInt(textMatch[3], 10);
+    if (year < 100) year += 2000;
+    return new Date(year, month, day, 23, 59, 59);
+  }
+
+  const isoMatch = clean.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) {
+    return new Date(parseInt(isoMatch[1], 10), parseInt(isoMatch[2], 10) - 1, parseInt(isoMatch[3], 10), 23, 59, 59);
+  }
+
+  const slashMatch = clean.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+  if (slashMatch) {
+    let year = parseInt(slashMatch[3], 10);
+    if (year < 100) year += 2000;
+    return new Date(year, parseInt(slashMatch[2], 10) - 1, parseInt(slashMatch[1], 10), 23, 59, 59);
+  }
+
+  const d = new Date(clean);
+  return isNaN(d.getTime()) ? null : d;
 }
 

@@ -6,12 +6,13 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-import { SavedMeter } from '../../types/bill';
+import { SavedMeter, BillStatus } from '../../types/bill';
 import { AppIcon } from '../AppIcon';
 import { ProviderLogo } from '../ProviderLogo';
 import { Language } from '../../i18n/translations';
 import { NotificationService } from '../../services/notification';
 import { StorageService } from '../../services/storage';
+import { parseDueDate } from '../../services/api';
 
 interface DashboardBillCardProps {
   meter: SavedMeter;
@@ -22,6 +23,7 @@ interface DashboardBillCardProps {
   onCheckBill: (meter: SavedMeter) => void;
   onDownloadPdf?: (meter: SavedMeter) => void;
   onDeleteMeter?: (meter: SavedMeter) => void;
+  onStatusChange?: (meter: SavedMeter, newStatus: BillStatus) => void;
 }
 
 export const DashboardBillCard: React.FC<DashboardBillCardProps> = ({
@@ -33,13 +35,43 @@ export const DashboardBillCard: React.FC<DashboardBillCardProps> = ({
   onCheckBill,
   onDownloadPdf,
   onDeleteMeter,
+  onStatusChange,
 }) => {
   const isUrdu = language === 'ur';
   const isGas = meter.utilityType === 'gas';
 
   const amount = meter.lastBillAmount;
   const dueDate = meter.lastDueDate;
-  const status = meter.lastBillStatus;
+
+  const [localStatus, setLocalStatus] = React.useState<BillStatus | undefined>(meter.lastBillStatus);
+
+  React.useEffect(() => {
+    setLocalStatus(meter.lastBillStatus);
+  }, [meter.lastBillStatus]);
+
+  // Compute status: if marked paid, always show PAID. If unpaid & past due date, show OVERDUE
+  const effectiveStatus: BillStatus = React.useMemo(() => {
+    if (localStatus === 'paid') return 'paid';
+    if (dueDate) {
+      const parsedDue = parseDueDate(dueDate);
+      if (parsedDue && parsedDue.getTime() < Date.now()) {
+        return 'overdue';
+      }
+    }
+    return localStatus || 'unpaid';
+  }, [localStatus, dueDate]);
+
+  const handleToggleStatus = async () => {
+    const nextStatus: BillStatus = effectiveStatus === 'paid' ? 'unpaid' : 'paid';
+    setLocalStatus(nextStatus);
+    await StorageService.saveMeter({
+      ...meter,
+      lastBillStatus: nextStatus,
+    });
+    if (onStatusChange) {
+      onStatusChange(meter, nextStatus);
+    }
+  };
 
   // Retrieve consumer name from meter or cached bill
   const [cachedName, setCachedName] = React.useState<string | null>(null);
@@ -69,46 +101,70 @@ export const DashboardBillCard: React.FC<DashboardBillCardProps> = ({
 
   // Determine status pill style
   const renderStatusBadge = () => {
-    if (status === 'paid') {
+    if (effectiveStatus === 'paid') {
       return (
-        <View style={[styles.statusBadge, styles.statusPaidBadge]}>
+        <TouchableOpacity
+          onPress={handleToggleStatus}
+          activeOpacity={0.75}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+          style={[styles.statusBadge, styles.statusPaidBadge]}
+          accessibilityLabel="Mark Bill Unpaid"
+        >
           <View style={[styles.statusDot, { backgroundColor: '#62FF96' }]} />
           <Text style={styles.statusPaidText}>
             {isUrdu ? 'ادا شدہ' : 'PAID'}
           </Text>
-        </View>
+        </TouchableOpacity>
       );
     }
 
-    if (status === 'overdue') {
+    if (effectiveStatus === 'overdue') {
       return (
-        <View style={[styles.statusBadge, styles.statusUnpaidBadge]}>
+        <TouchableOpacity
+          onPress={handleToggleStatus}
+          activeOpacity={0.75}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+          style={[styles.statusBadge, styles.statusUnpaidBadge]}
+          accessibilityLabel="Mark Bill Paid"
+        >
           <View style={[styles.statusDot, { backgroundColor: '#FF8A80' }]} />
           <Text style={styles.statusUnpaidText}>
             {isUrdu ? 'تاریخ گزر گئی' : 'OVERDUE'}
           </Text>
-        </View>
+        </TouchableOpacity>
       );
     }
 
-    if (status === 'unpaid') {
+    if (effectiveStatus === 'unpaid') {
       return (
-        <View style={[styles.statusBadge, styles.statusUnpaidBadge]}>
+        <TouchableOpacity
+          onPress={handleToggleStatus}
+          activeOpacity={0.75}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+          style={[styles.statusBadge, styles.statusUnpaidBadge]}
+          accessibilityLabel="Mark Bill Paid"
+        >
           <View style={[styles.statusDot, { backgroundColor: '#FF8A80' }]} />
           <Text style={styles.statusUnpaidText}>
             {isUrdu ? 'غیر ادا شدہ' : 'UNPAID'}
           </Text>
-        </View>
+        </TouchableOpacity>
       );
     }
 
     return (
-      <View style={[styles.statusBadge, styles.statusNeutralBadge]}>
+      <TouchableOpacity
+        onPress={handleToggleStatus}
+        activeOpacity={0.75}
+        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+        style={[styles.statusBadge, styles.statusNeutralBadge]}
+        accessibilityLabel="Mark Bill Paid"
+      >
         <View style={[styles.statusDot, { backgroundColor: '#94A3B8' }]} />
         <Text style={styles.statusNeutralText}>
           {isUrdu ? 'محفوظ' : 'SAVED'}
         </Text>
-      </View>
+      </TouchableOpacity>
     );
   };
 
