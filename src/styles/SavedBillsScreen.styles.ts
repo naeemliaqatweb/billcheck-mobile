@@ -273,202 +273,6 @@ export const styles = StyleSheet.create({
     fontWeight: '900',
   },
 
-  // Meter Cards
-  meterCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 14,
-  },
-  meterCardLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#C4C6CC',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  meterCardDark: {
-    backgroundColor: '#0F1C2C',
-    borderColor: '#24354D',
-  },
-  cardTopRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  logoBoxWrapper: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.25)',
-    backgroundColor: '#EFF4FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  logoBoxDark: {
-    backgroundColor: '#132033',
-    borderColor: '#24354D',
-  },
-  cardMiddleInfo: {
-    flex: 1,
-    minWidth: 0,
-  },
-  nicknameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    flexWrap: 'wrap',
-  },
-  cardNickname: {
-    fontSize: 14,
-    fontWeight: '800',
-  },
-  companyPill: {
-    backgroundColor: '#EFF4FF',
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 99,
-  },
-  companyPillDark: {
-    backgroundColor: '#132033',
-  },
-  companyPillText: {
-    fontSize: 9.5,
-    fontWeight: '800',
-    color: '#006D35',
-    letterSpacing: 0.5,
-  },
-  refRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 3,
-  },
-  refText: {
-    fontSize: 11.5,
-    fontFamily: 'monospace',
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  copyIconBtn: {
-    padding: 2,
-  },
-  metaStatsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 6,
-    flexWrap: 'wrap',
-  },
-  metaCheckedText: {
-    fontSize: 11,
-    fontWeight: '500',
-  },
-  metaAmountText: {
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  dueBadgeDue: {
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 99,
-    backgroundColor: '#FFFBEB',
-    borderWidth: 1,
-    borderColor: '#FDE68A',
-  },
-  dueBadgeTextDue: {
-    fontSize: 9.5,
-    fontWeight: '800',
-    color: '#D97706',
-  },
-  dueBadgeOverdue: {
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 99,
-    backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#FECACA',
-  },
-  dueBadgeTextOverdue: {
-    fontSize: 9.5,
-    fontWeight: '800',
-    color: '#DC2626',
-  },
-  dueBadgePaid: {
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 99,
-    backgroundColor: '#E8FDF2',
-    borderWidth: 1,
-    borderColor: '#A7F3D0',
-  },
-  dueBadgeTextPaid: {
-    fontSize: 9.5,
-    fontWeight: '800',
-    color: '#00A854',
-  },
-
-  // Card Bottom CTA Action Bar
-  cardBottomBar: {
-    marginTop: 12,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(148, 163, 184, 0.15)',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  phaseInfoLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  phaseDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  phaseText: {
-    fontSize: 10.5,
-    fontWeight: '600',
-  },
-  actionsRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  deleteBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    backgroundColor: 'rgba(186, 26, 26, 0.08)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  viewBillBtn: {
-    height: 36,
-    paddingHorizontal: 14,
-    borderRadius: 8,
-    backgroundColor: '#62FF96',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    shadowColor: '#00E676',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  viewBillBtnText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#00210B',
-  },
-
   // Add Another Meter Prominent Action Card
   addAnotherCard: {
     borderWidth: 2,
@@ -509,6 +313,14 @@ export const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     alignItems: 'center',
+  },
+  emptyCardLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#C4C6CC',
+  },
+  emptyCardDark: {
+    backgroundColor: '#0F1C2C',
+    borderColor: '#24354D',
   },
   emptyIconCircle: {
     width: 64,

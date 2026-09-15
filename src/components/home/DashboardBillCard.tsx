@@ -105,8 +105,20 @@ export const DashboardBillCard: React.FC<DashboardBillCardProps> = ({
           </View>
         </View>
 
-        {/* Right Status Pill */}
-        {renderStatusBadge()}
+        {/* Right Status Pill & Delete Button */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          {renderStatusBadge()}
+          {onDeleteMeter && (
+            <TouchableOpacity
+              onPress={() => onDeleteMeter(meter)}
+              activeOpacity={0.7}
+              style={styles.deleteCircleBtn}
+              accessibilityLabel="Delete Meter"
+            >
+              <AppIcon name="trash" size={13} color="#FF8A80" />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* Bottom Zone: Amount, Due Date and Quick Action Buttons */}
@@ -465,5 +477,13 @@ const styles = StyleSheet.create({
   },
   rtlText: {
     textAlign: 'right',
+  },
+  deleteCircleBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 138, 128, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

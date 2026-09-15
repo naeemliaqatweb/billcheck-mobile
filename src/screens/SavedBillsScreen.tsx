@@ -6,8 +6,6 @@ import {
   TouchableOpacity,
   ScrollView,
   RefreshControl,
-  ActivityIndicator,
-  Share,
   Image,
 } from 'react-native';
 import { SavedMeter, BillData } from '../types/bill';
@@ -15,9 +13,10 @@ import { TRANSLATIONS, Language } from '../i18n/translations';
 import { AdBanner } from '../components/AdBanner';
 import { StorageService } from '../services/storage';
 import { ApiService } from '../services/api';
+import { BillPdfService } from '../services/billPdf';
 import { AppIcon } from '../components/AppIcon';
-import { ProviderLogo } from '../components/ProviderLogo';
 import { CustomPopup, PopupConfig } from '../components/CustomPopup';
+import { DashboardBillCard } from '../components/home/DashboardBillCard';
 import { NewMeterFab } from '../components/NewMeterFab';
 import { styles } from '../styles/SavedBillsScreen.styles';
 
@@ -131,26 +130,29 @@ export const SavedBillsScreen: React.FC<SavedBillsScreenProps> = ({
     }
   };
 
-  const handleCopyRef = (meter: SavedMeter) => {
-    setPopup({
-      visible: true,
-      type: 'info',
-      title: isUrdu ? 'ریفرنس نمبر' : 'Reference Number',
-      message: `${meter.company} Ref: ${meter.referenceNumber}\n${meter.nickname}`,
-      primaryText: isUrdu ? 'شیئر کریں' : 'Share',
-      secondaryText: isUrdu ? 'ٹھیک ہے' : 'OK',
-      onPrimaryPress: async () => {
-        setPopup((p) => ({ ...p, visible: false }));
-        try {
-          await Share.share({
-            message: `${meter.company} Reference Number: ${meter.referenceNumber} (${meter.nickname})`,
-          });
-        } catch {
-          // ignore
-        }
-      },
-      onClose: () => setPopup((p) => ({ ...p, visible: false })),
-    });
+  const handleDownloadPdf = async (meter: SavedMeter) => {
+    try {
+      const billData: BillData = {
+        company: meter.company,
+        referenceNo: meter.referenceNumber,
+        consumerName: meter.nickname || `${meter.company} Consumer`,
+        consumerId: meter.referenceNumber,
+        tariff: 'General',
+        load: '1 kW',
+        dueDate: meter.lastDueDate || '2024-09-20',
+        payableWithinDueDate: meter.lastBillAmount || 0,
+        payableAfterDueDate: Math.round((meter.lastBillAmount || 0) * 1.08),
+        billingMonth: meter.lastBillMonth || 'SEP 24',
+        readingDate: 'N/A',
+        issueDate: 'N/A',
+        unitsConsumed: 0,
+        billStatus: meter.lastBillStatus || 'unpaid',
+        utilityType: meter.utilityType,
+      };
+      await BillPdfService.requestOfficialBillPdf(billData);
+    } catch {
+      // ignore
+    }
   };
 
   const handleRefreshAll = async () => {
@@ -396,14 +398,14 @@ export const SavedBillsScreen: React.FC<SavedBillsScreenProps> = ({
             <View
               style={[
                 styles.emptyCard,
-                darkMode ? styles.meterCardDark : styles.meterCardLight,
+                darkMode ? styles.emptyCardDark : styles.emptyCardLight,
               ]}
             >
               <View style={styles.emptyIconCircle}>
                 <AppIcon name="receipt" size={36} color="#778598" />
               </View>
               <Text style={[styles.emptyTitle, darkMode ? styles.darkText : styles.lightText]}>
-                {savedMeters.length === 0 ? t.noSavedBills : 'کوئی میٹر نہیں ملا / No Meters Found'}
+                {savedMeters.length === 0 ? t.noSavedBills : (isUrdu ? 'کوئی میٹر نہیں ملا' : 'No Meters Found')}
               </Text>
               <Text style={[styles.emptySub, darkMode ? styles.darkSub : styles.lightSub]}>
                 {isUrdu
@@ -412,174 +414,18 @@ export const SavedBillsScreen: React.FC<SavedBillsScreenProps> = ({
               </Text>
             </View>
           ) : (
-            filteredMeters.map((meter) => {
-              const isLoadingThis = loadingMeterId === meter.id;
-              const isPaid = meter.lastBillStatus === 'paid';
-              const isOverdue = meter.lastBillStatus === 'overdue';
-
-              return (
-                <View
-                  key={meter.id}
-                  style={[
-                    styles.meterCard,
-                    darkMode ? styles.meterCardDark : styles.meterCardLight,
-                  ]}
-                >
-                  {/* Card Top Row: Provider Logo + Meter Info */}
-                  <View style={styles.cardTopRow}>
-                    {/* PROVIDER LOGO BOX (Stitch Requirement) */}
-                    <View
-                      style={[
-                        styles.logoBoxWrapper,
-                        darkMode && styles.logoBoxDark,
-                      ]}
-                    >
-                      <ProviderLogo code={meter.company} size={40} />
-                    </View>
-
-                    {/* Meter Info Column */}
-                    <View style={styles.cardMiddleInfo}>
-                      <View style={styles.nicknameRow}>
-                        <Text
-                          style={[
-                            styles.cardNickname,
-                            darkMode ? styles.darkText : styles.lightText,
-                          ]}
-                          numberOfLines={1}
-                        >
-                          {meter.nickname || `${meter.company} Meter`}
-                        </Text>
-                        <View
-                          style={[
-                            styles.companyPill,
-                            darkMode && styles.companyPillDark,
-                          ]}
-                        >
-                          <Text style={styles.companyPillText}>{meter.company}</Text>
-                        </View>
-                      </View>
-
-                      {/* Reference Number with Copy Button */}
-                      <View style={styles.refRow}>
-                        <Text
-                          style={[
-                            styles.refText,
-                            darkMode ? styles.darkText : styles.lightText,
-                          ]}
-                        >
-                          {meter.referenceNumber}
-                        </Text>
-                        <TouchableOpacity
-                          style={styles.copyIconBtn}
-                          onPress={() => handleCopyRef(meter)}
-                          activeOpacity={0.7}
-                          accessibilityLabel="Copy Reference"
-                        >
-                          <AppIcon name="share" size={13} color="#778598" />
-                        </TouchableOpacity>
-                      </View>
-
-                      {/* Meta Stats Row */}
-                      <View style={styles.metaStatsRow}>
-                        <Text
-                          style={[
-                            styles.metaCheckedText,
-                            darkMode ? styles.darkSub : styles.lightSub,
-                          ]}
-                        >
-                          {meter.lastCheckedDate
-                            ? `Checked ${meter.lastCheckedDate}`
-                            : 'Synchronized'}
-                        </Text>
-                        <Text style={darkMode ? styles.darkSub : styles.lightSub}>•</Text>
-                        {meter.lastBillAmount ? (
-                          <Text
-                            style={[
-                              styles.metaAmountText,
-                              darkMode ? styles.darkText : styles.lightText,
-                            ]}
-                          >
-                            Rs. {meter.lastBillAmount.toLocaleString()}
-                          </Text>
-                        ) : null}
-
-                        {/* Status Badge */}
-                        {isPaid ? (
-                          <View style={styles.dueBadgePaid}>
-                            <Text style={styles.dueBadgeTextPaid}>Paid</Text>
-                          </View>
-                        ) : isOverdue ? (
-                          <View style={styles.dueBadgeOverdue}>
-                            <Text style={styles.dueBadgeTextOverdue}>Overdue</Text>
-                          </View>
-                        ) : (
-                          <View style={styles.dueBadgeDue}>
-                            <Text style={styles.dueBadgeTextDue}>
-                              {meter.lastDueDate ? `Due ${meter.lastDueDate}` : 'Due Soon'}
-                            </Text>
-                          </View>
-                        )}
-                      </View>
-                    </View>
-                  </View>
-
-                  {/* Card Bottom CTA Action Bar */}
-                  <View style={styles.cardBottomBar}>
-                    <View style={styles.phaseInfoLeft}>
-                      <View
-                        style={[
-                          styles.phaseDot,
-                          {
-                            backgroundColor: isPaid
-                              ? '#00A854'
-                              : meter.utilityType === 'gas'
-                              ? '#006D35'
-                              : '#62FF96',
-                          },
-                        ]}
-                      />
-                      <Text
-                        style={[
-                          styles.phaseText,
-                          darkMode ? styles.darkSub : styles.lightSub,
-                        ]}
-                      >
-                        {meter.utilityType === 'gas' ? 'Gas Consumer' : 'Domestic 1-Phase'}
-                      </Text>
-                    </View>
-
-                    <View style={styles.actionsRight}>
-                      {/* Delete Meter */}
-                      <TouchableOpacity
-                        style={styles.deleteBtn}
-                        onPress={() => handleDelete(meter)}
-                        activeOpacity={0.7}
-                        accessibilityLabel="Delete Meter"
-                      >
-                        <AppIcon name="trash" size={16} color="#BA1A1A" />
-                      </TouchableOpacity>
-
-                      {/* View Bill Button */}
-                      <TouchableOpacity
-                        style={styles.viewBillBtn}
-                        onPress={() => handleOpenMeter(meter)}
-                        disabled={isLoadingThis}
-                        activeOpacity={0.85}
-                      >
-                        {isLoadingThis ? (
-                          <ActivityIndicator size="small" color="#00210B" />
-                        ) : (
-                          <>
-                            <Text style={styles.viewBillBtnText}>{t.checkBillBtn}</Text>
-                            <AppIcon name="arrow-right" size={14} color="#00210B" />
-                          </>
-                        )}
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                </View>
-              );
-            })
+            filteredMeters.map((meter) => (
+              <DashboardBillCard
+                key={meter.id}
+                meter={meter}
+                language={language}
+                darkMode={darkMode}
+                isLoading={loadingMeterId === meter.id}
+                onCheckBill={handleOpenMeter}
+                onDownloadPdf={handleDownloadPdf}
+                onDeleteMeter={handleDelete}
+              />
+            ))
           )}
 
           {/* Add Another Meter Prominent Action Card */}
