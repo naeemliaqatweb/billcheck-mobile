@@ -23,7 +23,7 @@ export const ConsumptionChart: React.FC<ConsumptionChartProps> = ({
   language = 'en',
 }) => {
   const isUrdu = language === 'ur';
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<any>(null);
   const scrollOffsetX = useRef<number>(0);
 
   if (!history || history.length === 0) {

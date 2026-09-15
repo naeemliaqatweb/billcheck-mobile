@@ -273,11 +273,11 @@ export const DashboardBillCard: React.FC<DashboardBillCardProps> = ({
               {isUrdu ? 'آخری تاریخ' : 'Due Date'}
             </Text>
             <View style={styles.dueDateRow}>
-              <AppIcon name="calendar" size={13} color={status === 'paid' ? '#059669' : (dueDate ? '#BA1A1A' : '#778598')} />
+              <AppIcon name="calendar" size={13} color={effectiveStatus === 'paid' ? '#059669' : (dueDate ? '#BA1A1A' : '#778598')} />
               <Text
                 style={[
                   styles.dueDateVal,
-                  { color: status === 'paid' ? '#059669' : (dueDate ? '#BA1A1A' : '#778598') },
+                  { color: effectiveStatus === 'paid' ? '#059669' : (dueDate ? '#BA1A1A' : '#778598') },
                 ]}
               >
                 {dueDate || '--'}

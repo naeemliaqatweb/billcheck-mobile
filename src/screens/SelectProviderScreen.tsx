@@ -38,7 +38,7 @@ export const SelectProviderScreen: React.FC<SelectProviderScreenProps> = ({
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [refreshing, setRefreshing] = useState(false);
   const [showRefGuideModal, setShowRefGuideModal] = useState(false);
-  const [popup, setPopup] = useState<PopupConfig>({
+  const [popup] = useState<PopupConfig>({
     visible: false,
     title: '',
     message: '',

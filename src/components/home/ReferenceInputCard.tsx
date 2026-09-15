@@ -57,7 +57,7 @@ export const ReferenceInputCard: React.FC<ReferenceInputCardProps> = ({
       friction: 8,
       useNativeDriver: true,
     }).start();
-  }, [isComplete]);
+  }, [isComplete, btnAnim]);
 
   const headingText = isUrdu
     ? (utilityType === 'electricity'

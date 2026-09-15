@@ -72,6 +72,9 @@ export interface BillData {
   meterNo: string;
   tariff: string;
   connectedLoad?: string;
+  load?: string;
+  billingMonth?: string;
+  readingDate?: string;
   fpaAmount: number;
   tvFee: number;
   gstAmount: number;

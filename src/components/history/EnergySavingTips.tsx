@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { Language, TRANSLATIONS } from '../../i18n/translations';
+import { Language } from '../../i18n/translations';
 import { AppIcon } from '../AppIcon';
 import { styles } from '../../styles/HistoryScreen.styles';
 

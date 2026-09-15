@@ -421,7 +421,7 @@ async function fetchDirectFromPitc(company: string, cleanRef: string): Promise<B
       electricityDuty: 0,
       history12Months: generate12MonthHistory(units, payableWithinDueDate),
       fetchedAt: new Date().toISOString(),
-      sourceUrl: portalUrl,
+      sourceUrl: `https://bill.pitc.com.pk/${company.toLowerCase()}bill/general?refno=${cleanRef}`,
       isMockData: false,
     };
 
@@ -445,7 +445,7 @@ export function parseDueDate(dateStr?: string): Date | null {
     JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11,
   };
 
-  const textMatch = clean.match(/(\d{1,2})[\s\-\/]+(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[\s\-\/]+(\d{2,4})/i);
+  const textMatch = clean.match(/(\d{1,2})[\s\-/]+(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[\s\-/]+(\d{2,4})/i);
   if (textMatch) {
     const day = parseInt(textMatch[1], 10);
     const month = monMap[textMatch[2].toUpperCase()];

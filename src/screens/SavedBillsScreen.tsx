@@ -7,6 +7,7 @@ import {
   ScrollView,
   RefreshControl,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { SavedMeter, BillData } from '../types/bill';
 import { TRANSLATIONS, Language } from '../i18n/translations';
@@ -145,7 +146,7 @@ export const SavedBillsScreen: React.FC<SavedBillsScreenProps> = ({
   const handleDownloadPdf = async (meter: SavedMeter) => {
     setDownloadingMeterId(meter.id);
     try {
-      const billData: BillData = {
+      const billData: Partial<BillData> & { company: string; referenceNo: string } = {
         company: meter.company,
         referenceNo: meter.referenceNumber,
         consumerName: meter.consumerName || meter.nickname || `${meter.company} Consumer`,

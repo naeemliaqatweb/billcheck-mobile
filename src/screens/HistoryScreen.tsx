@@ -10,7 +10,7 @@ import {
   Image,
 } from 'react-native';
 import { BillData, SavedMeter, BillMonthHistory } from '../types/bill';
-import { TRANSLATIONS, Language } from '../i18n/translations';
+import { Language } from '../i18n/translations';
 import { AdBanner } from '../components/AdBanner';
 import { AppIcon } from '../components/AppIcon';
 import { StorageService } from '../services/storage';
@@ -39,11 +39,10 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
   savedMeters = [],
   language,
   darkMode,
-  onSelectBill,
-  onNavigateHome,
+  onSelectBill: _onSelectBill,
+  onNavigateHome: _onNavigateHome,
   onOpenSelectProvider,
 }) => {
-  const t = TRANSLATIONS[language];
   const isUrdu = language === 'ur';
 
   // Utility category filter: 'electricity' vs 'gas'
@@ -69,8 +68,6 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
       return m.utilityType !== 'gas';
     });
   }, [savedMeters, utilityType]);
-  // Determine if any gas providers exist to conditionally show gas tab
-  const hasGas = useMemo(() => savedMeters.some((m) => m.utilityType === 'gas'), [savedMeters]);
 
   useEffect(() => {
     const initHistory = async () => {
@@ -224,13 +221,6 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
   }, [activeBill]);
 
   const hasHistory = historyData.length > 0;
-
-  const rawName = activeBill?.consumerName || '';
-  const cleanConsumerName =
-    rawName.replace(/[\.\s]+$/, '').trim() ||
-    activeBill?.formattedRefNo ||
-    activeBill?.referenceNo ||
-    '';
 
   const meterDisplayLabel = activeBill
     ? `${activeBill.company} # ${activeBill.formattedRefNo || activeBill.referenceNo}`

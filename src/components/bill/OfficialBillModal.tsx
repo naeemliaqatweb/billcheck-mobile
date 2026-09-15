@@ -7,11 +7,10 @@ import {
   StyleSheet,
   ScrollView,
   Share,
-  Platform,
 } from 'react-native';
 import { BillData } from '../../types/bill';
 import { AppIcon } from '../AppIcon';
-import { Language, TRANSLATIONS } from '../../i18n/translations';
+import { Language } from '../../i18n/translations';
 
 interface OfficialBillModalProps {
   visible: boolean;
@@ -31,7 +30,6 @@ export const OfficialBillModal: React.FC<OfficialBillModalProps> = ({
   onSaveToGallery,
 }) => {
   const isUrdu = language === 'ur';
-  const t = TRANSLATIONS[language];
 
   const handleShare = async () => {
     try {

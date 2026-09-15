@@ -81,7 +81,7 @@ const formatCurrentBillMonth = (
 };
 
 export const DashboardHeroCard: React.FC<DashboardHeroCardProps> = ({
-  location = 'Lahore, PK',
+  location: _location = 'Lahore, PK',
   totalDueAmount = 0,
   unpaidBillsCount = 0,
   history,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Linking, RefreshControl } from 'react-native';
+import { View, ScrollView, Linking, RefreshControl } from 'react-native';
 import {
   ELECTRICITY_PROVIDERS,
   GAS_PROVIDERS,
@@ -9,7 +9,6 @@ import { BillData, SavedMeter } from '../types/bill';
 import { TRANSLATIONS, Language } from '../i18n/translations';
 import { ApiService } from '../services/api';
 import { StorageService } from '../services/storage';
-import { AppIcon } from '../components/AppIcon';
 import { CustomPopup, PopupConfig } from '../components/CustomPopup';
 import { RefGuideModal } from '../components/RefGuideModal';
 import { AddBillTopHeader } from '../components/addbill/AddBillTopHeader';

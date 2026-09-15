@@ -17,7 +17,6 @@ import {
   Bell,
   BellRing,
   AlertTriangle,
-  AlertCircle,
   Info,
   BadgeCheck,
   ShieldCheck,

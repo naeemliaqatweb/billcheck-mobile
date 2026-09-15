@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { BillMonthHistory } from '../../types/bill';
-import { Language, TRANSLATIONS } from '../../i18n/translations';
+import { Language } from '../../i18n/translations';
 import { AppIcon } from '../AppIcon';
 import { styles } from '../../styles/HistoryScreen.styles';
 
@@ -16,7 +16,6 @@ export const ConsumptionMetricsGrid: React.FC<ConsumptionMetricsGridProps> = ({
   darkMode,
   language,
 }) => {
-  const t = TRANSLATIONS[language];
   const isUrdu = language === 'ur';
 
   const hasHistory = historyData.length > 0;

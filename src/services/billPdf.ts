@@ -56,7 +56,7 @@ export const BillPdfService = {
    * Directly opens and downloads the authentic official duplicate bill inside the app
    * via Android's native Print & PDF engine (rendering the exact HTML with barcode, meter photo & styles).
    */
-  async requestOfficialBillPdf(bill: BillData): Promise<DownloadPdfResult> {
+  async requestOfficialBillPdf(bill: Partial<BillData> & { company: string; referenceNo: string }): Promise<DownloadPdfResult> {
     const cleanRef = bill.referenceNo.replace(/[^0-9a-zA-Z]/g, '').trim();
     const officialUrl = this.getOfficialPortalDuplicateUrl(bill.company, cleanRef);
     const fileName = `Official_Bill_${bill.company}_${cleanRef}.pdf`;
@@ -113,10 +113,10 @@ export const BillPdfService = {
 /**
  * Generates an authentic, print-ready official duplicate bill HTML document.
  */
-function generateOfficialBillTemplateHtml(bill: BillData): string {
+function generateOfficialBillTemplateHtml(bill: Partial<BillData> & { company: string; referenceNo: string }): string {
   const isPaid = bill.billStatus === 'paid';
   const cleanRef = bill.formattedRefNo || bill.referenceNo;
-  const latePayable = bill.payableAfterDueDate || Math.round(bill.payableWithinDueDate * 1.08);
+  const latePayable = bill.payableAfterDueDate || Math.round((bill.payableWithinDueDate || 0) * 1.08);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -254,12 +254,12 @@ function generateOfficialBillTemplateHtml(bill: BillData): string {
 
     <div class="amount-box">
       <div>
-        <div class="label">PAYABLE WITHIN DUE DATE</div>
-        <div class="amount-main">PKR ${bill.payableWithinDueDate.toLocaleString()}</div>
+        <div style="font-size: 11px; color: #64748B; font-weight: 600;">PAYABLE WITHIN DUE DATE:</div>
+        <div class="amount-main">PKR ${(bill.payableWithinDueDate || 0).toLocaleString()}</div>
       </div>
       <div style="text-align: right;">
-        <div class="label">PAYABLE AFTER DUE DATE</div>
-        <div style="font-size: 18px; font-weight: 800; color: #BA1A1A;">PKR ${latePayable.toLocaleString()}</div>
+        <div style="font-size: 11px; color: #64748B; font-weight: 600;">PAYABLE AFTER DUE DATE:</div>
+        <div class="amount-main" style="color: #BA1A1A;">PKR ${latePayable.toLocaleString()}</div>
       </div>
     </div>
 

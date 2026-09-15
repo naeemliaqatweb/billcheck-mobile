@@ -1,5 +1,4 @@
 import { StyleSheet } from 'react-native';
-import { COLORS } from './common.styles';
 
 export const styles = StyleSheet.create({
   outerContainer: {

@@ -80,7 +80,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       ? 'ستمبر کا نیا بل Rs. 14,250 جاری ہو گیا ہے۔ آخری تاریخ: 22 ستمبر'
       : 'Your new bill for SEP 24 (Rs. 14,250) is now ready. Due Date: 22 Sep';
 
-    const sent = await NotificationService.triggerSystemNotification(
+    await NotificationService.triggerSystemNotification(
       title,
       message,
       'test_bill_alert'

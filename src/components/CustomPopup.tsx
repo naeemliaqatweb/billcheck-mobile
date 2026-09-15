@@ -88,6 +88,7 @@ export const CustomPopup: React.FC<CustomPopupProps> = ({
       scaleAnim.setValue(0.85);
       opacityAnim.setValue(0);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
   const handleClose = () => {
@@ -212,7 +213,7 @@ export const CustomPopup: React.FC<CustomPopupProps> = ({
                 style={[styles.secondaryButton, darkMode ? styles.darkBtnSec : styles.lightBtnSec]}
                 onPress={() => {
                   handleClose();
-                  onSecondaryPress?.();
+                  finalOnSecondaryPress?.();
                 }}
                 activeOpacity={0.7}
               >

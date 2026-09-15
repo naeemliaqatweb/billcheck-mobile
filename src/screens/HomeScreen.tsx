@@ -225,7 +225,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const handleDownloadPdf = async (meter: SavedMeter) => {
     setDownloadingMeterId(meter.id);
     try {
-      const billData: BillData = {
+      const billData: Partial<BillData> & { company: string; referenceNo: string } = {
         company: meter.company,
         referenceNo: meter.referenceNumber,
         consumerName: meter.consumerName || meter.nickname || `${meter.company} Consumer`,
@@ -350,10 +350,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   styles.filterTabItem,
                   filterType === 'electricity' && (darkMode ? styles.filterTabActiveDark : styles.filterTabActive),
                 ]}
-                onPress={() => {
-  setFilterType('electricity');
-  setUtilityType('electricity');
-}}
+                onPress={() => setFilterType('electricity')}
                 activeOpacity={0.8}
               >
                 <Text
@@ -371,10 +368,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   styles.filterTabItem,
                   filterType === 'gas' && (darkMode ? styles.filterTabActiveDark : styles.filterTabActive),
                 ]}
-                onPress={() => {
-  setFilterType('gas');
-  setUtilityType('gas');
-}}
+                onPress={() => setFilterType('gas')}
                 activeOpacity={0.8}
               >
                 <Text

@@ -43,7 +43,7 @@ export const FloatingLabelInput: React.FC<FloatingLabelInputProps> = ({
       duration: 160,
       useNativeDriver: false,
     }).start();
-  }, [isFocused, value]);
+  }, [isFocused, value, anim]);
 
   const bg = cardBg || (darkMode ? '#111827' : '#FFFFFF');
   const textColor = darkMode ? '#F9FAFB' : '#0F172A';

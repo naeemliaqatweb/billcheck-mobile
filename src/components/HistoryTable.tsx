@@ -22,7 +22,6 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({
   }
 
   const total12Units = history.reduce((acc, h) => acc + h.units, 0);
-  const avgUnits = Math.round(total12Units / history.length);
   const total12Amount = history.reduce((acc, h) => acc + h.amount, 0);
   const avgAmount = Math.round(total12Amount / history.length);
 
