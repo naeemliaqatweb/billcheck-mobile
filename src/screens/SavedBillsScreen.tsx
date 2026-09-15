@@ -115,6 +115,17 @@ export const SavedBillsScreen: React.FC<SavedBillsScreenProps> = ({
     try {
       const bill = await ApiService.fetchBill(meter.company, meter.referenceNumber);
       await StorageService.cacheBill(bill);
+      if (bill.consumerName && (!meter.consumerName || meter.consumerName !== bill.consumerName)) {
+        await StorageService.saveMeter({
+          ...meter,
+          consumerName: bill.consumerName,
+          consumerAddress: bill.consumerAddress || meter.consumerAddress,
+          lastBillAmount: bill.payableWithinDueDate,
+          lastDueDate: bill.dueDate,
+          lastBillStatus: bill.billStatus,
+          lastBillMonth: bill.billMonth,
+        });
+      }
       onSelectMeter(bill);
     } catch {
       setPopup({
@@ -135,7 +146,7 @@ export const SavedBillsScreen: React.FC<SavedBillsScreenProps> = ({
       const billData: BillData = {
         company: meter.company,
         referenceNo: meter.referenceNumber,
-        consumerName: meter.nickname || `${meter.company} Consumer`,
+        consumerName: meter.consumerName || meter.nickname || `${meter.company} Consumer`,
         consumerId: meter.referenceNumber,
         tariff: 'General',
         load: '1 kW',
@@ -166,9 +177,12 @@ export const SavedBillsScreen: React.FC<SavedBillsScreenProps> = ({
             await StorageService.cacheBill(fresh);
             await StorageService.saveMeter({
               ...meter,
+              consumerName: fresh.consumerName || meter.consumerName,
+              consumerAddress: fresh.consumerAddress || meter.consumerAddress,
               lastBillAmount: fresh.payableWithinDueDate,
               lastDueDate: fresh.dueDate,
               lastBillStatus: fresh.billStatus,
+              lastBillMonth: fresh.billMonth,
               lastCheckedDate: new Date().toISOString().split('T')[0],
             });
           }

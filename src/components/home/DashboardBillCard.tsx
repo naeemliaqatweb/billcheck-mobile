@@ -11,6 +11,7 @@ import { AppIcon } from '../AppIcon';
 import { ProviderLogo } from '../ProviderLogo';
 import { Language } from '../../i18n/translations';
 import { NotificationService } from '../../services/notification';
+import { StorageService } from '../../services/storage';
 
 interface DashboardBillCardProps {
   meter: SavedMeter;
@@ -37,6 +38,21 @@ export const DashboardBillCard: React.FC<DashboardBillCardProps> = ({
   const amount = meter.lastBillAmount;
   const dueDate = meter.lastDueDate;
   const status = meter.lastBillStatus;
+
+  // Retrieve consumer name from meter or cached bill
+  const [cachedName, setCachedName] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!meter.consumerName) {
+      StorageService.getCachedBill(meter.company, meter.referenceNumber).then((cached) => {
+        if (cached?.consumerName) {
+          setCachedName(cached.consumerName);
+        }
+      });
+    }
+  }, [meter.company, meter.referenceNumber, meter.consumerName]);
+
+  const consumerDisplayName = meter.consumerName || cachedName;
 
   // Clean nickname to avoid repeating company name e.g. "MEPCO • MEPCO (liaqat)"
   const getDisplayNickname = () => {
@@ -144,6 +160,44 @@ export const DashboardBillCard: React.FC<DashboardBillCardProps> = ({
 
       {/* Bottom Zone: Amount, Due Date and Quick Action Buttons */}
       <View style={[styles.bottomZone, darkMode ? styles.bottomZoneDark : styles.bottomZoneLight]}>
+        {/* Consumer / Customer Name Info Row */}
+        {consumerDisplayName ? (
+          <View
+            style={[
+              styles.consumerContainer,
+              darkMode ? styles.consumerContainerDark : styles.consumerContainerLight,
+              isUrdu && styles.rtlRow,
+            ]}
+          >
+            <View style={[styles.consumerLeftGroup, isUrdu && styles.rtlRow]}>
+              <AppIcon
+                name="user"
+                size={13}
+                color={darkMode ? '#62FF96' : '#006D35'}
+              />
+              <Text
+                style={[
+                  styles.consumerLabel,
+                  darkMode ? styles.darkSub : styles.lightSub,
+                ]}
+              >
+                {isUrdu ? 'صارف کا نام:' : 'Consumer:'}
+              </Text>
+            </View>
+            <Text
+              style={[
+                styles.consumerNameText,
+                darkMode ? styles.darkText : styles.lightText,
+                isUrdu && styles.rtlText,
+              ]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {consumerDisplayName}
+            </Text>
+          </View>
+        ) : null}
+
         <View style={[styles.amountDueDateRow, isUrdu && styles.rtlRow]}>
           {/* Payable Amount */}
           <View>
@@ -377,6 +431,42 @@ const styles = StyleSheet.create({
   },
   bottomZoneLight: {
     backgroundColor: '#FFFFFF',
+  },
+  consumerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginBottom: 12,
+    borderWidth: 1,
+    gap: 8,
+  },
+  consumerContainerDark: {
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  consumerContainerLight: {
+    backgroundColor: '#F8FAFC',
+    borderColor: '#E2E8F0',
+  },
+  consumerLeftGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    flexShrink: 0,
+  },
+  consumerLabel: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+  },
+  consumerNameText: {
+    fontSize: 12,
+    fontWeight: '700',
+    flex: 1,
+    textAlign: 'right',
   },
   amountDueDateRow: {
     flexDirection: 'row',

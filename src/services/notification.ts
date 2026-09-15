@@ -147,6 +147,8 @@ export const NotificationService = {
               // Update saved meter record
               await StorageService.saveMeter({
                 ...meter,
+                consumerName: fresh.consumerName || meter.consumerName,
+                consumerAddress: fresh.consumerAddress || meter.consumerAddress,
                 lastBillAmount: fresh.payableWithinDueDate,
                 lastDueDate: fresh.dueDate,
                 lastBillStatus: fresh.billStatus,

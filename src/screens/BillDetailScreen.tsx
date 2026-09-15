@@ -213,10 +213,13 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
       company: activeBill.company,
       referenceNumber: activeBill.referenceNo,
       utilityType: activeBill.utilityType,
+      consumerName: activeBill.consumerName,
+      consumerAddress: activeBill.consumerAddress,
       lastCheckedDate: new Date().toISOString().split('T')[0],
       lastBillAmount: activeBill.payableWithinDueDate,
       lastDueDate: activeBill.dueDate,
       lastBillStatus: activeBill.billStatus,
+      lastBillMonth: activeBill.billMonth,
     });
 
     if (success) {

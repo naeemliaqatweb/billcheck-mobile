@@ -17,6 +17,7 @@ import { AdBanner } from '../components/AdBanner';
 import { ApiService, generate12MonthHistory } from '../services/api';
 import { StorageService } from '../services/storage';
 import { NotificationService } from '../services/notification';
+import { BillPdfService } from '../services/billPdf';
 import { AppIcon } from '../components/AppIcon';
 import { CustomPopup, PopupConfig } from '../components/CustomPopup';
 import { DashboardHeroCard } from '../components/home/DashboardHeroCard';
@@ -200,6 +201,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     try {
       const bill = await ApiService.fetchBill(meter.company, meter.referenceNumber);
       await StorageService.cacheBill(bill);
+      if (bill.consumerName && (!meter.consumerName || meter.consumerName !== bill.consumerName)) {
+        await StorageService.saveMeter({
+          ...meter,
+          consumerName: bill.consumerName,
+          consumerAddress: bill.consumerAddress || meter.consumerAddress,
+          lastBillAmount: bill.payableWithinDueDate,
+          lastDueDate: bill.dueDate,
+          lastBillStatus: bill.billStatus,
+          lastBillMonth: bill.billMonth,
+        });
+      }
       onBillChecked(bill);
     } catch {
       handleFetchFailure(prov, meter.referenceNumber);
@@ -209,12 +221,29 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   };
 
   // Download PDF / open official bill portal
-  const handleDownloadPdf = (meter: SavedMeter) => {
-    const prov =
-      [...ELECTRICITY_PROVIDERS, ...GAS_PROVIDERS].find((p) => p.code === meter.company) ||
-      ELECTRICITY_PROVIDERS[0];
-    const portalUrl = prov.portalUrl || 'https://bill.pitc.com.pk/';
-    Linking.openURL(portalUrl);
+  const handleDownloadPdf = async (meter: SavedMeter) => {
+    try {
+      const billData: BillData = {
+        company: meter.company,
+        referenceNo: meter.referenceNumber,
+        consumerName: meter.consumerName || meter.nickname || `${meter.company} Consumer`,
+        consumerId: meter.referenceNumber,
+        tariff: 'General',
+        load: '1 kW',
+        dueDate: meter.lastDueDate || '2024-09-20',
+        payableWithinDueDate: meter.lastBillAmount || 0,
+        payableAfterDueDate: Math.round((meter.lastBillAmount || 0) * 1.08),
+        billingMonth: meter.lastBillMonth || 'SEP 24',
+        readingDate: 'N/A',
+        issueDate: 'N/A',
+        unitsConsumed: 0,
+        billStatus: meter.lastBillStatus || 'unpaid',
+        utilityType: meter.utilityType,
+      };
+      await BillPdfService.requestOfficialBillPdf(billData);
+    } catch {
+      // ignore
+    }
   };
 
   return (
