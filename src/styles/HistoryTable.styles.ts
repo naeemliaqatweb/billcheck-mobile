@@ -40,7 +40,7 @@ export const styles = StyleSheet.create({
     color: '#778598',
   },
   lightSub: {
-    color: '#778598',
+    color: '#334155',
   },
   badge12: {
     fontSize: 10,
@@ -107,7 +107,7 @@ export const styles = StyleSheet.create({
     color: '#778598',
   },
   lightTh: {
-    color: '#44474C',
+    color: '#1E293B',
   },
   tableRow: {
     flexDirection: 'row',

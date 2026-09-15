@@ -51,6 +51,31 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
     message: '',
   });
 
+  // Check on mount if this meter is already saved in local storage
+  React.useEffect(() => {
+    let isMounted = true;
+    const checkSavedStatus = async () => {
+      try {
+        const saved = await StorageService.getSavedMeters();
+        const cleanRef = bill.referenceNo.replace(/[^0-9a-zA-Z]/g, '').trim();
+        const alreadyExists = saved.some(
+          (m) =>
+            m.company === bill.company &&
+            m.referenceNumber.replace(/[^0-9a-zA-Z]/g, '').trim() === cleanRef
+        );
+        if (isMounted) {
+          setIsSaved(alreadyExists);
+        }
+      } catch {
+        // ignore
+      }
+    };
+    checkSavedStatus();
+    return () => {
+      isMounted = false;
+    };
+  }, [bill.company, bill.referenceNo]);
+
   const [openHistory, setOpenHistory] = useState(false);
   const [openPortal, setOpenPortal] = useState(false);
   const [openNotices, setOpenNotices] = useState(false);
@@ -606,64 +631,55 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
             />
           </AccordionSection>
 
-          {/* Save Meter Action Card (Stitch System) */}
-          <TouchableOpacity
-            style={[
-              styles.saveMeterCard,
-              darkMode ? styles.saveMeterCardDark : styles.saveMeterCardLight,
-              isSaved && styles.saveMeterCardSaved,
-            ]}
-            onPress={handleSaveMeter}
-            activeOpacity={0.85}
-          >
-            <View style={styles.saveMeterLeft}>
-              <View
-                style={[
-                  styles.saveMeterIconBox,
-                  darkMode && styles.saveMeterIconBoxDark,
-                  isSaved && styles.saveMeterIconBoxSaved,
-                ]}
-              >
-                <AppIcon
-                  name={isSaved ? 'check' : 'star'}
-                  size={18}
-                  color={isSaved ? '#FFFFFF' : (darkMode ? '#62FF96' : '#006D35')}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={[
-                    styles.saveMeterTitle,
-                    darkMode ? styles.darkText : styles.lightText,
-                  ]}
-                >
-                  {isSaved ? t.meterSaved : t.saveMeterBtn}
-                </Text>
-                <Text
-                  style={[
-                    styles.saveMeterSub,
-                    darkMode ? styles.darkSub : styles.lightSub,
-                  ]}
-                >
-                  {isUrdu ? 'ڈیش بورڈ پر محفوظ کریں تاکہ ایک کلک پر بل حاصل ہو' : 'Save to dashboard for 1-tap tracking & alerts'}
-                </Text>
-              </View>
-            </View>
-            <View
+          {/* Save Meter Action Card (Only shown if meter is not already saved) */}
+          {!isSaved && (
+            <TouchableOpacity
               style={[
-                styles.saveMeterPill,
-                isSaved && styles.saveMeterPillSaved,
+                styles.saveMeterCard,
+                darkMode ? styles.saveMeterCardDark : styles.saveMeterCardLight,
               ]}
+              onPress={handleSaveMeter}
+              activeOpacity={0.85}
             >
-              <Text
-                style={
-                  isSaved ? styles.saveMeterPillTextSaved : styles.saveMeterPillText
-                }
-              >
-                {isSaved ? (isUrdu ? 'محفوظ' : 'Saved') : (isUrdu ? 'محفوظ کریں' : 'Save')}
-              </Text>
-            </View>
-          </TouchableOpacity>
+              <View style={styles.saveMeterLeft}>
+                <View
+                  style={[
+                    styles.saveMeterIconBox,
+                    darkMode && styles.saveMeterIconBoxDark,
+                  ]}
+                >
+                  <AppIcon
+                    name="star"
+                    size={18}
+                    color={darkMode ? '#62FF96' : '#006D35'}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={[
+                      styles.saveMeterTitle,
+                      darkMode ? styles.darkText : styles.lightText,
+                    ]}
+                  >
+                    {t.saveMeterBtn}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.saveMeterSub,
+                      darkMode ? styles.darkSub : styles.lightSub,
+                    ]}
+                  >
+                    {isUrdu ? 'ڈیش بورڈ پر محفوظ کریں تاکہ ایک کلک پر بل حاصل ہو' : 'Save to dashboard for 1-tap tracking & alerts'}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.saveMeterPill}>
+                <Text style={styles.saveMeterPillText}>
+                  {isUrdu ? 'محفوظ کریں' : 'Save'}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
 
           <AdBanner darkMode={darkMode} language={language} />
         </View>

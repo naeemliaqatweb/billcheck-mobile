@@ -144,7 +144,7 @@ export const styles = StyleSheet.create({
     color: '#778598',
   },
   lightSub: {
-    color: '#778598',
+    color: '#334155',
   },
   rtlText: {
     textAlign: 'right',

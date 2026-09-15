@@ -5,7 +5,6 @@ export const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
     position: 'relative',
-    backgroundColor: '#0F1C2C',
   },
   container: {
     flex: 1,
@@ -292,7 +291,7 @@ export const styles = StyleSheet.create({
     color: '#94A3B8',
   },
   lightSub: {
-    color: '#64748B',
+    color: '#334155',
   },
   darkCard: {
     backgroundColor: '#1E293B',
