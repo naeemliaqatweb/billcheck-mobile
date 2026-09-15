@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { BillMonthHistory } from '../types/bill';
+import { AppIcon } from './AppIcon';
 
 interface ConsumptionChartProps {
   history: BillMonthHistory[];
@@ -24,13 +25,18 @@ export const ConsumptionChart: React.FC<ConsumptionChartProps> = ({
   return (
     <View style={[styles.container, darkMode ? styles.darkContainer : styles.lightContainer]}>
       <View style={styles.titleRow}>
-        <Text style={[styles.title, darkMode ? styles.darkText : styles.lightText, isUrdu && styles.rtlText]}>
-          📊 {isUrdu ? '12 ماہ کا کنزمپشن گراف' : '12-Month Consumption Graph'}
-        </Text>
-        <Text style={styles.unitBadge}>Units (kWh)</Text>
+        <View style={styles.titleLeft}>
+          <AppIcon name="stats" size={16} color="#006D35" />
+          <Text style={[styles.title, darkMode ? styles.darkText : styles.lightText]}>
+            {isUrdu ? 'ماہانہ بجلی کا استعمال (kWh)' : '12-Month Consumption Trend'}
+          </Text>
+        </View>
+        <View style={styles.unitBadge}>
+          <Text style={styles.unitBadgeText}>kWh</Text>
+        </View>
       </View>
 
-      {/* Horizontally Scrollable Bar Chart to fit all 12 months cleanly */}
+      {/* Horizontally Scrollable Bar Chart */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chartScroll}>
         <View style={styles.chartContainer}>
           {history.map((item, index) => {
@@ -46,7 +52,7 @@ export const ConsumptionChart: React.FC<ConsumptionChartProps> = ({
                 </Text>
 
                 {/* Bar */}
-                <View style={styles.barTrack}>
+                <View style={[styles.barTrack, darkMode ? styles.barTrackDark : styles.barTrackLight]}>
                   <View
                     style={[
                       styles.barFill,
@@ -61,7 +67,7 @@ export const ConsumptionChart: React.FC<ConsumptionChartProps> = ({
                   {item.month.split(' ')[0]}
                 </Text>
                 <Text style={[styles.yearLabel, darkMode ? styles.darkSub : styles.lightSub]}>
-                  &apos;{item.month.split(' ')[1]}
+                  &apos;{item.month.split(' ')[1] || '24'}
                 </Text>
               </View>
             );
@@ -72,21 +78,21 @@ export const ConsumptionChart: React.FC<ConsumptionChartProps> = ({
       {/* Legend */}
       <View style={styles.legendRow}>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: '#10B981' }]} />
+          <View style={[styles.legendDot, { backgroundColor: '#62FF96' }]} />
           <Text style={[styles.legendText, darkMode ? styles.darkSub : styles.lightSub]}>
-            {isUrdu ? 'موجودہ مہینہ' : 'Current'}
+            {isUrdu ? 'موجودہ بل' : 'Current'}
           </Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: '#EF4444' }]} />
+          <View style={[styles.legendDot, { backgroundColor: '#FF6B6B' }]} />
           <Text style={[styles.legendText, darkMode ? styles.darkSub : styles.lightSub]}>
-            {isUrdu ? 'پیک سمر (300+)' : 'Peak Summer'}
+            {isUrdu ? 'پیک (300+)' : 'Peak (>300)'}
           </Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: '#3B82F6' }]} />
+          <View style={[styles.legendDot, { backgroundColor: '#38BDF8' }]} />
           <Text style={[styles.legendText, darkMode ? styles.darkSub : styles.lightSub]}>
-            {isUrdu ? 'نارمل' : 'Standard'}
+            {isUrdu ? 'معمول' : 'Normal'}
           </Text>
         </View>
       </View>
@@ -96,48 +102,50 @@ export const ConsumptionChart: React.FC<ConsumptionChartProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 18,
-    padding: 16,
-    marginVertical: 10,
+    borderRadius: 14,
+    padding: 14,
     borderWidth: 1,
+    marginTop: 4,
   },
   darkContainer: {
-    backgroundColor: '#0F172A',
-    borderColor: '#1E293B',
+    backgroundColor: '#132033',
+    borderColor: '#24354D',
   },
   lightContainer: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    backgroundColor: '#F8F9FF',
+    borderColor: '#D3E4FE',
   },
   titleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
+  },
+  titleLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
   },
   title: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '800',
   },
   darkText: {
-    color: '#F8FAFC',
+    color: '#F8F9FF',
   },
   lightText: {
-    color: '#0F172A',
+    color: '#0B1C30',
   },
   unitBadge: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#10B981',
-    backgroundColor: 'rgba(16, 185, 129, 0.12)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    backgroundColor: '#0F1C2C',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  unitBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#62FF96',
   },
   chartScroll: {
     paddingRight: 10,
@@ -145,13 +153,13 @@ const styles = StyleSheet.create({
   chartContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    height: 150,
-    paddingTop: 16,
-    paddingBottom: 4,
-    gap: 8,
+    height: 135,
+    paddingTop: 12,
+    paddingBottom: 2,
+    gap: 7,
   },
   barColumn: {
-    width: 38,
+    width: 36,
     alignItems: 'center',
     justifyContent: 'flex-end',
     height: '100%',
@@ -162,41 +170,47 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   latestUnitLabel: {
-    color: '#10B981',
+    color: '#62FF96',
     fontWeight: '900',
   },
   barTrack: {
-    width: 18,
-    height: 90,
+    width: 14,
+    height: 80,
     justifyContent: 'flex-end',
-    borderRadius: 6,
-    backgroundColor: 'rgba(148, 163, 184, 0.12)',
+    borderRadius: 5,
     overflow: 'hidden',
+  },
+  barTrackLight: {
+    backgroundColor: '#DCE9FF',
+  },
+  barTrackDark: {
+    backgroundColor: '#070E17',
   },
   barFill: {
     width: '100%',
-    borderRadius: 6,
+    borderRadius: 5,
   },
   regularBar: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#38BDF8',
   },
   peakSummerBar: {
-    backgroundColor: '#EF4444',
+    backgroundColor: '#FF6B6B',
   },
   latestBar: {
-    backgroundColor: '#10B981',
+    backgroundColor: '#62FF96',
   },
   monthLabel: {
-    fontSize: 10,
-    marginTop: 6,
-    fontWeight: '600',
+    fontSize: 9.5,
+    marginTop: 5,
+    fontWeight: '700',
   },
   latestMonthLabel: {
-    color: '#10B981',
-    fontWeight: '800',
+    color: '#62FF96',
+    fontWeight: '900',
   },
   yearLabel: {
     fontSize: 8,
+    fontWeight: '500',
   },
   darkMonth: {
     color: '#94A3B8',
@@ -205,19 +219,19 @@ const styles = StyleSheet.create({
     color: '#64748B',
   },
   darkSub: {
-    color: '#94A3B8',
+    color: '#778598',
   },
   lightSub: {
-    color: '#64748B',
+    color: '#778598',
   },
   legendRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 14,
-    marginTop: 14,
+    gap: 12,
+    marginTop: 10,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(148, 163, 184, 0.15)',
-    paddingTop: 10,
+    borderTopColor: 'rgba(119, 133, 152, 0.2)',
+    paddingTop: 8,
   },
   legendItem: {
     flexDirection: 'row',
@@ -225,14 +239,12 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   legendDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   legendText: {
-    fontSize: 11,
-  },
-  rtlText: {
-    textAlign: 'right',
+    fontSize: 10,
+    fontWeight: '600',
   },
 });

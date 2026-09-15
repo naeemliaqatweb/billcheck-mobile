@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { BillMonthHistory } from '../types/bill';
+import { AppIcon } from './AppIcon';
 import { styles } from '../styles/HistoryTable.styles';
 
 interface HistoryTableProps {
@@ -29,9 +30,12 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({
     <View style={[styles.container, darkMode ? styles.darkContainer : styles.lightContainer]}>
       {/* Title */}
       <View style={styles.titleRow}>
-        <Text style={[styles.title, darkMode ? styles.darkText : styles.lightText, isUrdu && styles.rtlText]}>
-          📅 {isUrdu ? 'گزشتہ 12 مہینوں کا مکمل بل ریکارڈ' : 'Last 12 Months Billing History'}
-        </Text>
+        <View style={styles.titleLeft}>
+          <AppIcon name="calendar" size={16} color="#006D35" />
+          <Text style={[styles.title, darkMode ? styles.darkText : styles.lightText]}>
+            {isUrdu ? '12 ماہ کا مکمل بل ریکارڈ' : '12-Month Billing Archive'}
+          </Text>
+        </View>
         <Text style={styles.badge12}>12 Months</Text>
       </View>
 

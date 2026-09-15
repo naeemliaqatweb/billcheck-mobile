@@ -3,12 +3,103 @@ import { COLORS } from './common.styles';
 
 export const styles = StyleSheet.create({
   container: {
-    marginVertical: 14,
-    marginHorizontal: 16,
-    borderRadius: 20,
+    marginVertical: 10,
+    marginHorizontal: 0,
+    borderRadius: 18,
     borderWidth: 1,
     overflow: 'hidden',
     padding: 16,
+  },
+  compactContainer: {
+    marginVertical: 8,
+    marginHorizontal: 0,
+    borderRadius: 14,
+    borderWidth: 1,
+    overflow: 'hidden',
+    padding: 12,
+  },
+  compactContentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  compactLogoWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#E6F4FE',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.4)',
+    overflow: 'hidden',
+  },
+  compactLogoImage: {
+    width: 42,
+    height: 42,
+    borderRadius: 10,
+  },
+  compactTextWrap: {
+    flex: 1,
+  },
+  compactTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  compactAppName: {
+    fontSize: 14.5,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+  },
+  compactAdBadge: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    paddingHorizontal: 5,
+    paddingVertical: 1.5,
+    borderRadius: 4,
+    borderWidth: 0.5,
+    borderColor: 'rgba(16, 185, 129, 0.3)',
+  },
+  compactAdBadgeText: {
+    color: '#10B981',
+    fontSize: 8.5,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  compactFreeBadge: {
+    backgroundColor: 'rgba(56, 189, 248, 0.12)',
+    paddingHorizontal: 5,
+    paddingVertical: 1.5,
+    borderRadius: 4,
+  },
+  compactFreeBadgeText: {
+    color: '#0284C7',
+    fontSize: 8.5,
+    fontWeight: '700',
+  },
+  compactTagline: {
+    fontSize: 11,
+    marginTop: 2,
+    lineHeight: 15,
+  },
+  compactInstallBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#10B981',
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  compactInstallBtnText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '800',
   },
   darkContainer: {
     backgroundColor: '#0F172A',
@@ -180,5 +271,8 @@ export const styles = StyleSheet.create({
   },
   rtlText: {
     textAlign: 'right',
+  },
+  rtlRow: {
+    flexDirection: 'row-reverse',
   },
 });

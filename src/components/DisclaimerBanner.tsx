@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native';
+import { APP_CONFIG } from '../constants/appConfig';
 
 interface DisclaimerBannerProps {
   language: 'en' | 'ur';
@@ -11,6 +12,10 @@ interface DisclaimerBannerProps {
  */
 export const DisclaimerBanner: React.FC<DisclaimerBannerProps> = ({ language, darkMode = true }) => {
   const isUrdu = language === 'ur';
+
+  const handleOpenPrivacy = () => {
+    Linking.openURL(APP_CONFIG.privacyPolicyUrl).catch(() => {});
+  };
 
   return (
     <View style={[styles.container, darkMode ? styles.darkContainer : styles.lightContainer]}>
@@ -25,14 +30,23 @@ export const DisclaimerBanner: React.FC<DisclaimerBannerProps> = ({ language, da
           ? 'بل چیک پی کے (BillCheck PK) ارکلوم ٹیک کی جانب سے تیار کردہ ایک غیر سرکاری آزاد ایپ ہے۔ اس کا حکومتِ پاکستان، واپڈا یا کسی بھی ڈسکو سے کوئی سرکاری تعلق نہیں ہے۔'
           : 'BillCheck PK is an independent utility tracking tool by Arcloom Tech. NOT affiliated with or endorsed by any government entity or utility provider.'}
       </Text>
+      <TouchableOpacity
+        style={[styles.policyLinkRow, isUrdu && styles.rtlRow]}
+        onPress={handleOpenPrivacy}
+        activeOpacity={0.7}
+      >
+        <Text style={[styles.policyLinkText, darkMode ? styles.darkLink : styles.lightLink]}>
+          {isUrdu ? 'رازداری کی پالیسی (Privacy Policy) پڑھیں ↗' : 'Read Official Privacy Policy ↗'}
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 16,
-    marginVertical: 10,
+    marginHorizontal: 0,
+    marginVertical: 8,
     padding: 12,
     borderRadius: 12,
     borderWidth: 1,
@@ -74,7 +88,26 @@ const styles = StyleSheet.create({
   lightDesc: {
     color: '#78350F',
   },
+  policyLinkRow: {
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  policyLinkText: {
+    fontSize: 11,
+    fontWeight: '700',
+    textDecorationLine: 'underline',
+  },
+  darkLink: {
+    color: '#62FF96',
+  },
+  lightLink: {
+    color: '#006D35',
+  },
   rtlText: {
     textAlign: 'right',
   },
+  rtlRow: {
+    alignSelf: 'flex-end',
+  },
 });
+

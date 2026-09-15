@@ -5,290 +5,307 @@ export const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
     position: 'relative',
+    backgroundColor: '#0F1C2C',
   },
   container: {
     flex: 1,
   },
-  fab: {
-    position: 'absolute',
-    bottom: 24,
-    right: 20,
-    zIndex: 999,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.45,
-    shadowRadius: 12,
-    elevation: 12,
-  },
-  fabInner: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    justifyContent: 'center',
-    alignItems: 'center',
+  contentContainer: {
+    paddingBottom: 110,
   },
   darkBg: {
-    backgroundColor: COLORS.darkBg,
+    backgroundColor: '#070E17',
   },
   lightBg: {
-    backgroundColor: COLORS.lightBg,
+    backgroundColor: '#F8F9FF',
   },
-  contentContainer: {
-    paddingBottom: 30,
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 8,
-  },
-  headerTopRow: {
+
+  // TopAppBar
+  topAppBar: {
+    height: 56,
+    backgroundColor: '#0F1C2C',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1E293B',
+    zIndex: 40,
   },
-  headerLogoRow: {
+  brandTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
   },
-  headerRightActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  headerLogo: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
   },
-  headerActionBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerActionBtnDark: {
-    backgroundColor: '#1E293B',
-    borderColor: '#334155',
-  },
-  headerActionBtnLight: {
-    backgroundColor: '#F1F5F9',
-    borderColor: '#E2E8F0',
-  },
-  headerLangBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  headerLangBtnDark: {
-    backgroundColor: '#1E293B',
-    borderColor: '#334155',
-  },
-  headerLangBtnLight: {
-    backgroundColor: '#F1F5F9',
-    borderColor: '#E2E8F0',
-  },
-  headerLangText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 4,
-  },
-  brandBadge: {
-    backgroundColor: COLORS.primaryDark,
-    color: '#FFFFFF',
-    fontSize: 10,
+  brandTitle: {
+    fontSize: 18,
     fontWeight: '800',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    letterSpacing: 0.5,
-  },
-  verifiedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(16, 185, 129, 0.12)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  verifiedText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: COLORS.primary,
-  },
-  appTitle: {
-    fontSize: 22,
-    fontWeight: '900',
+    color: '#FFFFFF',
     letterSpacing: -0.3,
   },
-  appSubtitle: {
-    fontSize: 12.5,
-    marginTop: 3,
-    lineHeight: 17,
+
+  // Main Content Canvas (Overlapping Hero by -14px)
+  mainCanvas: {
+    paddingHorizontal: 16,
+    marginTop: -14,
+    zIndex: 20,
+    gap: 16,
   },
-  darkText: {
-    color: COLORS.darkText,
+
+  // Section Header & Quick Filter Tabs Card
+  sectionFilterCard: {
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  lightText: {
-    color: COLORS.lightText,
+  sectionFilterCardDark: {
+    backgroundColor: '#1E293B',
+    borderColor: '#334155',
   },
-  darkSub: {
-    color: COLORS.darkSub,
-  },
-  lightSub: {
-    color: COLORS.lightSub,
-  },
-  darkCard: {
-    backgroundColor: COLORS.darkCard,
-    borderColor: COLORS.darkBorder,
-  },
-  lightCard: {
-    backgroundColor: COLORS.lightCard,
-    borderColor: COLORS.lightBorder,
+  sectionFilterCardLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 6,
     elevation: 2,
   },
-  tabSelector: {
-    flexDirection: 'row',
-    marginHorizontal: 16,
-    marginTop: 10,
-    marginBottom: 16,
-    padding: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  tabButton: {
+  sectionTitleCol: {
     flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderRadius: 8,
   },
-  activeTab: {
-    backgroundColor: COLORS.primary,
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: -0.2,
   },
-  tabButtonText: {
-    fontSize: 12,
-    fontWeight: '700',
+  sectionSub: {
+    fontSize: 11,
+    marginTop: 2,
+    fontWeight: '500',
   },
-  activeTabText: {
-    color: '#FFFFFF',
-  },
-  tabContentRow: {
+
+  // Segmented Filter Tabs
+  filterTabsWrap: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+    backgroundColor: '#EFF4FF',
+    padding: 3,
+    borderRadius: 20,
+    gap: 2,
   },
-  inputCard: {
-    marginHorizontal: 16,
-    padding: 16,
+  filterTabsWrapDark: {
+    backgroundColor: '#0F1C2C',
+  },
+  filterTabItem: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: 16,
   },
-  inputHeaderRow: {
+  filterTabActive: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  filterTabActiveDark: {
+    backgroundColor: '#213145',
+  },
+  filterTabText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  filterTabTextActive: {
+    color: '#0B1C30',
+    fontWeight: '800',
+  },
+  filterTabTextActiveDark: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+  },
+
+  // Saved Bills List
+  billsListContainer: {
+    gap: 12,
+  },
+
+  // Empty state
+  emptyBillsBox: {
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  emptyBillsBoxDark: {
+    backgroundColor: '#1E293B',
+    borderColor: '#334155',
+  },
+  emptyBillsBoxLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+  },
+  emptyBillsTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    marginTop: 10,
+    marginBottom: 4,
+  },
+  emptyBillsSub: {
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+
+  // Quick Utility Sync Banner
+  syncBanner: {
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
   },
-  inputLabel: {
-    fontSize: 13,
-    fontWeight: '700',
+  syncBannerDark: {
+    backgroundColor: '#1E293B',
+    borderColor: '#334155',
   },
-  providerBadge: {
-    fontSize: 12,
-    fontWeight: '700',
+  syncBannerLight: {
+    backgroundColor: '#EFF4FF',
+    borderColor: '#D3E4FE',
   },
-  input: {
-    height: 48,
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  darkInput: {
-    backgroundColor: COLORS.darkInput,
-    borderColor: COLORS.darkInputBorder,
-    color: '#FFFFFF',
-  },
-  lightInput: {
-    backgroundColor: COLORS.lightInput,
-    borderColor: COLORS.lightInputBorder,
-    color: '#0F172A',
-  },
-  refInfoBox: {
-    marginTop: 10,
-    marginBottom: 14,
-    padding: 10,
-    backgroundColor: 'rgba(148, 163, 184, 0.08)',
-    borderRadius: 8,
-  },
-  refInfoTitleRow: {
+  syncBannerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 4,
+    gap: 10,
+    flex: 1,
   },
-  refInfoTitle: {
+  syncBannerTitle: {
+    fontSize: 13.5,
+    fontWeight: '700',
+  },
+  syncBannerSub: {
+    fontSize: 11,
+    marginTop: 1,
+  },
+  syncConnectedBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4.5,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  syncConnectedBadgeDark: {
+    backgroundColor: '#0F1C2C',
+    borderColor: '#334155',
+  },
+  syncConnectedBadgeLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#CBD5E1',
+  },
+  syncConnectedText: {
     fontSize: 11,
     fontWeight: '700',
-    color: COLORS.warning,
+    color: '#006D35',
   },
-  refInfoDesc: {
-    fontSize: 10,
-    lineHeight: 14,
+
+  // Check Any Bill Collapsible Card
+  checkNewBillCard: {
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
   },
-  checkButton: {
-    height: 48,
-    borderRadius: 10,
-    justifyContent: 'center',
+  checkNewBillHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  btnRow: {
+  checkNewBillTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: 8,
+    flex: 1,
   },
-  checkButtonText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
+
+  // Lookup Section & Utility Switcher
+  lookupContent: {
+    marginTop: 14,
   },
-  portalFallbackBtn: {
-    marginTop: 10,
+  utilitySwitcherWrap: {
+    flexDirection: 'row',
+    padding: 4,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  utilitySwitcherDark: {
+    backgroundColor: '#0F1C2C',
+  },
+  utilitySwitcherLight: {
+    backgroundColor: '#EFF4FF',
+  },
+  utilitySwitcherTab: {
+    flex: 1,
     paddingVertical: 8,
     alignItems: 'center',
-    justifyContent: 'center',
+    borderRadius: 8,
+    backgroundColor: 'transparent',
   },
-  portalFallbackRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
+  utilitySwitcherTabActiveElectric: {
+    backgroundColor: '#059669',
   },
-  portalFallbackText: {
+  utilitySwitcherTabActiveGas: {
+    backgroundColor: '#0284C7',
+  },
+  utilitySwitcherTabText: {
     fontSize: 12,
     fontWeight: '700',
-    textAlign: 'center',
-    textDecorationLine: 'underline',
+  },
+  utilitySwitcherTabTextActive: {
+    color: '#FFFFFF',
+  },
+  utilitySwitcherTabTextInactiveDark: {
+    color: '#94A3B8',
+  },
+  utilitySwitcherTabTextInactiveLight: {
+    color: '#64748B',
+  },
+  bottomSpacer: {
+    height: 80,
+  },
+
+  // Typography & Colors
+  darkText: {
+    color: '#F8FAFC',
+  },
+  lightText: {
+    color: '#0B1C30',
+  },
+  darkSub: {
+    color: '#94A3B8',
+  },
+  lightSub: {
+    color: '#64748B',
+  },
+  darkCard: {
+    backgroundColor: '#1E293B',
+    borderColor: '#334155',
+  },
+  lightCard: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+  },
+  rtlRow: {
+    flexDirection: 'row-reverse',
   },
   rtlText: {
-    textAlign: 'right',
-  },
-  rtlInput: {
     textAlign: 'right',
   },
 });

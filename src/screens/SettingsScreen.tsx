@@ -1,16 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
-  Image,
   TouchableOpacity,
   ScrollView,
   Switch,
+  Linking,
 } from 'react-native';
 import { TRANSLATIONS, Language } from '../i18n/translations';
+import { APP_CONFIG } from '../constants/appConfig';
 import { AdBanner } from '../components/AdBanner';
 import { AppIcon } from '../components/AppIcon';
 import { CustomPopup, PopupConfig } from '../components/CustomPopup';
+import { StorageService } from '../services/storage';
 import { styles } from '../styles/SettingsScreen.styles';
 
 interface SettingsScreenProps {
@@ -28,21 +30,129 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 }) => {
   const t = TRANSLATIONS[language];
   const isUrdu = language === 'ur';
+
+  const [savedCount, setSavedCount] = useState<number>(0);
+  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
   const [popup, setPopup] = useState<PopupConfig>({
     visible: false,
     title: '',
     message: '',
   });
 
+  // Load saved meters count and notification preferences
+  const loadPreferences = useCallback(async () => {
+    try {
+      const [meters, notifs] = await Promise.all([
+        StorageService.getSavedMeters(),
+        StorageService.getNotifications(),
+      ]);
+      setSavedCount(meters.length);
+      setNotificationsEnabled(notifs);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    loadPreferences();
+  }, [loadPreferences]);
+
+  const handleToggleNotifications = async (val: boolean) => {
+    setNotificationsEnabled(val);
+    await StorageService.setNotifications(val);
+  };
+
   const showPrivacyPolicy = () => {
     setPopup({
       visible: true,
       type: 'info',
-      title: isUrdu ? 'رازداری کی پالیسی (Privacy Policy)' : 'Privacy Policy',
+      title: isUrdu ? 'رازداری کی پالیسی (Privacy Policy)' : 'Privacy Policy & Data Security',
       message: isUrdu
-        ? 'بل چیک پی کے (BillCheck PK) ارکلوم ٹیک (Arcloom Tech) کی جانب سے آپ کی رازداری کا مکمل احترام کرتا ہے۔ ہم کوئی بھی ذاتی ڈیٹا، شناختی کارڈ یا پاس ورڈ اکٹھا یا محفوظ نہیں کرتے۔ آپ کے تمام میٹرز اور ریفرنس نمبرز صرف اور صرف آپ کے اپنے موبائل کی لوکل میموری میں محفوظ رہتے ہیں۔'
-        : 'BillCheck PK by Arcloom Tech respects your privacy. We DO NOT collect, harvest, or store personal identifiable information (PII). Any reference numbers or meter nicknames you save remain exclusively on your local device storage.',
+        ? `${APP_CONFIG.nameUrdu} صارفین کی رازداری کا مکمل احترام کرتا ہے۔ ہم کوئی بھی ذاتی ڈیٹا، شناختی کارڈ نمبر یا پاس ورڈ اکٹھا نہیں کرتے۔ تمام ریفرنس نمبرز اور بلز صرف آپ کے موبائل کی لوکل میموری میں محفوظ رہتے ہیں۔\n\nمکمل سرکاری رازداری کی پالیسی آن لائن پڑھنے کے لیے نیچے دیے گئے بٹن پر کلک کریں۔`
+        : `${APP_CONFIG.name} strictly respects consumer privacy. We operate under zero-retention architecture. No personal data, CNICs, or passwords are harvested or stored on external servers. All saved meters remain exclusively in your local device storage.\n\nTap below to read the complete official Privacy Policy online.`,
+      primaryText: isUrdu ? 'آن لائن پالیسی کھولیں' : 'Open Online Policy',
+      secondaryText: isUrdu ? 'بند کریں' : 'Close',
+      onPrimary: () => {
+        Linking.openURL(APP_CONFIG.privacyPolicyUrl).catch(() => {});
+      },
+      onSecondary: () => setPopup((p) => ({ ...p, visible: false })),
+      onClose: () => setPopup((p) => ({ ...p, visible: false })),
+    });
+  };
+
+  const showAboutCompany = () => {
+    setPopup({
+      visible: true,
+      type: 'info',
+      title: isUrdu ? 'ارکلوم ٹیک (Arcloom Tech)' : 'About Arcloom Tech',
+      message: isUrdu
+        ? `${APP_CONFIG.nameUrdu} ارکلوم ٹیک کی جانب سے تیار کردہ جدید یوٹیلیٹی ٹریکر ہے۔ ہمارا مقصد پاکستانی صارفین کے لیے بجلی، گیس اور دیگر بلوں کی تصدیق اور ادائیگی کے عمل کو آسان، تیز اور محفوظ بنانا ہے۔`
+        : `${APP_CONFIG.name} is engineered by Arcloom Tech, an independent fintech and civic infrastructure laboratory in Pakistan. Our mission is to provide lightning-fast, transparent, and user-friendly utility billing solutions.`,
+      primaryText: isUrdu ? 'ٹھیک ہے' : 'Got it',
+      onClose: () => setPopup((p) => ({ ...p, visible: false })),
+    });
+  };
+
+  const showTaxStatementsInfo = () => {
+    setPopup({
+      visible: true,
+      type: 'info',
+      title: isUrdu ? 'انکم ٹیکس سرٹیفکیٹ و ہسٹری' : 'Tax Statements & Certificates',
+      message: isUrdu
+        ? 'بجلی اور گیس کے بلوں پر کٹنے والا ایڈوانس ودہولڈنگ ٹیکس (Section 235) آپ کے ڈپلیکیٹ بل پر درج ہوتا ہے۔ آپ سالانہ انکم ٹیکس ریٹرن میں کٹوتی کلیم کرنے کے لیے اپنے بل پی ڈی ایف فارمیٹ میں ڈاؤن لوڈ کر کے محفوظ کر سکتے ہیں۔'
+        : 'Electricity & Gas bills contain withholding income tax (Section 235/235A) required for annual FBR tax returns. Download and keep copies of your monthly PDF bills from the bill lookup or saved bills tab to claim your advance tax credits.',
       primaryText: isUrdu ? 'سمجھ گیا' : 'Got it',
+      onClose: () => setPopup((p) => ({ ...p, visible: false })),
+    });
+  };
+
+  const showHelplineDirectory = () => {
+    setPopup({
+      visible: true,
+      type: 'info',
+      title: isUrdu ? 'ہنگامی ہیلپ لائن ڈائریکٹری' : 'Emergency Helpline Directory',
+      message: isUrdu
+        ? '• LESCO (لاہور): 118 / 042-99204033\n• K-Electric (کراچی): 118 / 021-99000\n• IESCO (اسلام آباد): 118 / 051-9252937\n• FESCO (فیصل آباد): 118 / 041-9220184\n• MEPCO (ملتان): 118 / 061-9220313\n• SNGPL (سوئی گیس): 1199\n• SSGC (سوئی سدرن): 1199'
+        : '• LESCO (Lahore): 118 / 042-99204033\n• K-Electric (Karachi): 118 / 021-99000\n• IESCO (Islamabad): 118 / 051-9252937\n• FESCO (Faisalabad): 118 / 041-9220184\n• MEPCO (Multan): 118 / 061-9220313\n• SNGPL Gas: 1199\n• SSGC Gas: 1199',
+      primaryText: isUrdu ? 'بند کریں' : 'Close',
+      onClose: () => setPopup((p) => ({ ...p, visible: false })),
+    });
+  };
+
+  const showManagedBillsInfo = () => {
+    setPopup({
+      visible: true,
+      type: 'info',
+      title: isUrdu ? 'محفوظ کردہ میٹرز' : 'Managed Bills & Meters',
+      message: isUrdu
+        ? `آپ کے موبائل میں اس وقت ${savedCount} فعال میٹرز محفوظ ہیں۔ آپ ہوم اسکرین یا سیوڈ ٹیب سے مزید میٹرز شامل یا حذف کر سکتے ہیں۔`
+        : `You currently have ${savedCount} active utility reference numbers saved on this device. You can manage or delete them anytime from the Saved Meters tab.`,
+      primaryText: isUrdu ? 'ٹھیک ہے' : 'OK',
+      onClose: () => setPopup((p) => ({ ...p, visible: false })),
+    });
+  };
+
+  const promptResetApp = () => {
+    setPopup({
+      visible: true,
+      type: 'warning',
+      title: t.clearCacheConfirmTitle,
+      message: t.clearCacheConfirmMsg,
+      primaryText: t.confirmResetBtn,
+      secondaryText: t.cancelBtn,
+      onPrimary: async () => {
+        await StorageService.resetAppAndCache();
+        setSavedCount(0);
+        setPopup({
+          visible: true,
+          type: 'success',
+          title: t.clearCacheSuccessTitle,
+          message: t.clearCacheSuccessMsg,
+          primaryText: isUrdu ? 'ٹھیک ہے' : 'Done',
+          onClose: () => setPopup((p) => ({ ...p, visible: false })),
+        });
+      },
+      onSecondary: () => setPopup((p) => ({ ...p, visible: false })),
       onClose: () => setPopup((p) => ({ ...p, visible: false })),
     });
   };
@@ -54,38 +164,191 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <View style={styles.headerTopRow}>
-            <View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <AppIcon name="settings" size={24} color="#F59E0B" />
-                <Text style={[styles.title, darkMode ? styles.darkText : styles.lightText, isUrdu && styles.rtlText]}>
-                  {t.settingsTitle}
+        {/* ── 1. Deep Navy Hero Card (Stitch 100% Match) ── */}
+        <View style={styles.heroCard}>
+          {/* Top row: Brand & Version */}
+          <View style={styles.heroTopRow}>
+            <View style={styles.heroBrandLeft}>
+              <View style={styles.heroLogoBox}>
+                <View style={styles.heroLogoRow}>
+                  <AppIcon name="bolt" size={19} color="#62FF96" />
+                  <AppIcon
+                    name="flame"
+                    size={14}
+                    color="#FF8A80"
+                    containerStyle={{ marginLeft: -4 }}
+                  />
+                </View>
+              </View>
+              <View>
+                <Text style={styles.heroTitle}>{APP_CONFIG.name}</Text>
+                <Text style={styles.heroSubtitle}>
+                  {isUrdu ? 'ارکلوم ٹیک کی انجینئرنگ' : 'Engineered by Arcloom Tech'}
                 </Text>
               </View>
-              <Text style={[styles.subtitle, darkMode ? styles.darkSub : styles.lightSub, isUrdu && styles.rtlText]}>
-                {t.appPreferences}
+            </View>
+            <View style={styles.heroVersionBadge}>
+              <Text style={styles.heroVersionText}>v1.2.0</Text>
+            </View>
+          </View>
+
+          {/* User / Session Identity Ribbon */}
+          <View style={styles.heroUserRibbon}>
+            <View style={styles.heroUserLeft}>
+              <View style={styles.heroAvatar}>
+                <Text style={styles.heroAvatarText}>PK</Text>
+              </View>
+              <View>
+                <Text style={styles.heroUserName}>
+                  {isUrdu ? 'یوٹیلیٹی حب (پاکستان)' : 'Utility Hub (Pakistan)'}
+                </Text>
+                <View style={styles.heroUserStatusRow}>
+                  <Text style={styles.heroUserStatusText}>
+                    {isUrdu ? 'لوکل ڈیٹا اسٹوریج' : 'Storage: Local Encrypted'}
+                  </Text>
+                  <View style={styles.activeDot} />
+                  <Text style={styles.heroUserStatusText}>{t.activeSession}</Text>
+                </View>
+              </View>
+            </View>
+            <AppIcon name="verified-user" size={20} color="#62FF96" />
+          </View>
+        </View>
+
+        {/* ── 2. Bento Quick Metrics (2 Columns) ── */}
+        <View style={styles.metricsRow}>
+          {/* Metric 1: Electricity DISCOs */}
+          <View
+            style={[
+              styles.metricCard,
+              darkMode ? styles.darkCardBg : styles.lightCardBg,
+            ]}
+          >
+            <View
+              style={[
+                styles.metricIconBox,
+                darkMode ? styles.darkBox : styles.lightBox,
+              ]}
+            >
+              <AppIcon name="gauge" size={18} color="#006D35" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text
+                style={[
+                  styles.metricLabel,
+                  darkMode ? styles.darkSub : styles.lightSub,
+                  isUrdu && styles.rtlText,
+                ]}
+              >
+                {t.trackedDiscos}
+              </Text>
+              <Text
+                style={[
+                  styles.metricValue,
+                  darkMode ? styles.darkText : styles.lightText,
+                  isUrdu && styles.rtlText,
+                ]}
+                numberOfLines={1}
+              >
+                {t.trackedDiscosVal}
               </Text>
             </View>
-            <View style={styles.versionBadge}>
-              <Text style={[styles.headerVersionText, darkMode ? styles.darkSub : styles.lightSub]}>
-                v1.0.0
+          </View>
+
+          {/* Metric 2: Gas SNGPL / SSGC */}
+          <View
+            style={[
+              styles.metricCard,
+              darkMode ? styles.darkCardBg : styles.lightCardBg,
+            ]}
+          >
+            <View
+              style={[
+                styles.metricIconBox,
+                darkMode ? styles.darkBox : styles.lightBox,
+              ]}
+            >
+              <AppIcon name="flame" size={18} color="#006D35" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text
+                style={[
+                  styles.metricLabel,
+                  darkMode ? styles.darkSub : styles.lightSub,
+                  isUrdu && styles.rtlText,
+                ]}
+              >
+                {t.trackedGas}
+              </Text>
+              <Text
+                style={[
+                  styles.metricValue,
+                  darkMode ? styles.darkText : styles.lightText,
+                  isUrdu && styles.rtlText,
+                ]}
+                numberOfLines={1}
+              >
+                {t.trackedGasVal}
               </Text>
             </View>
           </View>
         </View>
 
-        {/* Preferences Section */}
-        <View style={[styles.sectionCard, darkMode ? styles.darkCard : styles.lightCard]}>
-          {/* Language Switcher */}
-          <View style={styles.settingRow}>
-            <View style={styles.labelWithIcon}>
-              <AppIcon name="globe" size={20} color="#0284C7" />
-              <View style={{ marginLeft: 10 }}>
-                <Text style={[styles.settingLabel, darkMode ? styles.darkText : styles.lightText]}>
+        {/* ── 3. Configuration & Services Menu List ── */}
+        <View style={[styles.menuCard, darkMode ? styles.darkCardBg : styles.lightCardBg]}>
+          {/* Card Header Bar */}
+          <View
+            style={[
+              styles.menuHeader,
+              darkMode ? styles.darkMenuHeader : styles.lightMenuHeader,
+            ]}
+          >
+            <Text
+              style={[
+                styles.menuHeaderText,
+                darkMode ? styles.darkSub : styles.lightSub,
+              ]}
+            >
+              {t.configurationAndServices}
+            </Text>
+            <Text
+              style={[
+                styles.menuHeaderBadge,
+                darkMode && styles.menuHeaderBadgeDark,
+              ]}
+            >
+              {t.preferencesCount}
+            </Text>
+          </View>
+
+          {/* Row 1: Language Switcher */}
+          <View style={[styles.menuRow, styles.menuRowBorder]}>
+            <View style={styles.menuRowLeft}>
+              <View
+                style={[
+                  styles.menuIconBox,
+                  darkMode ? styles.darkBox : styles.lightBox,
+                ]}
+              >
+                <AppIcon name="globe" size={18} color="#0284C7" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={[
+                    styles.menuRowTitle,
+                    darkMode ? styles.darkText : styles.lightText,
+                    isUrdu && styles.rtlText,
+                  ]}
+                >
                   {t.language}
                 </Text>
-                <Text style={[styles.settingSub, darkMode ? styles.darkSub : styles.lightSub]}>
+                <Text
+                  style={[
+                    styles.menuRowSubtitle,
+                    darkMode ? styles.darkSub : styles.lightSub,
+                    isUrdu && styles.rtlText,
+                  ]}
+                >
                   {language === 'en' ? 'English (Default)' : 'اردو (Urdu)'}
                 </Text>
               </View>
@@ -96,7 +359,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 onPress={() => onToggleLanguage('en')}
                 activeOpacity={0.7}
               >
-                <Text style={[styles.langChoiceText, language === 'en' ? styles.langActiveText : (darkMode ? styles.darkSub : styles.lightSub)]}>
+                <Text
+                  style={[
+                    styles.langChoiceText,
+                    language === 'en'
+                      ? styles.langActiveText
+                      : darkMode
+                      ? styles.darkSub
+                      : styles.lightSub,
+                  ]}
+                >
                   EN
                 </Text>
               </TouchableOpacity>
@@ -105,22 +377,50 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 onPress={() => onToggleLanguage('ur')}
                 activeOpacity={0.7}
               >
-                <Text style={[styles.langChoiceText, language === 'ur' ? styles.langActiveText : (darkMode ? styles.darkSub : styles.lightSub)]}>
+                <Text
+                  style={[
+                    styles.langChoiceText,
+                    language === 'ur'
+                      ? styles.langActiveText
+                      : darkMode
+                      ? styles.darkSub
+                      : styles.lightSub,
+                  ]}
+                >
                   اردو
                 </Text>
               </TouchableOpacity>
             </View>
           </View>
 
-          {/* Dark Mode Switcher */}
-          <View style={[styles.settingRow, { marginTop: 12 }]}>
-            <View style={styles.labelWithIcon}>
-              <AppIcon name="moon" size={20} color="#6366F1" />
-              <View style={{ marginLeft: 10 }}>
-                <Text style={[styles.settingLabel, darkMode ? styles.darkText : styles.lightText]}>
+          {/* Row 2: Dark Mode Switcher */}
+          <View style={[styles.menuRow, styles.menuRowBorder]}>
+            <View style={styles.menuRowLeft}>
+              <View
+                style={[
+                  styles.menuIconBox,
+                  darkMode ? styles.darkBox : styles.lightBox,
+                ]}
+              >
+                <AppIcon name="moon" size={18} color="#6366F1" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={[
+                    styles.menuRowTitle,
+                    darkMode ? styles.darkText : styles.lightText,
+                    isUrdu && styles.rtlText,
+                  ]}
+                >
                   {t.darkMode}
                 </Text>
-                <Text style={[styles.settingSub, darkMode ? styles.darkSub : styles.lightSub]}>
+                <Text
+                  style={[
+                    styles.menuRowSubtitle,
+                    darkMode ? styles.darkSub : styles.lightSub,
+                    isUrdu && styles.rtlText,
+                  ]}
+                >
                   {darkMode ? 'Dark Slate' : 'Light Clean'}
                 </Text>
               </View>
@@ -128,100 +428,412 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <Switch
               value={darkMode}
               onValueChange={onToggleTheme}
-              trackColor={{ false: '#CBD5E1', true: '#059669' }}
-              thumbColor={darkMode ? '#10B981' : '#FFFFFF'}
+              trackColor={{ false: '#CBD5E1', true: '#006D35' }}
+              thumbColor={darkMode ? '#3FFF8B' : '#FFFFFF'}
             />
           </View>
-        </View>
 
-        {/* Play Store Legal Policy Compliance Section */}
-        <View style={[styles.legalCard, darkMode ? styles.darkCard : styles.lightCard]}>
-          <View style={styles.legalHeader}>
-            <AppIcon name="shield" size={18} color="#059669" />
-            <Text style={[styles.legalTitle, isUrdu && styles.rtlText]}>
-              {t.legalDisclaimerTitle}
-            </Text>
-          </View>
-          <Text style={[styles.legalBody, darkMode ? styles.darkSub : styles.lightSub, isUrdu && styles.rtlText]}>
-            {t.legalDisclaimerText}
-          </Text>
-          <View style={styles.badgeContainer}>
-            <View style={styles.complianceBadgeBox}>
-              <AppIcon name="shield" size={13} color="#059669" />
-              <Text style={styles.complianceBadgeText}>{t.playStoreCompliantBadge}</Text>
+          {/* Row 3: Managed Bills & Meters */}
+          <TouchableOpacity
+            style={[styles.menuRow, styles.menuRowBorder]}
+            onPress={showManagedBillsInfo}
+            activeOpacity={0.7}
+          >
+            <View style={styles.menuRowLeft}>
+              <View
+                style={[
+                  styles.menuIconBox,
+                  darkMode ? styles.darkBox : styles.lightBox,
+                ]}
+              >
+                <AppIcon
+                  name="receipt-long"
+                  size={18}
+                  color={darkMode ? '#F8FAFC' : '#0F172A'}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={[
+                    styles.menuRowTitle,
+                    darkMode ? styles.darkText : styles.lightText,
+                    isUrdu && styles.rtlText,
+                  ]}
+                >
+                  {t.managedBillsMenu}
+                </Text>
+                <Text
+                  style={[
+                    styles.menuRowSubtitle,
+                    darkMode ? styles.darkSub : styles.lightSub,
+                    isUrdu && styles.rtlText,
+                  ]}
+                >
+                  {savedCount} {t.activeNumbersLinked}
+                </Text>
+              </View>
             </View>
-          </View>
-        </View>
-
-        {/* Privacy and App Info Links */}
-        <View style={[styles.sectionCard, darkMode ? styles.darkCard : styles.lightCard]}>
-          <View style={styles.linkRow}>
-            <View style={styles.labelWithIcon}>
-              <Image
-                source={require('../assets/images/app-logo.png')}
-                style={{ width: 28, height: 28, borderRadius: 6 }}
-                resizeMode="contain"
+            <View style={styles.menuRowRight}>
+              <View
+                style={[
+                  styles.countPill,
+                  darkMode ? styles.darkBox : styles.lightBox,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.countPillText,
+                    darkMode ? styles.darkText : styles.lightText,
+                  ]}
+                >
+                  {savedCount} {t.activeBadge}
+                </Text>
+              </View>
+              <AppIcon
+                name="chevron-right"
+                size={16}
+                color={darkMode ? '#64748B' : '#94A3B8'}
               />
-              <Text style={[styles.linkLabel, darkMode ? styles.darkText : styles.lightText, { marginLeft: 10, fontWeight: '700' }]}>
-                BillCheck PK
-              </Text>
             </View>
-            <Text style={[styles.versionText, { color: '#0284C7', fontWeight: '600' }]}>
-              Electric & Gas
-            </Text>
-          </View>
-
-          <View style={styles.divider} />
-
-          <TouchableOpacity style={styles.linkRow} onPress={showPrivacyPolicy} activeOpacity={0.7}>
-            <View style={styles.labelWithIcon}>
-              <AppIcon name="lock" size={18} color="#0284C7" />
-              <Text style={[styles.linkLabel, darkMode ? styles.darkText : styles.lightText, { marginLeft: 10 }]}>
-                {t.privacyPolicy}
-              </Text>
-            </View>
-            <AppIcon name="chevron-right" size={16} color={darkMode ? '#64748B' : '#94A3B8'} />
           </TouchableOpacity>
 
-          <View style={styles.divider} />
-
-          <View style={styles.linkRow}>
-            <View style={styles.labelWithIcon}>
-              <AppIcon name="business" size={18} color="#6366F1" />
-              <Text style={[styles.linkLabel, darkMode ? styles.darkText : styles.lightText, { marginLeft: 10 }]}>
-                {isUrdu ? 'ڈیولپر (Developer)' : 'Developer'}
-              </Text>
+          {/* Row 4: Download History & Tax Statements */}
+          <TouchableOpacity
+            style={[styles.menuRow, styles.menuRowBorder]}
+            onPress={showTaxStatementsInfo}
+            activeOpacity={0.7}
+          >
+            <View style={styles.menuRowLeft}>
+              <View
+                style={[
+                  styles.menuIconBox,
+                  darkMode ? styles.darkBox : styles.lightBox,
+                ]}
+              >
+                <AppIcon
+                  name="file-download"
+                  size={18}
+                  color={darkMode ? '#F8FAFC' : '#0F172A'}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={[
+                    styles.menuRowTitle,
+                    darkMode ? styles.darkText : styles.lightText,
+                    isUrdu && styles.rtlText,
+                  ]}
+                >
+                  {t.downloadHistoryTax}
+                </Text>
+                <Text
+                  style={[
+                    styles.menuRowSubtitle,
+                    darkMode ? styles.darkSub : styles.lightSub,
+                    isUrdu && styles.rtlText,
+                  ]}
+                >
+                  {t.downloadHistorySub}
+                </Text>
+              </View>
             </View>
-            <Text style={[styles.versionText, { color: '#6366F1', fontWeight: '700' }]}>
-              Arcloom Tech
-            </Text>
+            <AppIcon
+              name="chevron-right"
+              size={16}
+              color={darkMode ? '#64748B' : '#94A3B8'}
+            />
+          </TouchableOpacity>
+
+          {/* Row 5: Bill Notification Reminders */}
+          <View style={[styles.menuRow, styles.menuRowBorder]}>
+            <View style={styles.menuRowLeft}>
+              <View
+                style={[
+                  styles.menuIconBox,
+                  {
+                    backgroundColor: darkMode
+                      ? 'rgba(63, 255, 139, 0.15)'
+                      : 'rgba(0, 109, 53, 0.1)',
+                  },
+                ]}
+              >
+                <AppIcon
+                  name="bell-ring"
+                  size={18}
+                  color={darkMode ? '#3FFF8B' : '#006D35'}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={[
+                    styles.menuRowTitle,
+                    darkMode ? styles.darkText : styles.lightText,
+                    isUrdu && styles.rtlText,
+                  ]}
+                >
+                  {t.billNotifications}
+                </Text>
+                <Text
+                  style={[
+                    styles.menuRowSubtitle,
+                    darkMode ? styles.darkSub : styles.lightSub,
+                    isUrdu && styles.rtlText,
+                  ]}
+                >
+                  {t.billNotificationsSub}
+                </Text>
+              </View>
+            </View>
+            <Switch
+              value={notificationsEnabled}
+              onValueChange={handleToggleNotifications}
+              trackColor={{ false: '#CBD5E1', true: '#006D35' }}
+              thumbColor={notificationsEnabled ? '#3FFF8B' : '#FFFFFF'}
+            />
           </View>
 
-          <View style={styles.divider} />
-
-          <View style={styles.linkRow}>
-            <View style={styles.labelWithIcon}>
-              <AppIcon name="document" size={18} color="#10B981" />
-              <Text style={[styles.linkLabel, darkMode ? styles.darkText : styles.lightText, { marginLeft: 10 }]}>
-                {t.appVersion}
-              </Text>
+          {/* Row 6: DISCO & SNGPL Helpline Directory */}
+          <TouchableOpacity
+            style={[styles.menuRow, styles.menuRowBorder]}
+            onPress={showHelplineDirectory}
+            activeOpacity={0.7}
+          >
+            <View style={styles.menuRowLeft}>
+              <View
+                style={[
+                  styles.menuIconBox,
+                  darkMode ? styles.darkBox : styles.lightBox,
+                ]}
+              >
+                <AppIcon
+                  name="phone-call"
+                  size={18}
+                  color={darkMode ? '#F8FAFC' : '#0F172A'}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={[
+                    styles.menuRowTitle,
+                    darkMode ? styles.darkText : styles.lightText,
+                    isUrdu && styles.rtlText,
+                  ]}
+                >
+                  {t.helplineDirectory}
+                </Text>
+                <Text
+                  style={[
+                    styles.menuRowSubtitle,
+                    darkMode ? styles.darkSub : styles.lightSub,
+                    isUrdu && styles.rtlText,
+                  ]}
+                >
+                  {t.helplineDirectorySub}
+                </Text>
+              </View>
             </View>
-            <Text style={[styles.versionText, darkMode ? styles.darkSub : styles.lightSub]}>
-              1.0.0 (Production)
-            </Text>
+            <AppIcon
+              name="chevron-right"
+              size={16}
+              color={darkMode ? '#64748B' : '#94A3B8'}
+            />
+          </TouchableOpacity>
+
+          {/* Row 7: About Arcloom Tech */}
+          <TouchableOpacity
+            style={[styles.menuRow, styles.menuRowBorder]}
+            onPress={showAboutCompany}
+            activeOpacity={0.7}
+          >
+            <View style={styles.menuRowLeft}>
+              <View
+                style={[
+                  styles.menuIconBox,
+                  darkMode ? styles.darkBox : styles.lightBox,
+                ]}
+              >
+                <AppIcon
+                  name="corporate-fare"
+                  size={18}
+                  color={darkMode ? '#F8FAFC' : '#0F172A'}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={[
+                    styles.menuRowTitle,
+                    darkMode ? styles.darkText : styles.lightText,
+                    isUrdu && styles.rtlText,
+                  ]}
+                >
+                  {t.aboutCompany}
+                </Text>
+                <Text
+                  style={[
+                    styles.menuRowSubtitle,
+                    darkMode ? styles.darkSub : styles.lightSub,
+                    isUrdu && styles.rtlText,
+                  ]}
+                >
+                  {t.aboutCompanySub}
+                </Text>
+              </View>
+            </View>
+            <AppIcon
+              name="chevron-right"
+              size={16}
+              color={darkMode ? '#64748B' : '#94A3B8'}
+            />
+          </TouchableOpacity>
+
+          {/* Row 8: Privacy Policy & Data Security */}
+          <TouchableOpacity
+            style={styles.menuRow}
+            onPress={showPrivacyPolicy}
+            activeOpacity={0.7}
+          >
+            <View style={styles.menuRowLeft}>
+              <View
+                style={[
+                  styles.menuIconBox,
+                  darkMode ? styles.darkBox : styles.lightBox,
+                ]}
+              >
+                <AppIcon
+                  name="security"
+                  size={18}
+                  color={darkMode ? '#F8FAFC' : '#0F172A'}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={[
+                    styles.menuRowTitle,
+                    darkMode ? styles.darkText : styles.lightText,
+                    isUrdu && styles.rtlText,
+                  ]}
+                >
+                  {t.privacyAndSecurity}
+                </Text>
+                <Text
+                  style={[
+                    styles.menuRowSubtitle,
+                    darkMode ? styles.darkSub : styles.lightSub,
+                    isUrdu && styles.rtlText,
+                  ]}
+                >
+                  {t.privacyAndSecuritySub}
+                </Text>
+              </View>
+            </View>
+            <AppIcon
+              name="chevron-right"
+              size={16}
+              color={darkMode ? '#64748B' : '#94A3B8'}
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* ── 4. Dedicated Prominent Non-Affiliation / DISCLAIMER Card (Stitch 100% Match) ── */}
+        <View
+          style={[
+            styles.disclaimerCard,
+            darkMode ? styles.darkCardBg : styles.lightCardBg,
+          ]}
+        >
+          <View style={styles.disclaimerTop}>
+            <View
+              style={[
+                styles.disclaimerIconBox,
+                darkMode ? styles.darkBox : styles.lightBox,
+              ]}
+            >
+              <AppIcon name="shield" size={18} color="#EF4444" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <View style={styles.disclaimerHeaderRow}>
+                <AppIcon name="alert" size={14} color="#EF4444" />
+                <Text
+                  style={[
+                    styles.disclaimerTitle,
+                    darkMode ? styles.darkText : styles.lightText,
+                    isUrdu && styles.rtlText,
+                  ]}
+                >
+                  {t.officialDisclaimerTitle}
+                </Text>
+              </View>
+              <Text
+                style={[
+                  styles.disclaimerBody,
+                  darkMode ? styles.darkSub : styles.lightSub,
+                  isUrdu && styles.rtlText,
+                ]}
+              >
+                {t.officialDisclaimerText}
+              </Text>
+
+              <View style={styles.disclaimerFooter}>
+                <Text style={styles.disclaimerFooterLeft}>
+                  {t.publicGatewaySync}
+                </Text>
+                <View style={styles.disclaimerFooterRight}>
+                  <View style={styles.activeDot} />
+                  <Text
+                    style={[
+                      styles.disclaimerFooterRightText,
+                      darkMode && styles.disclaimerFooterRightDark,
+                    ]}
+                  >
+                    {t.verifiedPublicApis}
+                  </Text>
+                </View>
+              </View>
+            </View>
           </View>
         </View>
 
-        {/* SpendSense App Promotion Banner */}
-        <AdBanner darkMode={darkMode} language={language} />
+        {/* ── 5. Clear Cache / Reset Button ── */}
+        <TouchableOpacity
+          style={[
+            styles.resetButton,
+            darkMode ? styles.darkCardBg : styles.lightCardBg,
+          ]}
+          onPress={promptResetApp}
+          activeOpacity={0.7}
+        >
+          <AppIcon name="logout" size={17} color={darkMode ? '#F8FAFC' : '#0F172A'} />
+          <Text
+            style={[
+              styles.resetButtonText,
+              darkMode ? styles.darkText : styles.lightText,
+            ]}
+          >
+            {t.clearCacheResetBtn}
+          </Text>
+        </TouchableOpacity>
+
+        {/* ── 6. App Metadata & Copyright ── */}
+        <View style={styles.footerSection}>
+          <Text
+            style={[
+              styles.footerTextMain,
+              darkMode ? styles.darkSub : styles.lightSub,
+            ]}
+          >
+            {t.appFooterVersion}
+          </Text>
+          <Text style={styles.footerTextSub}>{t.appFooterLicense}</Text>
+        </View>
+
+        {/* ── 7. Optional Ad / Promotion Banner ── */}
+        <View style={{ marginTop: 14 }}>
+          <AdBanner darkMode={darkMode} language={language} />
+        </View>
       </ScrollView>
 
-      {/* ── Custom Animated Popup Modal ── */}
-      <CustomPopup
-        {...popup}
-        darkMode={darkMode}
-        isUrdu={isUrdu}
-      />
+      {/* ── Interactive Popups & Dialogs ── */}
+      <CustomPopup {...popup} darkMode={darkMode} isUrdu={isUrdu} />
     </View>
   );
 };

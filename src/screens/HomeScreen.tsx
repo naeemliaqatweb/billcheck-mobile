@@ -1,26 +1,27 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
   Image,
   TouchableOpacity,
   ScrollView,
-  Animated,
   Linking,
 } from 'react-native';
 import { ELECTRICITY_PROVIDERS, GAS_PROVIDERS } from '../constants/providers';
-import { ProviderInfo, BillData, SavedMeter } from '../types/bill';
+import { ProviderInfo, BillData, SavedMeter, BillMonthHistory } from '../types/bill';
 import { TRANSLATIONS, Language } from '../i18n/translations';
+import { APP_CONFIG } from '../constants/appConfig';
 import { DisclaimerBanner } from '../components/DisclaimerBanner';
 import { AdBanner } from '../components/AdBanner';
-import { ApiService } from '../services/api';
+import { ApiService, generate12MonthHistory } from '../services/api';
 import { StorageService } from '../services/storage';
-import { AddMeterModal } from '../components/AddMeterModal';
 import { AppIcon } from '../components/AppIcon';
 import { CustomPopup, PopupConfig } from '../components/CustomPopup';
 import { ProviderSelector } from '../components/ProviderSelector';
-import { QuickSavedBills } from '../components/QuickSavedBills';
 import { ReferenceInputCard } from '../components/home/ReferenceInputCard';
+import { DashboardHeroCard } from '../components/home/DashboardHeroCard';
+import { DashboardBillCard } from '../components/home/DashboardBillCard';
+import { NewMeterFab } from '../components/NewMeterFab';
 import { styles } from '../styles/HomeScreen.styles';
 
 interface HomeScreenProps {
@@ -32,7 +33,10 @@ interface HomeScreenProps {
   onToggleLanguage?: (lang: Language) => void;
   onToggleTheme?: (isDark: boolean) => void;
   onNavigateAnalytics?: () => void;
+  onOpenSelectProvider?: () => void;
 }
+
+type FilterType = 'all' | 'electricity' | 'gas';
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
   language,
@@ -42,33 +46,124 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onRefreshSaved,
   onToggleLanguage,
   onToggleTheme,
+  onOpenSelectProvider,
 }) => {
   const t = TRANSLATIONS[language];
   const isUrdu = language === 'ur';
 
+  // State
+  const [filterType, setFilterType] = useState<FilterType>('all');
+  const [loadingMeterId, setLoadingMeterId] = useState<string | null>(null);
+  const [showLookupCard, setShowLookupCard] = useState(false);
   const [utilityType, setUtilityType] = useState<'electricity' | 'gas'>('electricity');
   const [selectedProvider, setSelectedProvider] = useState<ProviderInfo>(ELECTRICITY_PROVIDERS[0]);
   const [referenceNo, setReferenceNo] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [addMeterVisible, setAddMeterVisible] = useState(false);
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [heroHistory, setHeroHistory] = useState<BillMonthHistory[]>([]);
   const [popup, setPopup] = useState<PopupConfig>({
     visible: false,
     title: '',
     message: '',
   });
 
-  // FAB pulse animation
-  const fabScale = useRef(new Animated.Value(1)).current;
+  // Filtered meters list
+  const filteredMeters = useMemo(() => {
+    if (filterType === 'electricity') {
+      return savedMeters.filter((m) => m.utilityType === 'electricity');
+    }
+    if (filterType === 'gas') {
+      return savedMeters.filter((m) => m.utilityType === 'gas');
+    }
+    return savedMeters;
+  }, [savedMeters, filterType]);
+
+  const electricityCount = useMemo(
+    () => savedMeters.filter((m) => m.utilityType !== 'gas').length,
+    [savedMeters]
+  );
+  const gasCount = useMemo(
+    () => savedMeters.filter((m) => m.utilityType === 'gas').length,
+    [savedMeters]
+  );
+
+  // Totals for currently filtered meters (used in hero card)
+  const { totalDueAmount, unpaidBillsCount } = useMemo(() => {
+    let sum = 0;
+    let unpaidCount = 0;
+    filteredMeters.forEach((m) => {
+      if (m.lastBillStatus !== 'paid') {
+        unpaidCount += 1;
+        sum += m.lastBillAmount || 0;
+      }
+    });
+    return { totalDueAmount: sum, unpaidBillsCount: unpaidCount };
+  }, [filteredMeters]);
+
+  // Helper to ensure current bill month is always the last entry in history
+  const enrichWithCurrentBill = (bill: BillData): BillMonthHistory[] => {
+    const base = bill.history12Months || [];
+    if (!bill.billMonth) return base;
+
+    const currentLabel = bill.billMonth.trim().toUpperCase();
+    const lastLabel = base.length > 0 ? (base[base.length - 1].month || '').trim().toUpperCase() : '';
+
+    if (lastLabel === currentLabel) return base;
+
+    const yrStr = currentLabel.split(' ')[1] || '26';
+    const fullYear = 2000 + (parseInt(yrStr, 10) || 26);
+
+    const currentEntry: BillMonthHistory = {
+      month: currentLabel,
+      year: fullYear,
+      units: bill.unitsConsumed || 0,
+      amount: bill.payableWithinDueDate || 0,
+      status: bill.billStatus === 'paid' ? 'paid' : 'unpaid',
+    };
+
+    return [...base, currentEntry];
+  };
+
+  // Load trend history dynamically for the hero graph
   useEffect(() => {
-    const pulse = Animated.loop(
-      Animated.sequence([
-        Animated.timing(fabScale, { toValue: 1.08, duration: 900, useNativeDriver: true }),
-        Animated.timing(fabScale, { toValue: 1.0, duration: 900, useNativeDriver: true }),
-      ])
-    );
-    pulse.start();
-    return () => pulse.stop();
-  }, []);
+    let isMounted = true;
+    const loadTrendHistory = async () => {
+      // 1. Try finding cached bill for first filtered meter or any saved meter
+      const primaryMeter = filteredMeters[0] || savedMeters[0];
+      if (primaryMeter) {
+        const cached = await StorageService.getCachedBill(primaryMeter.company, primaryMeter.referenceNumber);
+        if (isMounted && cached?.history12Months && cached.history12Months.length > 0) {
+          setHeroHistory(enrichWithCurrentBill(cached));
+          return;
+        }
+      }
+
+      // 2. Try last checked bill in storage
+      const lastChecked = await StorageService.getLastCheckedBill();
+      if (isMounted && lastChecked?.history12Months && lastChecked.history12Months.length > 0) {
+        setHeroHistory(enrichWithCurrentBill(lastChecked));
+        return;
+      }
+
+      // 3. If primary meter has lastBillAmount, generate dynamic history
+      if (primaryMeter && primaryMeter.lastBillAmount && primaryMeter.lastBillAmount > 0) {
+        const estimatedUnits = Math.max(50, Math.round(primaryMeter.lastBillAmount / 38));
+        const dyn = generate12MonthHistory(estimatedUnits, primaryMeter.lastBillAmount);
+        if (isMounted) setHeroHistory(dyn);
+        return;
+      }
+
+      // 4. Default dynamic history based on current total due or fallback
+      const baseAmount = totalDueAmount > 0 ? totalDueAmount : 14500;
+      const baseUnits = Math.max(80, Math.round(baseAmount / 38));
+      const dyn = generate12MonthHistory(baseUnits, baseAmount);
+      if (isMounted) setHeroHistory(dyn);
+    };
+
+    loadTrendHistory();
+    return () => {
+      isMounted = false;
+    };
+  }, [filteredMeters, savedMeters, totalDueAmount]);
 
   const activeProviders = utilityType === 'electricity' ? ELECTRICITY_PROVIDERS : GAS_PROVIDERS;
 
@@ -97,7 +192,35 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     });
   };
 
-  const handleCheckBill = async () => {
+  // Check saved bill
+  const handleCheckSavedBill = async (meter: SavedMeter) => {
+    setLoadingMeterId(meter.id);
+    const prov =
+      [...ELECTRICITY_PROVIDERS, ...GAS_PROVIDERS].find((p) => p.code === meter.company) ||
+      ELECTRICITY_PROVIDERS[0];
+
+    try {
+      const bill = await ApiService.fetchBill(meter.company, meter.referenceNumber);
+      await StorageService.cacheBill(bill);
+      onBillChecked(bill);
+    } catch {
+      handleFetchFailure(prov, meter.referenceNumber);
+    } finally {
+      setLoadingMeterId(null);
+    }
+  };
+
+  // Download PDF / open official bill portal
+  const handleDownloadPdf = (meter: SavedMeter) => {
+    const prov =
+      [...ELECTRICITY_PROVIDERS, ...GAS_PROVIDERS].find((p) => p.code === meter.company) ||
+      ELECTRICITY_PROVIDERS[0];
+    const portalUrl = prov.portalUrl || 'https://bill.pitc.com.pk/';
+    Linking.openURL(portalUrl);
+  };
+
+  // Lookup new bill
+  const handleLookupBill = async () => {
     const cleanRef = referenceNo.replace(/[^0-9a-zA-Z]/g, '').trim();
     if (!cleanRef || cleanRef.length < 8) {
       setPopup({
@@ -111,7 +234,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       return;
     }
 
-    setLoading(true);
+    setLookupLoading(true);
     try {
       const bill = await ApiService.fetchBill(selectedProvider.code, cleanRef);
       await StorageService.cacheBill(bill);
@@ -119,233 +242,312 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     } catch {
       handleFetchFailure(selectedProvider, cleanRef);
     } finally {
-      setLoading(false);
+      setLookupLoading(false);
     }
-  };
-
-  const handleQuickCheck = async (meter: SavedMeter) => {
-    const prov = [...ELECTRICITY_PROVIDERS, ...GAS_PROVIDERS].find((p) => p.code === meter.company) || ELECTRICITY_PROVIDERS[0];
-    setSelectedProvider(prov);
-    setUtilityType(meter.utilityType);
-    setReferenceNo(meter.referenceNumber);
-
-    setLoading(true);
-    try {
-      const bill = await ApiService.fetchBill(meter.company, meter.referenceNumber);
-      await StorageService.cacheBill(bill);
-      onBillChecked(bill);
-    } catch {
-      handleFetchFailure(prov, meter.referenceNumber);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleMeterAdded = (freshBill?: BillData) => {
-    setAddMeterVisible(false);
-    onRefreshSaved();
-    setPopup({
-      visible: true,
-      type: 'success',
-      title: isUrdu ? '🎉 نیا میٹر شامل ہو گیا!' : '🎉 Meter Added Successfully!',
-      message: freshBill && freshBill.payableWithinDueDate > 0
-        ? (isUrdu
-            ? `${freshBill.company}: بل کی تصدیق ہو گئی ہے۔\nکل رقم: Rs. ${freshBill.payableWithinDueDate.toLocaleString()} (تاریخ: ${freshBill.dueDate})`
-            : `${freshBill.company}: Live bill verified!\nAmount Due: Rs. ${freshBill.payableWithinDueDate.toLocaleString()} (Due: ${freshBill.dueDate})`)
-        : (isUrdu ? 'میٹر آپ کی محفوظ فہرست میں شامل ہو گیا ہے۔' : 'Meter saved to your dashboard list.'),
-      primaryText: freshBill && freshBill.payableWithinDueDate > 0
-        ? (isUrdu ? 'بل دیکھیں' : 'View Bill Now')
-        : (isUrdu ? 'ٹھیک ہے' : 'Done'),
-      secondaryText: freshBill && freshBill.payableWithinDueDate > 0 ? (isUrdu ? 'بعد میں' : 'Later') : undefined,
-      onPrimaryPress: () => {
-        setPopup((p) => ({ ...p, visible: false }));
-        if (freshBill && freshBill.payableWithinDueDate > 0) {
-          onBillChecked(freshBill);
-        }
-      },
-      onClose: () => setPopup((p) => ({ ...p, visible: false })),
-    });
   };
 
   return (
-    <View style={[styles.outerContainer, darkMode ? styles.darkBg : styles.lightBg]}>
+    <View style={styles.outerContainer}>
+      {/* TopAppBar Component */}
+      <View style={styles.topAppBar}>
+        <View style={styles.brandTitleRow}>
+          <Image
+            source={require('../assets/images/app-logo.png')}
+            style={styles.headerLogo}
+            resizeMode="contain"
+          />
+          <Text style={styles.brandTitle}>{APP_CONFIG.name}</Text>
+        </View>
+      </View>
+
       <ScrollView
-        style={styles.container}
+        style={[styles.container, darkMode ? styles.darkBg : styles.lightBg]}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          {/* Top Row: App Brand on Left, Action Icons on Right */}
-          <View style={styles.headerTopRow}>
-            <View style={styles.headerLogoRow}>
-              <Image
-                source={require('../assets/images/app-logo.png')}
-                style={{ width: 36, height: 36, borderRadius: 8 }}
-                resizeMode="contain"
-              />
-              <View>
-                <View style={styles.badgeRow}>
-                  <Text style={styles.brandBadge}>BILLCHECK PK</Text>
-                  <View style={styles.verifiedBadge}>
-                    <AppIcon name="shield-check" size={11} color="#10B981" />
-                    <Text style={styles.verifiedText}>Verified</Text>
-                  </View>
-                </View>
-                <Text style={[styles.appTitle, darkMode ? styles.darkText : styles.lightText, isUrdu && styles.rtlText]}>
-                  {t.appName}
-                </Text>
-              </View>
+        {/* Dark Navy Hero Header Section with 6-Month SVG Graph */}
+        <DashboardHeroCard
+          totalDueAmount={totalDueAmount}
+          unpaidBillsCount={unpaidBillsCount}
+          history={heroHistory}
+          billMonth={filteredMeters[0]?.lastBillMonth || savedMeters[0]?.lastBillMonth}
+          language={language}
+          darkMode={darkMode}
+          onOpenNotifications={() => {
+            setPopup({
+              visible: true,
+              type: 'info',
+              title: isUrdu ? 'بل الرٹس اور اطلاعات' : 'Bill Due Date Alerts',
+              message: isUrdu
+                ? 'تمام یوٹیلیٹی بلوں کی آخری تاریخ کی یاد دہانی اور نوٹیفیکیشنز فعال ہیں۔'
+                : 'Auto-sync and due date reminders are active for your saved meters.',
+              primaryText: isUrdu ? 'ٹھیک ہے' : 'Got it',
+              onClose: () => setPopup((p) => ({ ...p, visible: false })),
+            });
+          }}
+          onToggleLanguage={onToggleLanguage}
+          onToggleTheme={onToggleTheme}
+          onAddBill={() => onOpenSelectProvider && onOpenSelectProvider()}
+        />
+
+        {/* Main Content Canvas (Overlapping Hero by -16px) */}
+        <View style={styles.mainCanvas}>
+          {/* Section Header & Quick Filter Tabs */}
+          <View
+            style={[
+              styles.sectionFilterCard,
+              darkMode ? styles.sectionFilterCardDark : styles.sectionFilterCardLight,
+              isUrdu && styles.rtlRow,
+            ]}
+          >
+            <View style={styles.sectionTitleCol}>
+              <Text style={[styles.sectionTitle, darkMode ? styles.darkText : styles.lightText, isUrdu && styles.rtlText]}>
+                {t.savedUtilityBills}
+              </Text>
+              <Text style={[styles.sectionSub, darkMode ? styles.darkSub : styles.lightSub, isUrdu && styles.rtlText]}>
+                {savedMeters.length} {t.activeMetersConnected}
+              </Text>
             </View>
 
-            {/* Header Right Action Icons */}
-            <View style={styles.headerRightActions}>
-              {/* Language Switcher */}
-              {onToggleLanguage && (
-                <TouchableOpacity
-                  style={[
-                    styles.headerLangBtn,
-                    darkMode ? styles.headerLangBtnDark : styles.headerLangBtnLight,
-                  ]}
-                  onPress={() => onToggleLanguage(language === 'en' ? 'ur' : 'en')}
-                  activeOpacity={0.7}
-                >
-                  <AppIcon name="globe" size={14} color="#0284C7" />
-                  <Text style={[styles.headerLangText, darkMode ? styles.darkText : styles.lightText]}>
-                    {isUrdu ? 'EN' : 'اردو'}
-                  </Text>
-                </TouchableOpacity>
-              )}
-
-              {/* Theme Toggle (Moon/Sun) */}
-              {onToggleTheme && (
-                <TouchableOpacity
-                  style={[
-                    styles.headerActionBtn,
-                    darkMode ? styles.headerActionBtnDark : styles.headerActionBtnLight,
-                  ]}
-                  onPress={() => onToggleTheme(!darkMode)}
-                  activeOpacity={0.7}
-                >
-                  <AppIcon
-                    name={darkMode ? 'sun' : 'moon'}
-                    size={16}
-                    color={darkMode ? '#F59E0B' : '#64748B'}
-                  />
-                </TouchableOpacity>
-              )}
-
-              {/* Quick Add Meter Button */}
+            {/* Segmented Filter Tabs */}
+            <View style={[styles.filterTabsWrap, darkMode && styles.filterTabsWrapDark]}>
               <TouchableOpacity
                 style={[
-                  styles.headerActionBtn,
-                  { backgroundColor: '#059669', borderColor: '#059669' },
+                  styles.filterTabItem,
+                  filterType === 'all' && (darkMode ? styles.filterTabActiveDark : styles.filterTabActive),
                 ]}
-                onPress={() => setAddMeterVisible(true)}
-                activeOpacity={0.7}
+                onPress={() => {
+  setFilterType('all');
+  // Keep current utilityType or default to electricity for consistency
+}}
+                activeOpacity={0.8}
               >
-                <AppIcon name="plus" size={18} color="#FFFFFF" />
+                <Text
+                  style={[
+                    styles.filterTabText,
+                    filterType === 'all' && (darkMode ? styles.filterTabTextActiveDark : styles.filterTabTextActive),
+                  ]}
+                >
+                  {t.filterAll} ({savedMeters.length})
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.filterTabItem,
+                  filterType === 'electricity' && (darkMode ? styles.filterTabActiveDark : styles.filterTabActive),
+                ]}
+                onPress={() => {
+  setFilterType('electricity');
+  setUtilityType('electricity');
+}}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.filterTabText,
+                    filterType === 'electricity' && (darkMode ? styles.filterTabTextActiveDark : styles.filterTabTextActive),
+                  ]}
+                >
+                  {t.filterElectricity} ({electricityCount})
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.filterTabItem,
+                  filterType === 'gas' && (darkMode ? styles.filterTabActiveDark : styles.filterTabActive),
+                ]}
+                onPress={() => {
+  setFilterType('gas');
+  setUtilityType('gas');
+}}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.filterTabText,
+                    filterType === 'gas' && (darkMode ? styles.filterTabTextActiveDark : styles.filterTabTextActive),
+                  ]}
+                >
+                  {t.filterGas} ({gasCount})
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
 
-          <Text style={[styles.appSubtitle, darkMode ? styles.darkSub : styles.lightSub, isUrdu && styles.rtlText]}>
-            {t.tagline}
-          </Text>
-        </View>
+          {/* Saved Utility Bill Cards */}
+          <View style={styles.billsListContainer}>
+            {filteredMeters.length === 0 ? (
+              <View
+                style={[
+                  styles.emptyBillsBox,
+                  darkMode ? styles.emptyBillsBoxDark : styles.emptyBillsBoxLight,
+                ]}
+              >
+                <AppIcon name="receipt" size={32} color="#778598" />
+                <Text style={[styles.emptyBillsTitle, darkMode ? styles.darkText : styles.lightText]}>
+                  {t.noSavedBills}
+                </Text>
+                <Text style={[styles.emptyBillsSub, darkMode ? styles.darkSub : styles.lightSub]}>
+                  {isUrdu
+                    ? 'نیا میٹر شامل کرنے کے لیے نیچے دیے گئے بٹن پر کلک کریں۔'
+                    : 'Tap the green + button below to add your electricity or gas meter.'}
+                </Text>
+              </View>
+            ) : (
+              filteredMeters.map((meter) => (
+                <DashboardBillCard
+                  key={meter.id}
+                  meter={meter}
+                  language={language}
+                  darkMode={darkMode}
+                  isLoading={loadingMeterId === meter.id}
+                  onCheckBill={handleCheckSavedBill}
+                  onDownloadPdf={handleDownloadPdf}
+                />
+              ))
+            )}
+          </View>
 
-        {/* Disclaimer Banner */}
-        <DisclaimerBanner language={language} darkMode={darkMode} />
-
-        {/* Utility Switcher */}
-        <View style={[styles.tabSelector, darkMode ? styles.darkCard : styles.lightCard]}>
-          <TouchableOpacity
-            style={[styles.tabButton, utilityType === 'electricity' && styles.activeTab]}
-            onPress={() => handleSelectType('electricity')}
-          >
-            <View style={styles.tabContentRow}>
-              <AppIcon name="bolt" size={18} color={utilityType === 'electricity' ? '#10B981' : (darkMode ? '#94A3B8' : '#64748B')} />
-              <Text style={[styles.tabButtonText, utilityType === 'electricity' ? styles.activeTabText : (darkMode ? styles.darkSub : styles.lightSub)]}>
-                {t.electricityBills}
-              </Text>
+          {/* Quick Utility Sync Banner */}
+          <View style={[styles.syncBanner, darkMode ? styles.syncBannerDark : styles.syncBannerLight, isUrdu && styles.rtlRow]}>
+            <View style={[styles.syncBannerLeft, isUrdu && styles.rtlRow]}>
+              <AppIcon name="refresh" size={24} color="#006D35" />
+              <View>
+                <Text style={[styles.syncBannerTitle, darkMode ? styles.darkText : styles.lightText, isUrdu && styles.rtlText]}>
+                  {t.autoFetchEnabled}
+                </Text>
+                <Text style={[styles.syncBannerSub, darkMode ? styles.darkSub : styles.lightSub, isUrdu && styles.rtlText]}>
+                  {t.autoFetchDesc}
+                </Text>
+              </View>
             </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.tabButton, utilityType === 'gas' && styles.activeTab]}
-            onPress={() => handleSelectType('gas')}
-          >
-            <View style={styles.tabContentRow}>
-              <AppIcon name="flame" size={18} color={utilityType === 'gas' ? '#0284C7' : (darkMode ? '#94A3B8' : '#64748B')} />
-              <Text style={[styles.tabButtonText, utilityType === 'gas' ? styles.activeTabText : (darkMode ? styles.darkSub : styles.lightSub)]}>
-                {t.gasBills}
-              </Text>
+            <View style={[styles.syncConnectedBadge, darkMode ? styles.syncConnectedBadgeDark : styles.syncConnectedBadgeLight]}>
+              <Text style={styles.syncConnectedText}>{t.connectedBadge}</Text>
             </View>
-          </TouchableOpacity>
+          </View>
+
+          {/* Check Any Other Bill (Collapsible / Direct Lookup) */}
+          <View style={[styles.checkNewBillCard, darkMode ? styles.darkCard : styles.lightCard]}>
+            <TouchableOpacity
+              style={[styles.checkNewBillHeader, isUrdu && styles.rtlRow]}
+              onPress={() => setShowLookupCard(!showLookupCard)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.checkNewBillTitleRow, isUrdu && styles.rtlRow]}>
+                <AppIcon name="search" size={20} color="#62FF96" />
+                <View>
+                  <Text style={[styles.sectionTitle, darkMode ? styles.darkText : styles.lightText, isUrdu && styles.rtlText]}>
+                    {t.checkNewBillTitle}
+                  </Text>
+                  <Text style={[styles.sectionSub, darkMode ? styles.darkSub : styles.lightSub, isUrdu && styles.rtlText]}>
+                    {t.checkNewBillSub}
+                  </Text>
+                </View>
+              </View>
+              <AppIcon
+                name={showLookupCard ? 'chevron-up' : 'chevron-down'}
+                size={20}
+                color={darkMode ? '#94A3B8' : '#64748B'}
+              />
+            </TouchableOpacity>
+
+            {showLookupCard && (
+              <View style={styles.lookupContent}>
+                {/* Utility Switcher */}
+                <View
+                  style={[
+                    styles.utilitySwitcherWrap,
+                    darkMode ? styles.utilitySwitcherDark : styles.utilitySwitcherLight,
+                  ]}
+                >
+                  <TouchableOpacity
+                    style={[
+                      styles.utilitySwitcherTab,
+                      utilityType === 'electricity' && styles.utilitySwitcherTabActiveElectric,
+                    ]}
+                    onPress={() => handleSelectType('electricity')}
+                  >
+                    <Text
+                      style={[
+                        styles.utilitySwitcherTabText,
+                        utilityType === 'electricity'
+                          ? styles.utilitySwitcherTabTextActive
+                          : (darkMode ? styles.utilitySwitcherTabTextInactiveDark : styles.utilitySwitcherTabTextInactiveLight),
+                      ]}
+                    >
+                      {t.electricityBills}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.utilitySwitcherTab,
+                      utilityType === 'gas' && styles.utilitySwitcherTabActiveGas,
+                    ]}
+                    onPress={() => handleSelectType('gas')}
+                  >
+                    <Text
+                      style={[
+                        styles.utilitySwitcherTabText,
+                        utilityType === 'gas'
+                          ? styles.utilitySwitcherTabTextActive
+                          : (darkMode ? styles.utilitySwitcherTabTextInactiveDark : styles.utilitySwitcherTabTextInactiveLight),
+                      ]}
+                    >
+                      {t.gasBills}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Provider Selector */}
+                <ProviderSelector
+                  providers={activeProviders}
+                  selectedProvider={selectedProvider}
+                  onSelectProvider={setSelectedProvider}
+                  darkMode={darkMode}
+                  label={t.selectProvider}
+                  isUrdu={isUrdu}
+                />
+
+                {/* Reference Input Card */}
+                <ReferenceInputCard
+                  utilityType={utilityType}
+                  selectedProvider={selectedProvider}
+                  referenceNo={referenceNo}
+                  onChangeReferenceNo={setReferenceNo}
+                  onCheckBill={handleLookupBill}
+                  loading={lookupLoading}
+                  darkMode={darkMode}
+                  isUrdu={isUrdu}
+                  labels={{
+                    referenceNumber: t.referenceNumber,
+                    consumerId: t.consumerId,
+                    whereToFindRef: t.whereToFindRef,
+                    refExplanation: t.refExplanation,
+                    checkBillBtn: t.checkBillBtn,
+                  }}
+                />
+              </View>
+            )}
+          </View>
+
+          <DisclaimerBanner language={language} darkMode={darkMode} />
+          <AdBanner darkMode={darkMode} language={language} />
+          <View style={styles.bottomSpacer} />
         </View>
-
-        {/* Provider Horizontal Selector */}
-        <ProviderSelector
-          providers={activeProviders}
-          selectedProvider={selectedProvider}
-          onSelectProvider={setSelectedProvider}
-          darkMode={darkMode}
-          label={t.selectProvider}
-          isUrdu={isUrdu}
-        />
-
-        {/* Reference Input Card */}
-        <ReferenceInputCard
-          utilityType={utilityType}
-          selectedProvider={selectedProvider}
-          referenceNo={referenceNo}
-          onChangeReferenceNo={setReferenceNo}
-          onCheckBill={handleCheckBill}
-          loading={loading}
-          darkMode={darkMode}
-          isUrdu={isUrdu}
-          labels={{
-            referenceNumber: t.referenceNumber,
-            consumerId: t.consumerId,
-            whereToFindRef: t.whereToFindRef,
-            refExplanation: t.refExplanation,
-            checkBillBtn: t.checkBillBtn,
-          }}
-        />
-
-        {/* Quick Saved Bills */}
-        <QuickSavedBills
-          savedMeters={savedMeters}
-          darkMode={darkMode}
-          isUrdu={isUrdu}
-          title={t.quickSavedBills}
-          onQuickCheck={handleQuickCheck}
-        />
-
-        <AdBanner darkMode={darkMode} language={language} />
-        <View style={{ height: 90 }} />
       </ScrollView>
 
-      {/* Floating Action Button */}
-      <Animated.View style={[styles.fab, { transform: [{ scale: fabScale }] }]}>
-        <TouchableOpacity
-          style={[styles.fabInner, { backgroundColor: '#10B981' }]}
-          onPress={() => setAddMeterVisible(true)}
-          activeOpacity={0.85}
-        >
-          <AppIcon name="add" size={30} color="#FFFFFF" />
-        </TouchableOpacity>
-      </Animated.View>
+      {/* Reusable Floating Action Button (New Meter FAB) */}
+      {onOpenSelectProvider && (
+        <NewMeterFab
+          onPress={onOpenSelectProvider}
+          language={language}
+        />
+      )}
 
-      {/* Modals */}
-      <AddMeterModal
-        visible={addMeterVisible}
-        onClose={() => setAddMeterVisible(false)}
-        onAdded={handleMeterAdded}
-        language={language}
-        darkMode={darkMode}
-      />
-
+      {/* Custom Popup Dialog */}
       <CustomPopup
         {...popup}
         darkMode={darkMode}
@@ -354,3 +556,4 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     </View>
   );
 };
+

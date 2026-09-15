@@ -100,12 +100,15 @@ export interface SavedMeter {
   company: string;
   referenceNumber: string;
   consumerId?: string;
+  consumerName?: string;
+  consumerAddress?: string;
   utilityType: UtilityType;
   lastCheckedDate?: string;
   lastBillAmount?: number;
   lastDueDate?: string;
   lastBillStatus?: BillStatus;
   lastBillMonth?: string;
+  createdAt?: string;
 }
 
 export interface ProviderInfo {

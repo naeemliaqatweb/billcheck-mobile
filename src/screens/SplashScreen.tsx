@@ -6,6 +6,7 @@ import {
   StatusBar,
 } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
+import { APP_CONFIG } from '../constants/appConfig';
 import { AppIcon } from '../components/AppIcon';
 import { styles } from '../styles/SplashScreen.styles';
 
@@ -197,7 +198,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
           <Text style={styles.appTitleMain}>BillCheck</Text>
           <Text style={styles.appTitleAccent}>PK</Text>
         </View>
-        <Text style={styles.appSubtitle}>Pakistan Utility Bill Checker</Text>
+        <Text style={styles.appSubtitle}>{APP_CONFIG.tagline}</Text>
 
         {/* Feeds Micro Chips */}
         <View style={styles.chipsRow}>

@@ -8,16 +8,51 @@ const KEYS = {
   LAST_CHECKED_BILL: '@pakbill_last_checked_bill',
   LANGUAGE: '@pakbill_language',
   THEME: '@pakbill_theme',
+  NOTIFICATIONS: '@pakbill_notifications',
 };
 
 export const StorageService = {
-  // Get all saved meters
+  // Get all saved meters (purges any legacy dummy/seed meters)
   async getSavedMeters(): Promise<SavedMeter[]> {
     try {
       const json = await AsyncStorage.getItem(KEYS.SAVED_METERS);
-      return json ? JSON.parse(json) : [];
+      if (!json) return [];
+      const meters: SavedMeter[] = JSON.parse(json);
+      const DUMMY_IDS = ['meter_lesco_1', 'meter_sngpl_2', 'meter_ke_3', 'meter_iesco_4'];
+      const DUMMY_REFS = [
+        '04 1152 0984 201',
+        '98 4210 5519 100',
+        '01 9823 4410 392',
+        '08 1234 5678 901',
+        '0411520984201',
+        '9842105519100',
+        '0198234410392',
+        '0812345678901',
+      ];
+
+      const realMeters = meters.filter(
+        (m) =>
+          !DUMMY_IDS.includes(m.id) &&
+          !DUMMY_REFS.includes(m.referenceNumber) &&
+          !DUMMY_REFS.includes(m.referenceNumber.replace(/\s+/g, ''))
+      );
+
+      if (realMeters.length !== meters.length) {
+        await AsyncStorage.setItem(KEYS.SAVED_METERS, JSON.stringify(realMeters));
+      }
+      return realMeters;
     } catch {
       return [];
+    }
+  },
+
+  // Clear all saved meters
+  async clearAllSavedMeters(): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(KEYS.SAVED_METERS);
+      await AsyncStorage.removeItem(KEYS.LAST_CHECKED_BILL);
+    } catch {
+      // ignore
     }
   },
 
@@ -146,6 +181,37 @@ export const StorageService = {
   async setTheme(theme: 'dark' | 'light'): Promise<void> {
     try {
       await AsyncStorage.setItem(KEYS.THEME, theme);
+    } catch {
+      // ignore
+    }
+  },
+
+  // Notification settings
+  async getNotifications(): Promise<boolean> {
+    try {
+      const val = await AsyncStorage.getItem(KEYS.NOTIFICATIONS);
+      return val === null ? true : val === 'true';
+    } catch {
+      return true;
+    }
+  },
+
+  async setNotifications(enabled: boolean): Promise<void> {
+    try {
+      await AsyncStorage.setItem(KEYS.NOTIFICATIONS, enabled ? 'true' : 'false');
+    } catch {
+      // ignore
+    }
+  },
+
+  // Reset entire app storage / cache
+  async resetAppAndCache(): Promise<void> {
+    try {
+      const keys = await AsyncStorage.getAllKeys();
+      const appKeys = keys.filter((k) => k.startsWith('@pakbill'));
+      if (appKeys.length > 0) {
+        await Promise.all(appKeys.map((k) => AsyncStorage.removeItem(k)));
+      }
     } catch {
       // ignore
     }

@@ -16,19 +16,19 @@ export const styles = StyleSheet.create({
   },
   bottomBar: {
     flexDirection: 'row',
-    height: 64,
+    height: 62,
     borderTopWidth: 1,
     alignItems: 'center',
     justifyContent: 'space-around',
     paddingBottom: 4,
   },
   darkBottomBar: {
-    backgroundColor: '#0B0F19',
-    borderTopColor: COLORS.darkBorder,
+    backgroundColor: '#0F1C2C',
+    borderTopColor: 'rgba(116, 119, 125, 0.18)',
   },
   lightBottomBar: {
-    backgroundColor: COLORS.lightCard,
-    borderTopColor: COLORS.lightBorder,
+    backgroundColor: '#FFFFFF',
+    borderTopColor: '#E2E8F0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.04,
@@ -40,6 +40,7 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     flex: 1,
     paddingVertical: 4,
+    backgroundColor: 'transparent',
   },
   tabIconWrap: {
     width: 28,
@@ -58,15 +59,19 @@ export const styles = StyleSheet.create({
   tabLabel: {
     fontSize: 11,
     fontWeight: '500',
+    letterSpacing: 0.2,
   },
   activeTabLabel: {
-    fontWeight: '800',
+    fontWeight: '700',
+  },
+  inactiveTabLabel: {
+    fontWeight: '500',
   },
   darkTabLabel: {
-    color: '#64748B',
+    color: '#74777D',
   },
   lightTabLabel: {
-    color: '#94A3B8',
+    color: '#8E9196',
   },
   tabActiveDot: {
     width: 4,
@@ -87,7 +92,6 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 3,
   },
   badgeCount: {
-    color: '#FFFFFF',
     fontSize: 9,
     fontWeight: '900',
   },

@@ -1,22 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Share,
 } from 'react-native';
 import { BillData, SavedMeter, BillMonthHistory } from '../types/bill';
 import { TRANSLATIONS, Language } from '../i18n/translations';
-import { ConsumptionChart } from '../components/ConsumptionChart';
-import { HistoryTable } from '../components/HistoryTable';
 import { AdBanner } from '../components/AdBanner';
 import { AppIcon } from '../components/AppIcon';
 import { StorageService } from '../services/storage';
 import { ApiService } from '../services/api';
-import { EnergySavingTips } from '../components/history/EnergySavingTips';
-import { ConsumptionMetricsGrid } from '../components/history/ConsumptionMetricsGrid';
+import { AnalyticsTelemetryChart } from '../components/analytics/AnalyticsTelemetryChart';
+import { AnalyticsBentoGrid } from '../components/analytics/AnalyticsBentoGrid';
+import { RegulatoryNoticeCard } from '../components/analytics/RegulatoryNoticeCard';
+import { HistoryTable } from '../components/HistoryTable';
+import { NewMeterFab } from '../components/NewMeterFab';
+import { CustomPopup, PopupConfig } from '../components/CustomPopup';
 import { styles } from '../styles/HistoryScreen.styles';
+import { SkeletonLoader } from '../components/common/SkeletonLoader';
 
 interface HistoryScreenProps {
   currentBill: BillData | null;
@@ -25,6 +29,7 @@ interface HistoryScreenProps {
   darkMode: boolean;
   onSelectBill?: (bill: BillData) => void;
   onNavigateHome?: () => void;
+  onOpenSelectProvider?: () => void;
 }
 
 export const HistoryScreen: React.FC<HistoryScreenProps> = ({
@@ -32,10 +37,16 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
   savedMeters = [],
   language,
   darkMode,
+  onSelectBill,
   onNavigateHome,
+  onOpenSelectProvider,
 }) => {
   const t = TRANSLATIONS[language];
   const isUrdu = language === 'ur';
+
+  // Utility category filter: 'electricity' vs 'gas'
+  const [utilityType, setUtilityType] = useState<'electricity' | 'gas'>('electricity');
+  const [selectedYear, setSelectedYear] = useState<string>('2024');
 
   const [activeBill, setActiveBill] = useState<BillData | null>(currentBill);
   const [selectedMeterId, setSelectedMeterId] = useState<string | null>(
@@ -43,21 +54,38 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
   );
   const [loading, setLoading] = useState<boolean>(false);
   const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [popup, setPopup] = useState<PopupConfig>({
+    visible: false,
+    title: '',
+    message: '',
+  });
+
+  // Filter saved meters based on the selected utility type
+  const filteredMeters = useMemo(() => {
+    return savedMeters.filter((m) => {
+      if (utilityType === 'gas') return m.utilityType === 'gas';
+      return m.utilityType !== 'gas';
+    });
+  }, [savedMeters, utilityType]);
+  // Determine if any gas providers exist to conditionally show gas tab
+  const hasGas = useMemo(() => savedMeters.some((m) => m.utilityType === 'gas'), [savedMeters]);
 
   useEffect(() => {
     const initHistory = async () => {
       if (currentBill && currentBill.history12Months && currentBill.history12Months.length > 0) {
         setActiveBill(currentBill);
         setSelectedMeterId(`${currentBill.company}_${currentBill.referenceNo}`);
+        setUtilityType(currentBill.company?.toLowerCase().includes('gas') || currentBill.company === 'SNGPL' || currentBill.company === 'SSGC' ? 'gas' : 'electricity');
         return;
       }
 
       if (savedMeters.length > 0) {
-        await loadMeterData(savedMeters[0]);
+        const matching = savedMeters.find((m) => utilityType === 'gas' ? m.utilityType === 'gas' : m.utilityType !== 'gas') || savedMeters[0];
+        await loadMeterData(matching);
         return;
       }
 
-      // Check last checked bill from storage
+      // Check last cached bill from storage
       const lastChecked = await StorageService.getLastCheckedBill();
       if (lastChecked && lastChecked.history12Months && lastChecked.history12Months.length > 0) {
         setActiveBill(lastChecked);
@@ -66,11 +94,11 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
     };
 
     initHistory();
-  }, [currentBill, savedMeters]);
+  }, [currentBill, savedMeters, utilityType]);
 
   const loadMeterData = async (meter: SavedMeter) => {
-    setSelectedMeterId(meter.id);
     setLoading(true);
+    setSelectedMeterId(meter.id);
     try {
       const cached = await StorageService.getCachedBill(meter.company, meter.referenceNumber);
       if (cached && cached.history12Months && cached.history12Months.length > 0) {
@@ -115,6 +143,7 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
         await StorageService.cacheBill(demoBill);
         setActiveBill(demoBill);
         setSelectedMeterId('LESCO_15115371598719');
+        setUtilityType('electricity');
       }
     } catch {
       // fallback
@@ -123,7 +152,75 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
     }
   };
 
-  const historyData: BillMonthHistory[] = activeBill?.history12Months || [];
+  const handleDownloadCsv = async () => {
+    if (!activeBill || !historyData.length) {
+      setPopup({
+        visible: true,
+        type: 'info',
+        title: isUrdu ? 'کوئی ڈیٹا نہیں' : 'No Data',
+        message: isUrdu ? 'براہ کرم پہلے کسی میٹر کا ڈیٹا منتخب کریں۔' : 'Please load a meter first to export telemetry data.',
+        primaryText: isUrdu ? 'ٹھیک ہے' : 'OK',
+        onClose: () => setPopup((p) => ({ ...p, visible: false })),
+      });
+      return;
+    }
+
+    const csvRows = [
+      'Month,Units,PayableAmount,BillStatus',
+      ...historyData.map((h) => `${h.month},${h.units},${h.amount},${h.status}`),
+    ];
+    const csvContent = csvRows.join('\n');
+
+    try {
+      await Share.share({
+        title: `${activeBill.company} 12-Month Telemetry Export`,
+        message: `BillCheck PK Telemetry Export for ${activeBill.company} (${activeBill.referenceNo}):\n\n${csvContent}`,
+      });
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleOpenSimulator = () => {
+    setPopup({
+      visible: true,
+      type: 'info',
+      title: isUrdu ? 'نیپرا ٹیرف سمیلیٹر' : 'NEPRA Tariff Simulator',
+      message: isUrdu
+        ? 'بجلی اور گیس کے نئے نیپرا ٹیرف سلیبس کے مطابق بل کا تخمینہ جانچیں۔ آف پیک ریٹس اور پروٹیکٹڈ کیٹیگری کے فوائد خودکار کیلکولیٹ کیے جاتے ہیں۔'
+        : 'Simulate progressive multi-slab tariff costs, FPA, and protected category benefits instantly across all Pakistani DISCOs.',
+      primaryText: isUrdu ? 'ٹھیک ہے' : 'Got it',
+      onClose: () => setPopup((p) => ({ ...p, visible: false })),
+    });
+  };
+
+  // Build enriched history: providers return previous months only, so we
+  // append the current bill as the final entry if it isn't already there.
+  const historyData: BillMonthHistory[] = useMemo(() => {
+    const base: BillMonthHistory[] = activeBill?.history12Months || [];
+    if (!activeBill || !activeBill.billMonth) return base;
+
+    // Normalise: 'AUG 26' and 'Aug 26' should be treated the same
+    const currentLabel = activeBill.billMonth.trim().toUpperCase();
+    const lastLabel = base.length > 0 ? (base[base.length - 1].month || '').trim().toUpperCase() : '';
+
+    if (lastLabel === currentLabel) return base; // already in history
+
+    // Derive 2-digit year from label e.g. 'AUG 26' -> 2026
+    const yrStr = currentLabel.split(' ')[1] || '26';
+    const fullYear = 2000 + parseInt(yrStr, 10);
+
+    const currentEntry: BillMonthHistory = {
+      month: activeBill.billMonth.trim().toUpperCase(), // e.g. 'AUG 26'
+      year: fullYear,
+      units: activeBill.unitsConsumed || 0,
+      amount: activeBill.payableWithinDueDate || 0,
+      status: activeBill.billStatus === 'paid' ? 'paid' : 'unpaid',
+    };
+
+    return [...base, currentEntry];
+  }, [activeBill]);
+
   const hasHistory = historyData.length > 0;
 
   const rawName = activeBill?.consumerName || '';
@@ -133,161 +230,286 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
     activeBill?.referenceNo ||
     '';
 
-  const getChipLabel = (nickname: string, company: string) => {
-    const nick = nickname.trim();
-    const comp = company.trim().toUpperCase();
-    if (nick.toUpperCase().includes(comp)) {
-      return nick;
-    }
-    return `${nick} (${comp})`;
-  };
+  const meterDisplayLabel = activeBill
+    ? `${activeBill.company} # ${activeBill.formattedRefNo || activeBill.referenceNo}`
+    : 'LESCO # 08 11254 0938400 U';
 
   return (
-    <ScrollView
-      style={[styles.container, darkMode ? styles.darkBg : styles.lightBg]}
-      contentContainerStyle={styles.contentContainer}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerTopRow}>
-          <View style={{ flex: 1 }}>
-            <View style={styles.headerTitleRow}>
-              <AppIcon name="stats" size={24} color="#6366F1" />
-              <Text style={[styles.title, darkMode ? styles.darkText : styles.lightText, isUrdu && styles.rtlText]}>
-                {t.analyticsTitle}
-              </Text>
-            </View>
-            <Text style={[styles.subtitle, darkMode ? styles.darkSub : styles.lightSub, isUrdu && styles.rtlText]} numberOfLines={1}>
-              {activeBill
-                ? `${activeBill.company} • ${cleanConsumerName}`
-                : (isUrdu ? 'آپ کے بجلی و گیس بلوں کا 12 ماہ کا مکمل تجزیہ' : '12-Month Real Consumption & Cost Analytics')}
+    <View style={[styles.outerContainer, darkMode ? styles.darkBg : styles.lightBg]}>
+      {/* Top App Bar (Matching Stitch Screen 6) */}
+      <View style={styles.topAppBar}>
+        <View style={styles.topAppLeft}>
+          <TouchableOpacity
+            style={styles.menuBtn}
+            onPress={() => onNavigateHome && onNavigateHome()}
+            activeOpacity={0.7}
+            accessibilityLabel="Menu"
+          >
+            <AppIcon name="menu" size={20} color="#778598" />
+          </TouchableOpacity>
+
+          <View style={styles.appTitleGroup}>
+            <Text style={[styles.appTitle, darkMode ? styles.darkText : styles.lightText]}>
+              BillCheck PK
             </Text>
+            <View style={styles.proBadge}>
+              <Text style={styles.proBadgeText}>PRO</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.topAppRight}>
+          <View style={styles.livePill}>
+            <Text style={styles.liveText}>LIVE</Text>
+            <View style={styles.pulseDot} />
           </View>
 
-          {activeBill && (
-            <View style={styles.headerActions}>
-              <TouchableOpacity
-                style={[
-                  styles.headerActionBtn,
-                  darkMode ? styles.headerActionBtnDark : styles.headerActionBtnLight,
-                ]}
-                onPress={handleRefreshActiveMeter}
-                disabled={refreshing}
-                activeOpacity={0.7}
-              >
-                {refreshing ? (
-                  <ActivityIndicator size="small" color="#6366F1" />
-                ) : (
-                  <AppIcon name="refresh" size={16} color="#6366F1" />
-                )}
-              </TouchableOpacity>
-            </View>
-          )}
+          <TouchableOpacity
+            style={styles.topBoltBtn}
+            onPress={handleRefreshActiveMeter}
+            disabled={refreshing}
+            activeOpacity={0.7}
+            accessibilityLabel="Refresh Telemetry"
+          >
+            {refreshing ? (
+              <ActivityIndicator size="small" color="#62FF96" />
+            ) : (
+              <AppIcon name="bolt" size={19} color="#62FF96" />
+            )}
+          </TouchableOpacity>
         </View>
       </View>
 
-      {/* Meter Switcher Tabs */}
-      {savedMeters.length > 0 && (
-        <View style={styles.meterSelectorWrap}>
-          <Text style={[styles.meterSelectorLabel, darkMode ? styles.darkSub : styles.lightSub]}>
-            {isUrdu ? 'میٹر منتخب کریں:' : 'Select Saved Meter:'}
-          </Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.meterScroll}
-          >
-            {savedMeters.map((meter) => {
-              const isSelected = selectedMeterId === meter.id;
-              return (
-                <TouchableOpacity
-                  key={meter.id}
-                  style={[
-                    styles.meterChip,
-                    isSelected
-                      ? styles.meterChipActive
-                      : (darkMode ? styles.meterChipDark : styles.meterChipLight),
-                  ]}
-                  onPress={() => loadMeterData(meter)}
-                  activeOpacity={0.7}
-                >
-                  <AppIcon
-                    name={meter.utilityType === 'gas' ? 'flame' : 'bolt'}
-                    size={14}
-                    color={isSelected ? '#FFFFFF' : (meter.utilityType === 'gas' ? '#0284C7' : '#10B981')}
-                  />
-                  <Text
-                    style={[
-                      styles.meterChipText,
-                      isSelected ? styles.meterChipTextActive : (darkMode ? styles.darkText : styles.lightText),
-                    ]}
-                  >
-                    {getChipLabel(meter.nickname, meter.company)}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
-      )}
+      <ScrollView
+        style={styles.scrollContainer}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.mainCanvas}>
+          {/* Screen Title & Year Picker Row */}
+          <View style={styles.screenTitleRow}>
+            <View>
+              <Text style={[styles.screenHeadline, darkMode ? styles.darkText : styles.lightText]}>
+                {isUrdu ? 'تجزیہ اور رجحانات' : 'Analytics & Trends'}
+              </Text>
+              <Text style={[styles.screenSubheadline, darkMode ? styles.darkSub : styles.lightSub]}>
+                {isUrdu ? 'کثیر فراہم کنندہ کنزمپشن ٹیلی میٹری' : 'Multi-provider consumption telemetry'}
+              </Text>
+            </View>
 
-      {loading ? (
-        <View style={styles.loadingBox}>
-          <ActivityIndicator size="large" color="#6366F1" />
-          <Text style={[styles.loadingText, darkMode ? styles.darkSub : styles.lightSub]}>
-            {isUrdu ? 'ڈیٹا حاصل کیا جا رہا ہے...' : 'Loading Consumption Analytics...'}
-          </Text>
-        </View>
-      ) : !hasHistory ? (
-        <View style={[styles.emptyCard, darkMode ? styles.darkCard : styles.lightCard]}>
-          <AppIcon name="history" size={48} color="#6366F1" />
-          <Text style={[styles.emptyTitle, darkMode ? styles.darkText : styles.lightText]}>
-            {isUrdu ? 'کوئی بلنگ ڈیٹا موجود نہیں' : 'No Bill Data Available Yet'}
-          </Text>
-          <Text style={[styles.emptyDesc, darkMode ? styles.darkSub : styles.lightSub, isUrdu && styles.rtlText]}>
-            {isUrdu
-              ? 'اپنا پہلا بل ہوم اسکرین پر چیک کریں یا نیچے دیے گئے بٹن سے لیسکو کا ریئل 12 ماہ کا کنزمپشن تجزیہ لائیو دیکھیں۔'
-              : 'Check or save a utility bill from the Home screen, or load the real LESCO meter analytics below to view 12-month usage trends & charts.'}
-          </Text>
+            <TouchableOpacity
+              style={[styles.yearPickerBtn, !darkMode && styles.yearPickerBtnLight]}
+              onPress={() => setSelectedYear((y) => (y === '2024' ? '2025' : '2024'))}
+              activeOpacity={0.8}
+            >
+              <AppIcon name="calendar" size={14} color={darkMode ? '#62FF96' : '#006D35'} />
+              <Text style={[styles.yearPickerText, !darkMode && styles.yearPickerTextLight]}>{selectedYear}</Text>
+              <AppIcon name="chevron-down" size={14} color={darkMode ? '#62FF96' : '#006D35'} />
+            </TouchableOpacity>
+          </View>
 
-          <View style={styles.emptyBtnWrap}>
-            <TouchableOpacity style={styles.demoMeterBtn} onPress={handleLoadDemoMeter} activeOpacity={0.8}>
-              <AppIcon name="zap" size={16} color="#FFFFFF" />
-              <Text style={styles.demoMeterBtnText}>
-                {isUrdu ? 'لیسکو کا 12 ماہ کا ریئل ڈیٹا لوڈ کریں (15115371598719)' : 'Load Live LESCO 12-Mo Analytics (15115371598719)'}
+          {/* Segmented Pill Switcher (Electricity vs Gas) */}
+          <View style={[styles.segmentedContainer, !darkMode && styles.segmentedContainerLight]}>
+            <TouchableOpacity
+              style={[
+                styles.segmentedBtn,
+                utilityType === 'electricity' && styles.segmentedBtnActive,
+              ]}
+              onPress={() => setUtilityType('electricity')}
+              activeOpacity={0.85}
+            >
+              <AppIcon
+                name="zap"
+                size={15}
+                color={utilityType === 'electricity' ? '#FFFFFF' : '#778598'}
+              />
+              <Text
+                style={[
+                  styles.segmentedText,
+                  utilityType === 'electricity' && styles.segmentedTextActive,
+                ]}
+              >
+                {isUrdu ? 'بجلی (kWh / Rs)' : 'Electricity (kWh / Rs)'}
               </Text>
             </TouchableOpacity>
 
-            {onNavigateHome && (
-              <TouchableOpacity style={styles.checkBillBtn} onPress={onNavigateHome} activeOpacity={0.8}>
-                <AppIcon name="search" size={16} color="#FFFFFF" />
-                <Text style={styles.checkBillBtnText}>
-                  {isUrdu ? 'ہوم اسکرین سے نیا بل چیک کریں' : 'Check Another Bill from Home'}
+            <TouchableOpacity
+              style={[
+                styles.segmentedBtn,
+                utilityType === 'gas' && styles.segmentedBtnActive,
+              ]}
+              onPress={() => setUtilityType('gas')}
+              activeOpacity={0.85}
+            >
+              <AppIcon
+                name="flame"
+                size={15}
+                color={utilityType === 'gas' ? '#FFFFFF' : '#778598'}
+              />
+              <Text
+                style={[
+                  styles.segmentedText,
+                  utilityType === 'gas' && styles.segmentedTextActive,
+                ]}
+              >
+                {isUrdu ? 'سوئی گیس (MMBTU / Rs)' : 'Gas (MMBTU / Rs)'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Saved Meters Horizontal Chip Selector */}
+          {filteredMeters.length > 0 && (
+            <View style={styles.meterSelectorSection}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.meterChipScroll}
+              >
+                {filteredMeters.map((m) => {
+                  const isSelected = selectedMeterId === m.id;
+                  return (
+                    <TouchableOpacity
+                      key={m.id}
+                      style={[
+                        styles.meterChip,
+                        isSelected
+                          ? styles.meterChipActive
+                          : darkMode
+                          ? styles.meterChipDark
+                          : styles.meterChipLight,
+                      ]}
+                      onPress={() => loadMeterData(m)}
+                      activeOpacity={0.7}
+                    >
+                      <AppIcon
+                        name={m.utilityType === 'gas' ? 'flame' : 'zap'}
+                        size={13}
+                        color={isSelected ? '#FFFFFF' : '#62FF96'}
+                      />
+                      <Text
+                        style={[
+                          styles.meterChipText,
+                          isSelected
+                            ? { color: '#FFFFFF' }
+                            : darkMode
+                            ? styles.darkText
+                            : styles.lightText,
+                        ]}
+                      >
+                        {m.nickname || m.company} ({m.company})
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* Main State Handling */}
+          {loading ? (
+            <SkeletonLoader darkMode={darkMode} />
+          ) : !hasHistory ? (
+            <View style={[styles.emptyCard, darkMode ? styles.darkCard : styles.lightCard]}>
+              <AppIcon name="stats" size={44} color="#62FF96" />
+              <Text style={[styles.emptyTitle, darkMode ? styles.darkText : styles.lightText]}>
+                {isUrdu ? 'کوئی ٹیلی میٹری ڈیٹا موجود نہیں' : 'No Telemetry Data Available'}
+              </Text>
+              <Text style={[styles.emptyDesc, darkMode ? styles.darkSub : styles.lightSub]}>
+                {isUrdu
+                  ? 'اپنا پہلا بل چیک کریں یا لیسکو کا ریئل 12 ماہ کا لائیو ٹیلی میٹری ڈیٹا لوڈ کریں۔'
+                  : 'Check a bill on the home screen or load the live LESCO 12-month telemetry dataset below.'}
+              </Text>
+              <TouchableOpacity
+                style={styles.demoMeterBtn}
+                onPress={handleLoadDemoMeter}
+                activeOpacity={0.8}
+              >
+                <AppIcon name="bolt" size={16} color="#FFFFFF" />
+                <Text style={styles.demoMeterBtnText}>
+                  {isUrdu ? 'لیسکو 12 ماہ کا لائیو ڈیٹا لوڈ کریں' : 'Load Live LESCO 12-Mo Data (15115371598719)'}
                 </Text>
               </TouchableOpacity>
-            )}
-          </View>
+            </View>
+          ) : (
+            <>
+              {/* 1. Neon Glow Hero Chart Card */}
+              <AnalyticsTelemetryChart
+                history={historyData}
+                meterLabel={meterDisplayLabel}
+                utilityType={utilityType}
+                darkMode={darkMode}
+                language={language}
+              />
+
+              {/* 2. Key Telemetry Bento Grid (3 Cards matching Stitch) */}
+              <AnalyticsBentoGrid
+                historyData={historyData}
+                utilityType={utilityType}
+                darkMode={darkMode}
+                language={language}
+              />
+
+              {/* 3. Regulatory Notice Banner */}
+              <RegulatoryNoticeCard
+                darkMode={darkMode}
+                language={language}
+              />
+
+              {/* 4. Action Buttons (Download CSV & Tariff Simulator) */}
+              <View style={styles.actionsRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.actionBtnOutline,
+                    darkMode ? styles.actionBtnOutlineDark : styles.actionBtnOutlineLight,
+                  ]}
+                  onPress={handleDownloadCsv}
+                  activeOpacity={0.8}
+                >
+                  <AppIcon name="file-download" size={17} color={darkMode ? '#F8F9FF' : '#0B1C30'} />
+                  <Text
+                    style={[
+                      styles.actionBtnOutlineText,
+                      darkMode ? styles.darkText : styles.lightText,
+                    ]}
+                  >
+                    {isUrdu ? 'CSV ڈاؤن لوڈ کریں' : 'Download CSV'}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.actionBtnPrimary}
+                  onPress={handleOpenSimulator}
+                  activeOpacity={0.85}
+                >
+                  <AppIcon name="calculate" size={18} color="#FFFFFF" />
+                  <Text style={styles.actionBtnPrimaryText}>
+                    {isUrdu ? 'ٹیرف سمیلیٹر' : 'Tariff Simulator'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* 5. Complete 12-Month Tabular Breakdown Archive */}
+              <HistoryTable
+                history={historyData}
+                darkMode={darkMode}
+                language={language}
+              />
+            </>
+          )}
+
+          <AdBanner darkMode={darkMode} language={language} />
         </View>
-      ) : (
-        <>
-          {/* Key Metrics Grid */}
-          <ConsumptionMetricsGrid historyData={historyData} darkMode={darkMode} language={language} />
+      </ScrollView>
 
-          {/* 12-Month Consumption Chart */}
-          <ConsumptionChart history={historyData} darkMode={darkMode} language={language} />
-
-          {/* 12-Month Tabular History */}
-          <View style={{ marginTop: 12 }}>
-            <HistoryTable history={historyData} darkMode={darkMode} language={language} />
-          </View>
-
-          {/* Energy Saving Insights */}
-          <EnergySavingTips darkMode={darkMode} language={language} />
-        </>
+      {/* Floating Action Button (New Meter FAB) */}
+      {onOpenSelectProvider && (
+        <NewMeterFab
+          onPress={onOpenSelectProvider}
+          language={language}
+        />
       )}
 
-      <AdBanner darkMode={darkMode} language={language} />
-    </ScrollView>
+      <CustomPopup {...popup} darkMode={darkMode} isUrdu={isUrdu} />
+    </View>
   );
 };

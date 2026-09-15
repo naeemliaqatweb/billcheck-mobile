@@ -10,7 +10,7 @@ import {
 import { AppIcon, IconName } from './AppIcon';
 import { styles } from '../styles/CustomPopup.styles';
 
-export type PopupType = 'success' | 'error' | 'info' | 'bill-alert';
+export type PopupType = 'success' | 'error' | 'warning' | 'info' | 'bill-alert';
 
 export interface PopupConfig {
   visible: boolean;
@@ -23,6 +23,8 @@ export interface PopupConfig {
   cancelText?: string;
   onPrimaryPress?: () => void;
   onSecondaryPress?: () => void;
+  onPrimary?: () => void;
+  onSecondary?: () => void;
   onConfirm?: () => void;
   onClose?: () => void;
   autoCloseMs?: number;
@@ -44,6 +46,8 @@ export const CustomPopup: React.FC<CustomPopupProps> = ({
   cancelText,
   onPrimaryPress,
   onSecondaryPress,
+  onPrimary,
+  onSecondary,
   onConfirm,
   onClose,
   autoCloseMs,
@@ -52,7 +56,8 @@ export const CustomPopup: React.FC<CustomPopupProps> = ({
 }) => {
   const finalPrimaryText = primaryText || confirmText;
   const finalSecondaryText = secondaryText || cancelText;
-  const finalOnPrimaryPress = onPrimaryPress || onConfirm;
+  const finalOnPrimaryPress = onPrimary || onPrimaryPress || onConfirm;
+  const finalOnSecondaryPress = onSecondary || onSecondaryPress;
 
   const scaleAnim = useRef(new Animated.Value(0.85)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
@@ -113,6 +118,14 @@ export const CustomPopup: React.FC<CustomPopupProps> = ({
           borderColor: '#10B981',
           primaryBg: '#059669',
           defaultPrimary: isUrdu ? 'ٹھیک ہے' : 'OK',
+        };
+      case 'warning':
+        return {
+          icon: 'alert' as IconName,
+          iconBg: '#D97706',
+          borderColor: '#F59E0B',
+          primaryBg: '#DC2626',
+          defaultPrimary: isUrdu ? 'تصدیق کریں' : 'Confirm',
         };
       case 'error':
         return {

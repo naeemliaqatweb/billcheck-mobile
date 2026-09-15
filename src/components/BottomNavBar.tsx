@@ -25,39 +25,36 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
   darkMode,
   labels,
 }) => {
-  const inactiveColor = darkMode ? '#64748B' : '#94A3B8';
+  // Uniform active & inactive brand colors across all tabs (matching Stitch design)
+  const activeColor = darkMode ? '#3FFF8B' : '#006D35';
+  const inactiveColor = darkMode ? '#74777D' : '#8E9196';
 
   const tabs: {
     id: TabName;
     label: string;
     icon: string;
-    color: string;
     badge?: number;
   }[] = [
     {
       id: 'home',
       label: labels.home,
       icon: 'home',
-      color: '#0284C7',
     },
     {
       id: 'saved',
       label: labels.saved,
-      icon: 'bookmark',
-      color: '#10B981',
+      icon: 'history',
       badge: savedCount,
     },
     {
       id: 'analytics',
       label: labels.analytics,
-      icon: 'stats',
-      color: '#6366F1',
+      icon: 'monitoring',
     },
     {
       id: 'settings',
       label: labels.settings,
       icon: 'settings',
-      color: '#F59E0B',
     },
   ];
 
@@ -65,7 +62,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
     <View style={[styles.bottomBar, darkMode ? styles.darkBottomBar : styles.lightBottomBar]}>
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
-        const iconColor = isActive ? tab.color : inactiveColor;
+        const color = isActive ? activeColor : inactiveColor;
 
         return (
           <TouchableOpacity
@@ -75,30 +72,34 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
             activeOpacity={0.7}
           >
             <View style={styles.tabIconWrap}>
-              <AppIcon name={tab.icon} size={22} color={iconColor} />
+              <AppIcon
+                name={tab.icon}
+                size={22}
+                color={color}
+                strokeWidth={isActive ? 2.5 : 2.0}
+              />
               {!!tab.badge && tab.badge > 0 && (
-                <View style={[styles.badge, { backgroundColor: tab.color }]}>
-                  <Text style={styles.badgeCount}>{tab.badge}</Text>
+                <View style={[styles.badge, { backgroundColor: activeColor }]}>
+                  <Text
+                    style={[
+                      styles.badgeCount,
+                      { color: darkMode ? '#003919' : '#FFFFFF' },
+                    ]}
+                  >
+                    {tab.badge}
+                  </Text>
                 </View>
               )}
             </View>
             <Text
               style={[
                 styles.tabLabel,
-                isActive
-                  ? [styles.activeTabLabel, { color: tab.color }]
-                  : darkMode
-                  ? styles.darkTabLabel
-                  : styles.lightTabLabel,
+                { color },
+                isActive ? styles.activeTabLabel : styles.inactiveTabLabel,
               ]}
             >
               {tab.label}
             </Text>
-            {isActive ? (
-              <View style={[styles.tabActiveDot, { backgroundColor: tab.color }]} />
-            ) : (
-              <View style={{ height: 4, marginTop: 2 }} />
-            )}
           </TouchableOpacity>
         );
       })}

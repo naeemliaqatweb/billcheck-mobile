@@ -20,6 +20,10 @@ import { CustomPopup, PopupConfig } from './src/components/CustomPopup';
 import { BottomNavBar, TabName } from './src/components/BottomNavBar';
 import { styles } from './src/styles/App.styles';
 
+import { SelectProviderScreen } from './src/screens/SelectProviderScreen';
+import { AddBillScreen } from './src/screens/AddBillScreen';
+import { ProviderInfo } from './src/constants/providers';
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabName>('home');
   const [showSplash, setShowSplash] = useState<boolean>(true);
@@ -27,6 +31,8 @@ export default function App() {
   const [darkMode, setDarkMode] = useState<boolean>(true);
   const [currentBill, setCurrentBill] = useState<BillData | null>(null);
   const [savedMeters, setSavedMeters] = useState<SavedMeter[]>([]);
+  const [activeSubScreen, setActiveSubScreen] = useState<'select_provider' | 'add_bill' | null>(null);
+  const [selectedProviderForAdd, setSelectedProviderForAdd] = useState<ProviderInfo | null>(null);
   const [popup, setPopup] = useState<PopupConfig>({
     visible: false,
     title: '',
@@ -65,7 +71,10 @@ export default function App() {
             setPopup((p) => ({ ...p, visible: false }));
             if (latest.company && latest.referenceNumber) {
               const cached = await StorageService.getCachedBill(latest.company, latest.referenceNumber);
-              if (cached) setCurrentBill(cached);
+              if (cached) {
+                setActiveSubScreen(null);
+                setCurrentBill(cached);
+              }
             }
           },
           onClose: () => setPopup((p) => ({ ...p, visible: false })),
@@ -96,7 +105,25 @@ export default function App() {
   };
 
   const handleBillChecked = (bill: BillData) => {
+    setActiveSubScreen(null);
     setCurrentBill(bill);
+  };
+
+  const handleOpenSelectProvider = () => {
+    setActiveSubScreen('select_provider');
+  };
+
+  const handleProviderSelected = (provider: ProviderInfo) => {
+    setSelectedProviderForAdd(provider);
+    setActiveSubScreen('add_bill');
+  };
+
+  const handleBackToSelectProvider = () => {
+    setActiveSubScreen('select_provider');
+  };
+
+  const handleBackToMain = () => {
+    setActiveSubScreen(null);
   };
 
   const renderContent = () => {
@@ -107,6 +134,31 @@ export default function App() {
           language={language}
           darkMode={darkMode}
           onBack={() => setCurrentBill(null)}
+          onSaveMeterComplete={handleRefreshSaved}
+        />
+      );
+    }
+
+    if (activeSubScreen === 'select_provider') {
+      return (
+        <SelectProviderScreen
+          language={language}
+          darkMode={darkMode}
+          onSelectProvider={handleProviderSelected}
+          onBack={handleBackToMain}
+        />
+      );
+    }
+
+    if (activeSubScreen === 'add_bill') {
+      return (
+        <AddBillScreen
+          language={language}
+          darkMode={darkMode}
+          initialProvider={selectedProviderForAdd || undefined}
+          onChangeProvider={handleBackToSelectProvider}
+          onBack={handleBackToSelectProvider}
+          onBillChecked={handleBillChecked}
           onSaveMeterComplete={handleRefreshSaved}
         />
       );
@@ -124,6 +176,7 @@ export default function App() {
             onToggleLanguage={handleToggleLanguage}
             onToggleTheme={handleToggleTheme}
             onNavigateAnalytics={() => setActiveTab('analytics')}
+            onOpenSelectProvider={handleOpenSelectProvider}
           />
         );
       case 'saved':
@@ -134,6 +187,7 @@ export default function App() {
             darkMode={darkMode}
             onSelectMeter={handleBillChecked}
             onRefreshSaved={handleRefreshSaved}
+            onOpenSelectProvider={handleOpenSelectProvider}
           />
         );
       case 'analytics':
@@ -145,6 +199,7 @@ export default function App() {
             darkMode={darkMode}
             onSelectBill={handleBillChecked}
             onNavigateHome={() => setActiveTab('home')}
+            onOpenSelectProvider={handleOpenSelectProvider}
           />
         );
       case 'settings':
@@ -180,7 +235,7 @@ export default function App() {
         <View style={styles.contentArea}>{renderContent()}</View>
 
         {/* Bottom Navigation Bar */}
-        {!currentBill && (
+        {!currentBill && !activeSubScreen && (
           <BottomNavBar
             activeTab={activeTab}
             onSelectTab={setActiveTab}
