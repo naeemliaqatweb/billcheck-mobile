@@ -205,15 +205,10 @@ export const styles = StyleSheet.create({
 
   // 2-Column Provider Grid
   gridContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 40,
-  },
-  grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   providerCard: {
     width: '48.2%',
