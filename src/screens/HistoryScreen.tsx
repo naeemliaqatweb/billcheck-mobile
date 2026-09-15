@@ -3,6 +3,7 @@ import {
   View,
   Text,
   ScrollView,
+  RefreshControl,
   TouchableOpacity,
   ActivityIndicator,
   Share,
@@ -281,6 +282,15 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
         style={styles.scrollContainer}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefreshActiveMeter}
+            colors={['#10B981', '#006D35']}
+            tintColor={darkMode ? '#62FF96' : '#006D35'}
+            progressBackgroundColor={darkMode ? '#132033' : '#FFFFFF'}
+          />
+        }
       >
         <View style={styles.mainCanvas}>
           {/* Screen Title & Year Picker Row */}

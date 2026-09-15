@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
+  RefreshControl,
 } from 'react-native';
 import { ELECTRICITY_PROVIDERS, GAS_PROVIDERS, ALL_PROVIDERS, ProviderInfo } from '../constants/providers';
 import { getProviderLogo } from '../constants/providerLogos';
@@ -34,11 +35,21 @@ export const SelectProviderScreen: React.FC<SelectProviderScreenProps> = ({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<FilterType>('all');
+  const [refreshing, setRefreshing] = useState(false);
   const [popup, setPopup] = useState<PopupConfig>({
     visible: false,
     title: '',
     message: '',
   });
+
+  const handlePullRefresh = async () => {
+    setRefreshing(true);
+    setSearchQuery('');
+    setFilterType('all');
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 400);
+  };
 
   // Filtered providers based on search query and category tab
   const { electricityList, gasList } = useMemo(() => {
@@ -252,6 +263,15 @@ export const SelectProviderScreen: React.FC<SelectProviderScreenProps> = ({
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handlePullRefresh}
+            colors={['#10B981', '#006D35']}
+            tintColor={darkMode ? '#62FF96' : '#006D35'}
+            progressBackgroundColor={darkMode ? '#132033' : '#FFFFFF'}
+          />
+        }
       >
         {/* Section 1: Electricity Companies (DISCOs) */}
         {electricityList.length > 0 && (

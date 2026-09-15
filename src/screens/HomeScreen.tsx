@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
   Image,
   TouchableOpacity,
   ScrollView,
+  RefreshControl,
   Linking,
 } from 'react-native';
 import { ELECTRICITY_PROVIDERS, GAS_PROVIDERS } from '../constants/providers';
@@ -15,6 +16,7 @@ import { DisclaimerBanner } from '../components/DisclaimerBanner';
 import { AdBanner } from '../components/AdBanner';
 import { ApiService, generate12MonthHistory } from '../services/api';
 import { StorageService } from '../services/storage';
+import { NotificationService } from '../services/notification';
 import { AppIcon } from '../components/AppIcon';
 import { CustomPopup, PopupConfig } from '../components/CustomPopup';
 import { DashboardHeroCard } from '../components/home/DashboardHeroCard';
@@ -117,46 +119,57 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   };
 
   // Load trend history dynamically for the hero graph
-  useEffect(() => {
-    let isMounted = true;
-    const loadTrendHistory = async () => {
-      // 1. Try finding cached bill for first filtered meter or any saved meter
-      const primaryMeter = filteredMeters[0] || savedMeters[0];
-      if (primaryMeter) {
-        const cached = await StorageService.getCachedBill(primaryMeter.company, primaryMeter.referenceNumber);
-        if (isMounted && cached?.history12Months && cached.history12Months.length > 0) {
-          setHeroHistory(enrichWithCurrentBill(cached));
-          return;
-        }
-      }
-
-      // 2. Try last checked bill in storage
-      const lastChecked = await StorageService.getLastCheckedBill();
-      if (isMounted && lastChecked?.history12Months && lastChecked.history12Months.length > 0) {
-        setHeroHistory(enrichWithCurrentBill(lastChecked));
+  const loadTrendHistory = useCallback(async () => {
+    // 1. Try finding cached bill for first filtered meter or any saved meter
+    const primaryMeter = filteredMeters[0] || savedMeters[0];
+    if (primaryMeter) {
+      const cached = await StorageService.getCachedBill(primaryMeter.company, primaryMeter.referenceNumber);
+      if (cached?.history12Months && cached.history12Months.length > 0) {
+        setHeroHistory(enrichWithCurrentBill(cached));
         return;
       }
+    }
 
-      // 3. If primary meter has lastBillAmount, generate dynamic history
-      if (primaryMeter && primaryMeter.lastBillAmount && primaryMeter.lastBillAmount > 0) {
-        const estimatedUnits = Math.max(50, Math.round(primaryMeter.lastBillAmount / 38));
-        const dyn = generate12MonthHistory(estimatedUnits, primaryMeter.lastBillAmount);
-        if (isMounted) setHeroHistory(dyn);
-        return;
-      }
+    // 2. Try last checked bill in storage
+    const lastChecked = await StorageService.getLastCheckedBill();
+    if (lastChecked?.history12Months && lastChecked.history12Months.length > 0) {
+      setHeroHistory(enrichWithCurrentBill(lastChecked));
+      return;
+    }
 
-      // 4. Default dynamic history based on current total due or fallback
-      const baseAmount = totalDueAmount > 0 ? totalDueAmount : 14500;
-      const baseUnits = Math.max(80, Math.round(baseAmount / 38));
-      const dyn = generate12MonthHistory(baseUnits, baseAmount);
-      if (isMounted) setHeroHistory(dyn);
-    };
+    // 3. If primary meter has lastBillAmount, generate dynamic history
+    if (primaryMeter && primaryMeter.lastBillAmount && primaryMeter.lastBillAmount > 0) {
+      const estimatedUnits = Math.max(50, Math.round(primaryMeter.lastBillAmount / 38));
+      const dyn = generate12MonthHistory(estimatedUnits, primaryMeter.lastBillAmount);
+      setHeroHistory(dyn);
+      return;
+    }
 
-    loadTrendHistory();
-    return () => {
-      isMounted = false;
-    };
+    // 4. Default dynamic history based on current total due or fallback
+    const baseAmount = totalDueAmount > 0 ? totalDueAmount : 14500;
+    const baseUnits = Math.max(80, Math.round(baseAmount / 38));
+    const dyn = generate12MonthHistory(baseUnits, baseAmount);
+    setHeroHistory(dyn);
   }, [filteredMeters, savedMeters, totalDueAmount]);
+
+  useEffect(() => {
+    loadTrendHistory();
+  }, [loadTrendHistory]);
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handlePullRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await NotificationService.autoSyncSavedMeters(isUrdu);
+      onRefreshSaved();
+      await loadTrendHistory();
+    } catch {
+      // ignore
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const handleFetchFailure = (provider: ProviderInfo, refNo: string) => {
     const portalUrl = provider.portalUrl || 'https://bill.pitc.com.pk/';
@@ -222,6 +235,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         style={[styles.container, darkMode ? styles.darkBg : styles.lightBg]}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handlePullRefresh}
+            colors={['#10B981', '#006D35']}
+            tintColor={darkMode ? '#62FF96' : '#006D35'}
+            progressBackgroundColor={darkMode ? '#132033' : '#FFFFFF'}
+          />
+        }
       >
         {/* Dark Navy Hero Header Section with 6-Month SVG Graph */}
         <DashboardHeroCard

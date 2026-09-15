@@ -7,6 +7,7 @@ import {
   Switch,
   Linking,
   Image,
+  RefreshControl,
 } from 'react-native';
 import { TRANSLATIONS, Language } from '../i18n/translations';
 import { APP_CONFIG } from '../constants/appConfig';
@@ -35,6 +36,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   const [savedCount, setSavedCount] = useState<number>(0);
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
   const [popup, setPopup] = useState<PopupConfig>({
     visible: false,
     title: '',
@@ -54,6 +56,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       // ignore
     }
   }, []);
+
+  const handlePullRefresh = async () => {
+    setRefreshing(true);
+    await loadPreferences();
+    setRefreshing(false);
+  };
 
   useEffect(() => {
     loadPreferences();
@@ -218,6 +226,15 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handlePullRefresh}
+            colors={['#10B981', '#006D35']}
+            tintColor={darkMode ? '#62FF96' : '#006D35'}
+            progressBackgroundColor={darkMode ? '#132033' : '#FFFFFF'}
+          />
+        }
       >
         {/* ── 1. Deep Navy Hero Card (Stitch 100% Match) ── */}
         <View style={styles.heroCard}>

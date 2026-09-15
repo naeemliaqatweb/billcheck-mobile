@@ -4,6 +4,7 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
+  RefreshControl,
   Share,
   Linking,
   ActivityIndicator,
@@ -42,6 +43,8 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
 }) => {
   const t = TRANSLATIONS[language];
   const isUrdu = language === 'ur';
+  const [activeBill, setActiveBill] = useState<BillData>(bill);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [showOfficialModal, setShowOfficialModal] = useState(false);
@@ -51,16 +54,20 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
     message: '',
   });
 
+  React.useEffect(() => {
+    setActiveBill(bill);
+  }, [bill]);
+
   // Check on mount if this meter is already saved in local storage
   React.useEffect(() => {
     let isMounted = true;
     const checkSavedStatus = async () => {
       try {
         const saved = await StorageService.getSavedMeters();
-        const cleanRef = bill.referenceNo.replace(/[^0-9a-zA-Z]/g, '').trim();
+        const cleanRef = activeBill.referenceNo.replace(/[^0-9a-zA-Z]/g, '').trim();
         const alreadyExists = saved.some(
           (m) =>
-            m.company === bill.company &&
+            m.company === activeBill.company &&
             m.referenceNumber.replace(/[^0-9a-zA-Z]/g, '').trim() === cleanRef
         );
         if (isMounted) {
@@ -74,36 +81,51 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [bill.company, bill.referenceNo]);
+  }, [activeBill.company, activeBill.referenceNo]);
+
+  const handlePullRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const fresh = await ApiService.fetchBill(activeBill.company, activeBill.referenceNo, true);
+      if (fresh) {
+        await StorageService.cacheBill(fresh);
+        setActiveBill(fresh);
+      }
+    } catch {
+      // keep current data
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const [openHistory, setOpenHistory] = useState(false);
   const [openPortal, setOpenPortal] = useState(false);
   const [openNotices, setOpenNotices] = useState(false);
 
-  const provider = ALL_PROVIDERS.find((p) => p.code === bill.company);
-  const providerFullName = bill.companyName || provider?.fullName || `${bill.company} Electric Supply Company`;
-  const portalUrl = provider?.portalUrl || bill.sourceUrl || 'https://bill.pitc.com.pk/';
+  const provider = ALL_PROVIDERS.find((p) => p.code === activeBill.company);
+  const providerFullName = activeBill.companyName || provider?.fullName || `${activeBill.company} Electric Supply Company`;
+  const portalUrl = provider?.portalUrl || activeBill.sourceUrl || 'https://bill.pitc.com.pk/';
   const officialSite = provider?.officialSite || 'https://www.lesco.gov.pk/';
 
   // Calculated or dynamic values
-  const peakUnits = Math.round(bill.unitsConsumed * 0.245) || 84;
-  const offPeakUnits = Math.max(0, bill.unitsConsumed - peakUnits) || 258;
-  const peakPercent = bill.unitsConsumed > 0 ? `${Math.round((peakUnits / bill.unitsConsumed) * 100)}%` : '25%';
-  const offPeakPercent = bill.unitsConsumed > 0 ? `${Math.round((offPeakUnits / bill.unitsConsumed) * 100)}%` : '75%';
+  const peakUnits = Math.round(activeBill.unitsConsumed * 0.245) || 84;
+  const offPeakUnits = Math.max(0, activeBill.unitsConsumed - peakUnits) || 258;
+  const peakPercent = activeBill.unitsConsumed > 0 ? `${Math.round((peakUnits / activeBill.unitsConsumed) * 100)}%` : '25%';
+  const offPeakPercent = activeBill.unitsConsumed > 0 ? `${Math.round((offPeakUnits / activeBill.unitsConsumed) * 100)}%` : '75%';
 
   // Tariff charges breakdown
   const electricityCost =
-    bill.totalElectricityCharges ||
-    Math.max(0, bill.payableWithinDueDate - (bill.fpaAmount || 1420) - (bill.electricityDuty || 840) - (bill.gstAmount || 1765) - (bill.tvFee || 35)) ||
+    activeBill.totalElectricityCharges ||
+    Math.max(0, activeBill.payableWithinDueDate - (activeBill.fpaAmount || 1420) - (activeBill.electricityDuty || 840) - (activeBill.gstAmount || 1765) - (activeBill.tvFee || 35)) ||
     10260;
-  const fpaAmount = bill.fpaAmount || 1420;
-  const fcAndEd = (bill.electricityDuty || 0) + (bill.chargesBreakdown?.find((c) => c.labelEn.includes('FC'))?.value || 840);
-  const gstAndTv = (bill.gstAmount || 0) + (bill.tvFee || 0) || 1800;
+  const fpaAmount = activeBill.fpaAmount || 1420;
+  const fcAndEd = (activeBill.electricityDuty || 0) + (activeBill.chargesBreakdown?.find((c) => c.labelEn.includes('FC'))?.value || 840);
+  const gstAndTv = (activeBill.gstAmount || 0) + (activeBill.tvFee || 0) || 1800;
 
   // Format fetch date
   const formatFetchDate = () => {
     try {
-      const d = bill.fetchedAt ? new Date(bill.fetchedAt) : new Date();
+      const d = activeBill.fetchedAt ? new Date(activeBill.fetchedAt) : new Date();
       const day = d.getDate();
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const monthStr = months[d.getMonth()];
@@ -122,7 +144,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `📋 *${bill.company} Bill Details*\n👤 Consumer: ${bill.consumerName}\n🔢 Ref No: ${bill.formattedRefNo || bill.referenceNo}\n🏢 Sub Division: ${bill.subDivision || 'N/A'}\n💰 Amount Due: PKR ${bill.payableWithinDueDate.toLocaleString()}\n📅 Due Date: ${bill.dueDate}\n⚡ Units Consumed: ${bill.unitsConsumed} kWh\n\nChecked via BillCheck PK App`,
+        message: `📋 *${activeBill.company} Bill Details*\n👤 Consumer: ${activeBill.consumerName}\n🔢 Ref No: ${activeBill.formattedRefNo || activeBill.referenceNo}\n🏢 Sub Division: ${activeBill.subDivision || 'N/A'}\n💰 Amount Due: PKR ${activeBill.payableWithinDueDate.toLocaleString()}\n📅 Due Date: ${activeBill.dueDate}\n⚡ Units Consumed: ${activeBill.unitsConsumed} kWh\n\nChecked via BillCheck PK App`,
       });
     } catch {
       // ignore
@@ -133,7 +155,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
     setIsDownloadingPdf(true);
     try {
       // 1. Fetch authentic official duplicate bill from backend API
-      await ApiService.fetchOfficialBillPdfDocument(bill.company, bill.referenceNo, bill.consumerId);
+      await ApiService.fetchOfficialBillPdfDocument(activeBill.company, activeBill.referenceNo, activeBill.consumerId);
       // 2. Open Official In-App Bill Modal directly inside the app
       setShowOfficialModal(true);
     } catch {
@@ -143,11 +165,20 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
     }
   };
 
+  const handleOpenDuplicateOnline = () => {
+    const directUrl =
+      activeBill.sourceUrl ||
+      `https://bill.pitc.com.pk/${activeBill.company.toLowerCase()}bill/general?refno=${activeBill.referenceNo}`;
+    Linking.openURL(directUrl).catch(() => {
+      Linking.openURL(portalUrl);
+    });
+  };
+
   const handleSaveToDevice = async () => {
     try {
       await Share.share({
-        title: `${bill.company} Official Bill Copy`,
-        message: `📄 *${bill.company} Official Duplicate Bill*\n👤 Consumer: ${bill.consumerName}\n🔢 Ref: ${bill.formattedRefNo || bill.referenceNo}\n💰 Amount: PKR ${bill.payableWithinDueDate.toLocaleString()}\n📅 Due Date: ${bill.dueDate}\n\nOfficial Portal: ${portalUrl || bill.sourceUrl || 'https://bill.pitc.com.pk/'}\n\nVerified via BillCheck PK`,
+        title: `${activeBill.company} Official Bill Copy`,
+        message: `📄 *${activeBill.company} Official Duplicate Bill*\n👤 Consumer: ${activeBill.consumerName}\n🔢 Ref: ${activeBill.formattedRefNo || activeBill.referenceNo}\n💰 Amount: PKR ${activeBill.payableWithinDueDate.toLocaleString()}\n📅 Due Date: ${activeBill.dueDate}\n\nOfficial Portal: ${portalUrl || activeBill.sourceUrl || 'https://bill.pitc.com.pk/'}\n\nVerified via BillCheck PK`,
       });
 
       setPopup({
@@ -155,8 +186,8 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
         type: 'success',
         title: isUrdu ? '🎉 بل محفوظ ہو گیا!' : '🎉 Bill Saved!',
         message: isUrdu
-          ? `${bill.company} کا بل کامیابی سے آپ کے فون میں محفوظ ہو گیا ہے۔\n\n📁 لوکیشن:\n/storage/emulated/0/Download/Official_Bill_${bill.company}_${bill.referenceNo}.pdf`
-          : `Official duplicate bill for ${bill.company} has been exported to your phone.\n\n📁 File Path:\n/storage/emulated/0/Download/Official_Bill_${bill.company}_${bill.referenceNo}.pdf`,
+          ? `${activeBill.company} کا بل کامیابی سے آپ کے فون میں محفوظ ہو گیا ہے۔\n\n📁 لوکیشن:\n/storage/emulated/0/Download/Official_Bill_${activeBill.company}_${activeBill.referenceNo}.pdf`
+          : `Official duplicate bill for ${activeBill.company} has been exported to your phone.\n\n📁 File Path:\n/storage/emulated/0/Download/Official_Bill_${activeBill.company}_${activeBill.referenceNo}.pdf`,
         primaryText: isUrdu ? 'ٹھیک ہے' : 'OK',
         onClose: () => setPopup((p) => ({ ...p, visible: false })),
       });
@@ -171,8 +202,8 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
       type: 'info',
       title: `${partner} Payment - 1Link 1Bill`,
       message: isUrdu
-        ? `آپ اپنے بینک ایپ، ${partner} یا JazzCash میں جا کر '1Bill / Utility Bills' میں ${bill.company} منتخب کریں اور اپنا 14 ہندسوں کا ریفرنس نمبر (${bill.referenceNo}) درج کر کے براہ راست بل ادا کر سکتے ہیں۔`
-        : `To pay via ${partner}, open your app, navigate to '1Bill / Utility Bills', select '${bill.company}', and enter your 14-digit reference number (${bill.referenceNo}) to pay instantly.`,
+        ? `آپ اپنے بینک ایپ، ${partner} یا JazzCash میں جا کر '1Bill / Utility Bills' میں ${activeBill.company} منتخب کریں اور اپنا 14 ہندسوں کا ریفرنس نمبر (${activeBill.referenceNo}) درج کر کے براہ راست بل ادا کر سکتے ہیں۔`
+        : `To pay via ${partner}, open your app, navigate to '1Bill / Utility Bills', select '${activeBill.company}', and enter your 14-digit reference number (${activeBill.referenceNo}) to pay instantly.`,
       primaryText: isUrdu ? 'ٹھیک ہے' : 'Got it',
       onClose: () => setPopup((p) => ({ ...p, visible: false })),
     });
@@ -180,15 +211,15 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
 
   const handleSaveMeter = async () => {
     const success = await StorageService.saveMeter({
-      id: `${bill.company}_${bill.referenceNo}`,
-      nickname: `${bill.company} (${bill.consumerName.split(' ')[0]})`,
-      company: bill.company,
-      referenceNumber: bill.referenceNo,
-      utilityType: bill.utilityType,
+      id: `${activeBill.company}_${activeBill.referenceNo}`,
+      nickname: `${activeBill.company} (${activeBill.consumerName.split(' ')[0]})`,
+      company: activeBill.company,
+      referenceNumber: activeBill.referenceNo,
+      utilityType: activeBill.utilityType,
       lastCheckedDate: new Date().toISOString().split('T')[0],
-      lastBillAmount: bill.payableWithinDueDate,
-      lastDueDate: bill.dueDate,
-      lastBillStatus: bill.billStatus,
+      lastBillAmount: activeBill.payableWithinDueDate,
+      lastDueDate: activeBill.dueDate,
+      lastBillStatus: activeBill.billStatus,
     });
 
     if (success) {
@@ -198,8 +229,8 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
         type: 'success',
         title: isUrdu ? '🎉 میٹر محفوظ ہو گیا!' : '🎉 Meter Saved Successfully!',
         message: isUrdu
-          ? `${bill.company} کا میٹر (${bill.referenceNo}) آپ کی لسٹ میں محفوظ ہو گیا ہے۔`
-          : `${bill.company} meter (${bill.referenceNo}) is now saved to your dashboard list.`,
+          ? `${activeBill.company} کا میٹر (${activeBill.referenceNo}) آپ کی لسٹ میں محفوظ ہو گیا ہے۔`
+          : `${activeBill.company} meter (${activeBill.referenceNo}) is now saved to your dashboard list.`,
         primaryText: isUrdu ? 'ٹھیک ہے' : 'OK',
         onClose: () => {
           setPopup((p) => ({ ...p, visible: false }));
@@ -256,6 +287,15 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.contentContainer}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handlePullRefresh}
+            colors={['#10B981', '#006D35']}
+            tintColor={darkMode ? '#62FF96' : '#006D35'}
+            progressBackgroundColor={darkMode ? '#132033' : '#FFFFFF'}
+          />
+        }
       >
         {/* Verification Banner Pill */}
         <View style={[styles.bannerContainer, darkMode ? styles.bannerDark : styles.bannerLight]}>
@@ -269,7 +309,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
             </Text>
           </View>
           <View style={styles.bannerCompanyBadge}>
-            <Text style={styles.bannerCompanyBadgeText}>{bill.company}</Text>
+            <Text style={styles.bannerCompanyBadgeText}>{activeBill.company}</Text>
           </View>
         </View>
 
@@ -284,7 +324,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
                   <View style={styles.heroAmountNumberGroup}>
                     <Text style={styles.heroPkrCurrency}>PKR</Text>
                     <Text style={styles.heroAmountValue}>
-                      {bill.payableWithinDueDate.toLocaleString()}
+                      {activeBill.payableWithinDueDate.toLocaleString()}
                     </Text>
                   </View>
                 </View>
@@ -294,18 +334,18 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
                   <View
                     style={[
                       styles.statusChip,
-                      bill.billStatus === 'paid' ? styles.statusChipPaid : styles.statusChipUnpaid,
+                      activeBill.billStatus === 'paid' ? styles.statusChipPaid : styles.statusChipUnpaid,
                     ]}
                   >
                     <View
-                      style={bill.billStatus === 'paid' ? styles.statusDotPaid : styles.statusDotUnpaid}
+                      style={activeBill.billStatus === 'paid' ? styles.statusDotPaid : styles.statusDotUnpaid}
                     />
                     <Text
                       style={
-                        bill.billStatus === 'paid' ? styles.statusChipTextPaid : styles.statusChipTextUnpaid
+                        activeBill.billStatus === 'paid' ? styles.statusChipTextPaid : styles.statusChipTextUnpaid
                       }
                     >
-                      {bill.billStatus === 'paid' ? t.statusPaid : t.statusUnpaid}
+                      {activeBill.billStatus === 'paid' ? t.statusPaid : t.statusUnpaid}
                     </Text>
                   </View>
                   <Text style={styles.statusSubText}>{t.withinDueDate}</Text>
@@ -321,7 +361,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
                     <AppIcon name="calendar" size={13} color="#778598" />
                     <Text style={styles.heroInfoBoxLabel}>{t.dueDate}</Text>
                   </View>
-                  <Text style={styles.heroInfoBoxValue}>{bill.dueDate}</Text>
+                  <Text style={styles.heroInfoBoxValue}>{activeBill.dueDate}</Text>
                 </View>
 
                 <View style={styles.heroInfoBox}>
@@ -330,7 +370,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
                     <Text style={styles.heroInfoBoxLabel}>{t.afterDueDate}</Text>
                   </View>
                   <Text style={styles.heroInfoBoxValue}>
-                    Rs. {bill.payableAfterDueDate.toLocaleString()}
+                    Rs. {activeBill.payableAfterDueDate.toLocaleString()}
                   </Text>
                 </View>
               </View>
@@ -352,7 +392,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
                 {t.latePaymentSurchargeApplied}
               </Text>
               <Text style={styles.surchargeNoticeValue}>
-                +Rs. {bill.latePaymentSurcharge.toLocaleString()}
+                +Rs. {activeBill.latePaymentSurcharge.toLocaleString()}
               </Text>
             </View>
           </View>
@@ -373,7 +413,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
                 ]}
               >
                 <Text style={styles.cardRightBadgeText}>
-                  {bill.consumerDetails?.category || bill.tariff || 'Domestic A-1a'}
+                  {activeBill.consumerDetails?.category || activeBill.tariff || 'Domestic A-1a'}
                 </Text>
               </View>
             </View>
@@ -390,12 +430,12 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
                   isUrdu && styles.rtlText,
                 ]}
               >
-                {bill.consumerName}
+                {activeBill.consumerName}
               </Text>
             </View>
 
             {/* Consumer Address Row (if present) */}
-            {Boolean(bill.consumerAddress) && (
+            {Boolean(activeBill.consumerAddress) && (
               <View style={styles.detailRow}>
                 <Text style={[styles.detailLabel, darkMode ? styles.darkSub : styles.lightSub]}>
                   {t.consumerAddress}
@@ -407,7 +447,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
                     isUrdu && styles.rtlText,
                   ]}
                 >
-                  {bill.consumerAddress}
+                  {activeBill.consumerAddress}
                 </Text>
               </View>
             )}
@@ -419,7 +459,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
               </Text>
               <View style={[styles.monoRefChip, darkMode ? styles.monoRefChipDark : styles.monoRefChipLight]}>
                 <Text style={[styles.monoRefText, darkMode ? styles.darkText : styles.lightText]}>
-                  {bill.formattedRefNo || bill.referenceNo}
+                  {activeBill.formattedRefNo || activeBill.referenceNo}
                 </Text>
               </View>
             </View>
@@ -431,7 +471,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
                   {t.meterNo}
                 </Text>
                 <Text style={[styles.subInfoBoxValue, darkMode ? styles.darkText : styles.lightText]}>
-                  {bill.meterNo || '4092184'}
+                  {activeBill.meterNo || '4092184'}
                 </Text>
               </View>
 
@@ -440,7 +480,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
                   {t.billMonth}
                 </Text>
                 <Text style={[styles.subInfoBoxValue, darkMode ? styles.darkText : styles.lightText]}>
-                  {bill.billMonth || 'NOV 2024'}
+                  {activeBill.billMonth || 'NOV 2024'}
                 </Text>
               </View>
             </View>
@@ -452,7 +492,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
                   {t.unitsConsumed}
                 </Text>
                 <Text style={styles.unitsBigValue}>
-                  {bill.unitsConsumed} <Text style={styles.unitsUnitSuffix}>kWh</Text>
+                  {activeBill.unitsConsumed} <Text style={styles.unitsUnitSuffix}>kWh</Text>
                 </Text>
               </View>
 
@@ -561,7 +601,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
                   {t.netAmountDue}
                 </Text>
                 <Text style={styles.netTotalValue}>
-                  Rs. {bill.payableWithinDueDate.toLocaleString()}
+                  Rs. {activeBill.payableWithinDueDate.toLocaleString()}
                 </Text>
               </View>
             </View>
@@ -581,20 +621,20 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
             title="12-Month Consumption & History"
             urduTitle="12 ماہ کی بلنگ ہسٹری اور یونٹس"
             iconName="stats"
-            badge={`${bill.history12Months?.length || 12} Months`}
+            badge={`${activeBill.history12Months?.length || 12} Months`}
             isOpen={openHistory}
             onToggle={() => setOpenHistory(!openHistory)}
             darkMode={darkMode}
             isUrdu={isUrdu}
           >
-            <ConsumptionChart history={bill.history12Months || []} darkMode={darkMode} language={language} />
+            <ConsumptionChart history={activeBill.history12Months || []} darkMode={darkMode} language={language} />
             <View style={{ marginTop: 12 }}>
-              <HistoryTable history={bill.history12Months || []} darkMode={darkMode} language={language} />
+              <HistoryTable history={activeBill.history12Months || []} darkMode={darkMode} language={language} />
             </View>
           </AccordionSection>
 
           {/* Official Notices (if present) */}
-          {(bill.fpaMessage || bill.subsidyMessage) && (
+          {(activeBill.fpaMessage || activeBill.subsidyMessage) && (
             <AccordionSection
               id="notices"
               title="Official Notices & Subsidies"
@@ -606,7 +646,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
               darkMode={darkMode}
               isUrdu={isUrdu}
             >
-              <NoticesCard bill={bill} darkMode={darkMode} isUrdu={isUrdu} />
+              <NoticesCard bill={activeBill} darkMode={darkMode} isUrdu={isUrdu} />
             </AccordionSection>
           )}
 

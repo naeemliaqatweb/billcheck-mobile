@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Linking } from 'react-native';
+import { View, Text, ScrollView, Linking, RefreshControl } from 'react-native';
 import {
   ELECTRICITY_PROVIDERS,
   GAS_PROVIDERS,
@@ -49,11 +49,21 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
   const [referenceNo, setReferenceNo] = useState('');
   const [nickname, setNickname] = useState('');
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [popup, setPopup] = useState<PopupConfig>({
     visible: false,
     title: '',
     message: '',
   });
+
+  const handlePullRefresh = () => {
+    setRefreshing(true);
+    setReferenceNo('');
+    setNickname('');
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 400);
+  };
 
   useEffect(() => {
     if (initialProvider) {
@@ -194,6 +204,15 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handlePullRefresh}
+            colors={['#10B981', '#006D35']}
+            tintColor={darkMode ? '#62FF96' : '#006D35'}
+            progressBackgroundColor={darkMode ? '#132033' : '#FFFFFF'}
+          />
+        }
       >
         {/* Subtitle & Context */}
         <AddBillSubtitleSection
