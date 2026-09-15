@@ -134,9 +134,10 @@ export const ApiService = {
       }
     }
 
-    // ── Offline fallback ─────────────────────────────────────────────────────
-    return this.generateOfflineBill(company, cleanRef);
+    // When live server cannot reach provider portal, throw error so UI offers direct official portal link
+    throw new Error(`Live bill data could not be fetched from ${company} server. Please view your authentic bill directly on the official portal.`);
   },
+
 
   /**
    * Fetches the official duplicate bill document/PDF from the backend API gateway.
