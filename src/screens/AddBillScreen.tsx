@@ -236,7 +236,6 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
           onChangeNickname={setNickname}
           darkMode={darkMode}
           isUrdu={isUrdu}
-          onOpenRefGuide={() => setShowRefGuideModal(true)}
           labels={{
             selectDistCompany: t.selectDistCompany,
             discoSngplBadge: t.discoSngplBadge,

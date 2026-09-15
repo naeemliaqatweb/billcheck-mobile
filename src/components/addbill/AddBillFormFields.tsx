@@ -16,7 +16,6 @@ interface AddBillFormFieldsProps {
   onChangeNickname: (text: string) => void;
   darkMode: boolean;
   isUrdu: boolean;
-  onOpenRefGuide?: () => void;
   labels: {
     selectDistCompany: string;
     discoSngplBadge: string;
@@ -44,7 +43,6 @@ export const AddBillFormFields: React.FC<AddBillFormFieldsProps> = ({
   onChangeNickname,
   darkMode,
   isUrdu,
-  onOpenRefGuide,
   labels,
 }) => {
   const logo = getProviderLogo(selectedProvider.code);
@@ -166,35 +164,7 @@ export const AddBillFormFields: React.FC<AddBillFormFieldsProps> = ({
               {refLabel}
             </Text>
           </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            {onOpenRefGuide && (
-              <TouchableOpacity
-                onPress={onOpenRefGuide}
-                activeOpacity={0.7}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 3,
-                  backgroundColor: darkMode ? '#1E293B' : '#E0F2FE',
-                  paddingHorizontal: 7,
-                  paddingVertical: 3,
-                  borderRadius: 6,
-                }}
-              >
-                <AppIcon name="help-circle" size={12} color="#0284C7" />
-                <Text
-                  style={{
-                    fontSize: 10,
-                    fontWeight: '700',
-                    color: '#0284C7',
-                  }}
-                >
-                  {isUrdu ? 'بل پر کہاں ہے؟' : 'Where on bill?'}
-                </Text>
-              </TouchableOpacity>
-            )}
-            <Text style={styles.requiredText}>{labels.requiredBadge}</Text>
-          </View>
+          <Text style={styles.requiredText}>{labels.requiredBadge}</Text>
         </View>
 
         <View
