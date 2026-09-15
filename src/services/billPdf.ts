@@ -1,5 +1,7 @@
 import { BillData } from '../types/bill';
-import { Linking, Platform } from 'react-native';
+import { Linking, Platform, NativeModules } from 'react-native';
+
+const { BillNotificationModule } = NativeModules;
 
 export interface DownloadPdfResult {
   success: boolean;
@@ -55,22 +57,39 @@ export const BillPdfService = {
   },
 
   /**
-   * Directly opens the authentic official duplicate bill in the system browser / print preview engine.
+   * Directly opens the authentic official duplicate bill inside the app via native Android Print & PDF engine.
    */
   async requestOfficialBillPdf(bill: BillData): Promise<DownloadPdfResult> {
     const cleanRef = bill.referenceNo.replace(/[^0-9a-zA-Z]/g, '').trim();
     const officialUrl = this.getOfficialPortalDuplicateUrl(bill.company, cleanRef);
     const fileName = `Official_Bill_${bill.company}_${cleanRef}.pdf`;
+    const jobName = `${bill.company}_Bill_${cleanRef}`;
 
     try {
-      const supported = await Linking.canOpenURL(officialUrl);
-      if (supported) {
-        await Linking.openURL(officialUrl);
-      } else {
-        await Linking.openURL(officialUrl);
+      if (
+        Platform.OS === 'android' &&
+        BillNotificationModule &&
+        typeof BillNotificationModule.printOfficialBill === 'function'
+      ) {
+        const handled = await BillNotificationModule.printOfficialBill(officialUrl, jobName);
+        if (handled) {
+          return {
+            success: true,
+            officialUrl,
+            provider: bill.company,
+            fileName,
+          };
+        }
       }
     } catch {
+      // ignore and fallback
+    }
+
+    // Fallback to browser only if native print is unavailable
+    try {
       await Linking.openURL(officialUrl).catch(() => {});
+    } catch {
+      // ignore
     }
 
     return {

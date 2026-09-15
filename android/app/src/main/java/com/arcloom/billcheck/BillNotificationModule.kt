@@ -7,6 +7,12 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
+import android.print.PrintAttributes
+import android.print.PrintManager
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -117,6 +123,60 @@ class BillNotificationModule(private val reactContext: ReactApplicationContext) 
             val notifId = (tag?.hashCode() ?: System.currentTimeMillis().toInt()) and 0x7FFFFFFF
             notificationManager.notify(notifId, builder.build())
             promise.resolve(true)
+        } catch (e: Exception) {
+            promise.resolve(false)
+        }
+    }
+
+    @ReactMethod
+    fun printOfficialBill(url: String, jobName: String, promise: Promise) {
+        try {
+            val currentAct = reactApplicationContext.currentActivity
+            if (currentAct == null) {
+                promise.resolve(false)
+                return
+            }
+
+            Handler(Looper.getMainLooper()).post {
+                try {
+                    val webView = WebView(currentAct)
+                    webView.settings.javaScriptEnabled = true
+                    webView.settings.domStorageEnabled = true
+                    webView.settings.loadWithOverviewMode = true
+                    webView.settings.useWideViewPort = true
+
+                    webView.webViewClient = object : WebViewClient() {
+                        private var hasPrinted = false
+
+                        override fun onPageFinished(view: WebView?, loadedUrl: String?) {
+                            super.onPageFinished(view, loadedUrl)
+                            if (hasPrinted) return
+                            hasPrinted = true
+
+                            try {
+                                val printManager = currentAct.getSystemService(Context.PRINT_SERVICE) as? PrintManager
+                                if (printManager != null && view != null) {
+                                    val printAdapter = view.createPrintDocumentAdapter(jobName)
+                                    val printAttributes = PrintAttributes.Builder()
+                                        .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
+                                        .setColorMode(PrintAttributes.COLOR_MODE_COLOR)
+                                        .build()
+                                    printManager.print(jobName, printAdapter, printAttributes)
+                                    promise.resolve(true)
+                                } else {
+                                    promise.resolve(false)
+                                }
+                            } catch (e: Exception) {
+                                promise.resolve(false)
+                            }
+                        }
+                    }
+
+                    webView.loadUrl(url)
+                } catch (e: Exception) {
+                    promise.resolve(false)
+                }
+            }
         } catch (e: Exception) {
             promise.resolve(false)
         }
