@@ -10,6 +10,7 @@ import { SavedMeter } from '../../types/bill';
 import { AppIcon } from '../AppIcon';
 import { ProviderLogo } from '../ProviderLogo';
 import { Language } from '../../i18n/translations';
+import { NotificationService } from '../../services/notification';
 
 interface DashboardBillCardProps {
   meter: SavedMeter;
@@ -139,6 +140,19 @@ export const DashboardBillCard: React.FC<DashboardBillCardProps> = ({
             </View>
           </View>
         </View>
+
+        {/* Expected Next Bill Date Indicator */}
+        {dueDate ? (
+          <View style={[styles.predictionRow, darkMode ? styles.predictionRowDark : styles.predictionRowLight]}>
+            <AppIcon name="bell" size={12} color={darkMode ? '#62FF96' : '#006D35'} />
+            <Text style={[styles.predictionText, darkMode ? styles.predictionTextDark : styles.predictionTextLight]}>
+              {isUrdu ? 'اگلا بل متوقع:' : 'Next Bill Expected:'}{' '}
+              <Text style={{ fontWeight: '800' }}>
+                {NotificationService.predictNextBillReleaseDate(dueDate, isUrdu)}
+              </Text>
+            </Text>
+          </View>
+        ) : null}
 
         {/* Action Buttons Grid */}
         <View style={styles.actionGrid}>
@@ -415,7 +429,36 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
   },
   lightSub: {
-    color: '#64748B',
+    color: '#334155',
+  },
+  predictionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    marginBottom: 10,
+    marginTop: 2,
+    borderWidth: 1,
+  },
+  predictionRowDark: {
+    backgroundColor: '#0F1C2C',
+    borderColor: 'rgba(98, 255, 150, 0.2)',
+  },
+  predictionRowLight: {
+    backgroundColor: '#F0FDF4',
+    borderColor: '#BBF7D0',
+  },
+  predictionText: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  predictionTextDark: {
+    color: '#94A3B8',
+  },
+  predictionTextLight: {
+    color: '#166534',
   },
   rtlRow: {
     flexDirection: 'row-reverse',

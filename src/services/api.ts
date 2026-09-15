@@ -11,8 +11,9 @@ const BACKEND_URLS = [
 ];
 
 
-// Cache fresh for 12 hours (utility bills only update once per month)
-const CACHE_TTL_MS = 12 * 60 * 60 * 1000;
+// Cache fresh for 30 days (utility bills only update once per month)
+// When a new month's bill is generated, the old cache is automatically updated/replaced.
+const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 /**
  * Generates a simulated 13-month bill history for offline/fallback use.
