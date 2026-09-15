@@ -1,13 +1,15 @@
 import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image } from 'react-native';
-import { ProviderInfo } from '../../constants/providers';
+import { ProviderInfo, ELECTRICITY_PROVIDERS, GAS_PROVIDERS } from '../../constants/providers';
 import { getProviderLogo } from '../../constants/providerLogos';
 import { AppIcon } from '../AppIcon';
 import { styles } from '../../styles/AddBillScreen.styles';
 
 interface AddBillFormFieldsProps {
   selectedProvider: ProviderInfo;
-  onChangeProvider: () => void;
+  onSelectProvider?: (provider: ProviderInfo) => void;
+  availableProviders?: ProviderInfo[];
+  onChangeProvider?: () => void;
   referenceNo: string;
   onChangeReferenceNo: (text: string) => void;
   onClearReferenceNo: () => void;
@@ -35,7 +37,8 @@ interface AddBillFormFieldsProps {
 
 export const AddBillFormFields: React.FC<AddBillFormFieldsProps> = ({
   selectedProvider,
-  onChangeProvider,
+  onSelectProvider,
+  availableProviders,
   referenceNo,
   onChangeReferenceNo,
   onClearReferenceNo,
@@ -47,7 +50,9 @@ export const AddBillFormFields: React.FC<AddBillFormFieldsProps> = ({
   onOpenRefGuide,
   labels,
 }) => {
-  const logo = getProviderLogo(selectedProvider.code);
+  const providerList =
+    availableProviders ||
+    (selectedProvider.type === 'gas' ? GAS_PROVIDERS : ELECTRICITY_PROVIDERS);
 
   const refLabel =
     selectedProvider.type === 'gas' ||
@@ -58,7 +63,7 @@ export const AddBillFormFields: React.FC<AddBillFormFieldsProps> = ({
 
   return (
     <View style={[styles.formCard, darkMode ? styles.darkCard : styles.lightCard]}>
-      {/* Field 1: Distribution Company Selector */}
+      {/* Field 1: Distribution Company Selector Grid */}
       <View style={styles.fieldGroup}>
         <View style={styles.fieldLabelRow}>
           <View style={styles.fieldLabelLeft}>
@@ -80,75 +85,96 @@ export const AddBillFormFields: React.FC<AddBillFormFieldsProps> = ({
                 darkMode ? styles.darkSub : styles.lightSub,
               ]}
             >
-              {labels.discoSngplBadge}
+              {selectedProvider.type === 'gas'
+                ? isUrdu
+                  ? 'سوئی گیس'
+                  : '2 Gas Companies'
+                : isUrdu
+                ? '11 ڈسکوز'
+                : '11 DISCOs'}
             </Text>
           </View>
         </View>
 
-        {/* Selected Provider Box with Change Button */}
-        <TouchableOpacity
-          style={[
-            styles.providerSelectedBox,
-            darkMode ? styles.darkInput : styles.lightInput,
-            { borderColor: darkMode ? '#334155' : '#CBD5E1' },
-          ]}
-          onPress={onChangeProvider}
-          activeOpacity={0.7}
-        >
-          <View style={styles.providerSelectedLeft}>
-            <View
-              style={[
-                styles.selectedLogoBox,
-                darkMode ? styles.darkBox : styles.lightBox,
-              ]}
-            >
-              {logo ? (
-                <Image
-                  source={logo}
-                  style={styles.selectedLogoImg}
-                  resizeMode="contain"
-                />
-              ) : (
-                <AppIcon name="bolt" size={20} color="#006D35" />
-              )}
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text
-                style={[
-                  styles.selectedCodeText,
-                  darkMode ? styles.darkText : styles.lightText,
-                ]}
-              >
-                {selectedProvider.name}
-              </Text>
-              <Text
-                style={[
-                  styles.selectedFullNameText,
-                  darkMode ? styles.darkSub : styles.lightSub,
-                ]}
-                numberOfLines={2}
-              >
-                {selectedProvider.fullName}
-              </Text>
-            </View>
-          </View>
+        {/* Provider Selection Grid */}
+        <View style={styles.providerGrid}>
+          {providerList.map((provider) => {
+            const isSelected = selectedProvider.code === provider.code;
+            const provLogo = getProviderLogo(provider.code);
+            const isGas = provider.type === 'gas';
 
-          <View
-            style={[
-              styles.changeBtn,
-              darkMode ? styles.darkBox : styles.lightBox,
-            ]}
-          >
-            <Text
-              style={[
-                styles.changeBtnText,
-                darkMode && styles.changeBtnTextDark,
-              ]}
-            >
-              {labels.changeCompany}
-            </Text>
-          </View>
-        </TouchableOpacity>
+            return (
+              <TouchableOpacity
+                key={provider.code}
+                style={[
+                  styles.gridCard,
+                  isGas && styles.gridCardGas,
+                  darkMode ? styles.gridCardDark : styles.gridCardLight,
+                  isSelected &&
+                    (darkMode
+                      ? styles.gridCardActiveDark
+                      : styles.gridCardActiveLight),
+                ]}
+                onPress={() => onSelectProvider && onSelectProvider(provider)}
+                activeOpacity={0.7}
+              >
+                {/* Active Checkmark Badge */}
+                {isSelected && (
+                  <View style={styles.gridActiveCheckBadge}>
+                    <AppIcon name="check" size={9} color="#FFFFFF" strokeWidth={3} />
+                  </View>
+                )}
+
+                <View
+                  style={[
+                    styles.gridLogoBox,
+                    darkMode ? styles.darkBox : styles.lightBox,
+                    isSelected && {
+                      borderColor: darkMode ? '#3FFF8B' : '#059669',
+                    },
+                  ]}
+                >
+                  {provLogo ? (
+                    <Image
+                      source={provLogo}
+                      style={styles.gridLogoImg}
+                      resizeMode="contain"
+                    />
+                  ) : (
+                    <AppIcon
+                      name="bolt"
+                      size={16}
+                      color={isSelected ? '#10B981' : '#006D35'}
+                    />
+                  )}
+                </View>
+
+                <Text
+                  style={[
+                    styles.gridCodeText,
+                    darkMode ? styles.darkText : styles.lightText,
+                    isSelected && {
+                      color: darkMode ? '#3FFF8B' : '#006D35',
+                    },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {provider.name}
+                </Text>
+
+                <Text
+                  style={[
+                    styles.gridRegionText,
+                    darkMode ? styles.darkSub : styles.lightSub,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {provider.region ? provider.region.split(',')[0] : provider.fullName}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
 
       {/* Field 2: Reference Number */}

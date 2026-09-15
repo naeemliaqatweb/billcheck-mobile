@@ -202,7 +202,82 @@ export const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // Provider Selected Box
+  // Provider Grid inside Add Bill
+  providerGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginTop: 6,
+  },
+  gridCard: {
+    width: '31.3%',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    marginBottom: 2,
+  },
+  gridCardGas: {
+    width: '48.5%',
+  },
+  gridCardDark: {
+    backgroundColor: '#0F1C2C',
+    borderColor: '#284163',
+  },
+  gridCardLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#D5E2EE',
+  },
+  gridCardActiveDark: {
+    backgroundColor: 'rgba(0, 109, 53, 0.25)',
+    borderColor: '#3FFF8B',
+  },
+  gridCardActiveLight: {
+    backgroundColor: '#ECFDF5',
+    borderColor: '#059669',
+  },
+  gridLogoBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    padding: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 5,
+    borderWidth: 1,
+  },
+  gridLogoImg: {
+    width: '100%',
+    height: '100%',
+  },
+  gridCodeText: {
+    fontSize: 12,
+    fontWeight: '800',
+    textAlign: 'center',
+    letterSpacing: -0.2,
+  },
+  gridRegionText: {
+    fontSize: 8.5,
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  gridActiveCheckBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 15,
+    height: 15,
+    borderRadius: 7.5,
+    backgroundColor: '#10B981',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Provider Selected Box (Legacy/Compact)
   providerSelectedBox: {
     flexDirection: 'row',
     alignItems: 'center',
