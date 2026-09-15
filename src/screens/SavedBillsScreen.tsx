@@ -43,6 +43,7 @@ export const SavedBillsScreen: React.FC<SavedBillsScreenProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'electricity' | 'gas'>('all');
   const [loadingMeterId, setLoadingMeterId] = useState<string | null>(null);
+  const [downloadingMeterId, setDownloadingMeterId] = useState<string | null>(null);
   const [refreshingAll, setRefreshingAll] = useState<boolean>(false);
   const [popup, setPopup] = useState<PopupConfig>({
     visible: false,
@@ -142,6 +143,7 @@ export const SavedBillsScreen: React.FC<SavedBillsScreenProps> = ({
   };
 
   const handleDownloadPdf = async (meter: SavedMeter) => {
+    setDownloadingMeterId(meter.id);
     try {
       const billData: BillData = {
         company: meter.company,
@@ -163,6 +165,8 @@ export const SavedBillsScreen: React.FC<SavedBillsScreenProps> = ({
       await BillPdfService.requestOfficialBillPdf(billData);
     } catch {
       // ignore
+    } finally {
+      setDownloadingMeterId(null);
     }
   };
 
@@ -435,6 +439,7 @@ export const SavedBillsScreen: React.FC<SavedBillsScreenProps> = ({
                 language={language}
                 darkMode={darkMode}
                 isLoading={loadingMeterId === meter.id}
+                isDownloadingPdf={downloadingMeterId === meter.id}
                 onCheckBill={handleOpenMeter}
                 onDownloadPdf={handleDownloadPdf}
                 onDeleteMeter={handleDelete}

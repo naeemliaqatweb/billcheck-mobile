@@ -18,6 +18,7 @@ interface DashboardBillCardProps {
   language: Language;
   darkMode: boolean;
   isLoading?: boolean;
+  isDownloadingPdf?: boolean;
   onCheckBill: (meter: SavedMeter) => void;
   onDownloadPdf?: (meter: SavedMeter) => void;
   onDeleteMeter?: (meter: SavedMeter) => void;
@@ -28,6 +29,7 @@ export const DashboardBillCard: React.FC<DashboardBillCardProps> = ({
   language,
   darkMode,
   isLoading = false,
+  isDownloadingPdf = false,
   onCheckBill,
   onDownloadPdf,
   onDeleteMeter,
@@ -248,22 +250,33 @@ export const DashboardBillCard: React.FC<DashboardBillCardProps> = ({
             style={[
               styles.downloadBtn,
               darkMode ? styles.downloadBtnDark : styles.downloadBtnLight,
+              isDownloadingPdf && { opacity: 0.75 },
             ]}
-            onPress={() => onDownloadPdf ? onDownloadPdf(meter) : onCheckBill(meter)}
+            onPress={() => (onDownloadPdf ? onDownloadPdf(meter) : onCheckBill(meter))}
+            disabled={isDownloadingPdf || isLoading}
             activeOpacity={0.75}
           >
-            <AppIcon
-              name="document"
-              size={16}
-              color={darkMode ? '#FFFFFF' : '#0F1C2C'}
-            />
+            {isDownloadingPdf ? (
+              <ActivityIndicator
+                size="small"
+                color={darkMode ? '#62FF96' : '#006D35'}
+              />
+            ) : (
+              <AppIcon
+                name="document"
+                size={16}
+                color={darkMode ? '#FFFFFF' : '#0F1C2C'}
+              />
+            )}
             <Text
               style={[
                 styles.downloadBtnText,
                 darkMode ? styles.downloadBtnTextDark : styles.downloadBtnTextLight,
               ]}
             >
-              {isUrdu ? 'پی ڈی ایف ڈاؤن لوڈ' : 'Download PDF'}
+              {isDownloadingPdf
+                ? (isUrdu ? 'لوڈ ہو رہا ہے...' : 'Preparing PDF...')
+                : (isUrdu ? 'پی ڈی ایف ڈاؤن لوڈ' : 'Download PDF')}
             </Text>
           </TouchableOpacity>
 

@@ -55,6 +55,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   // State
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [loadingMeterId, setLoadingMeterId] = useState<string | null>(null);
+  const [downloadingMeterId, setDownloadingMeterId] = useState<string | null>(null);
   const [heroHistory, setHeroHistory] = useState<BillMonthHistory[]>([]);
   const [popup, setPopup] = useState<PopupConfig>({
     visible: false,
@@ -222,6 +223,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
   // Download PDF / open official bill portal
   const handleDownloadPdf = async (meter: SavedMeter) => {
+    setDownloadingMeterId(meter.id);
     try {
       const billData: BillData = {
         company: meter.company,
@@ -243,6 +245,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       await BillPdfService.requestOfficialBillPdf(billData);
     } catch {
       // ignore
+    } finally {
+      setDownloadingMeterId(null);
     }
   };
 
@@ -412,6 +416,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   language={language}
                   darkMode={darkMode}
                   isLoading={loadingMeterId === meter.id}
+                  isDownloadingPdf={downloadingMeterId === meter.id}
                   onCheckBill={handleCheckSavedBill}
                   onDownloadPdf={handleDownloadPdf}
                 />

@@ -32,11 +32,11 @@ const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 export function generate12MonthHistory(currentUnits: number, currentAmount: number): BillMonthHistory[] {
   // Seasonal multipliers indexed by month (0=Jan, 7=Aug peak, 11=Dec trough)
   const SEASON_MUL = [0.38, 0.42, 0.55, 0.75, 0.95, 1.15, 1.20, 1.05, 0.85, 0.65, 0.45, 0.40];
-  const MON_ABBR   = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  const MON_ABBR = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
-  const now   = new Date();
-  const curM  = now.getMonth();       // 0-11
-  const curY  = now.getFullYear();
+  const now = new Date();
+  const curM = now.getMonth();       // 0-11
+  const curY = now.getFullYear();
 
   // Build 13 slots: [curMonth-12, curMonth-11, …, curMonth-1, curMonth]
   const slots: Array<{ mon: number; year: number; isCurrent: boolean }> = [];
@@ -50,24 +50,24 @@ export function generate12MonthHistory(currentUnits: number, currentAmount: numb
   let prevUnits = 0;
 
   for (const slot of slots) {
-    const mul    = SEASON_MUL[slot.mon];
-    const label  = `${MON_ABBR[slot.mon]} ${String(slot.year).slice(-2)}`; // e.g. 'AUG 26'
-    const units  = slot.isCurrent
+    const mul = SEASON_MUL[slot.mon];
+    const label = `${MON_ABBR[slot.mon]} ${String(slot.year).slice(-2)}`; // e.g. 'AUG 26'
+    const units = slot.isCurrent
       ? currentUnits
       : Math.max(50, Math.round(currentUnits * mul));
     const amount = slot.isCurrent
       ? currentAmount
       : Math.round(units * 38.5 * 1.22);
-    const diff   = prevUnits > 0 ? Math.round(((units - prevUnits) / prevUnits) * 100) : 0;
-    prevUnits    = units;
+    const diff = prevUnits > 0 ? Math.round(((units - prevUnits) / prevUnits) * 100) : 0;
+    prevUnits = units;
 
     history.push({
-      month:              label,
-      year:               slot.year,
+      month: label,
+      year: slot.year,
       units,
       amount,
-      status:             slot.isCurrent ? 'unpaid' : 'paid',
-      paymentDate:        slot.isCurrent ? undefined : `15 ${MON_ABBR[slot.mon]} ${slot.year}`,
+      status: slot.isCurrent ? 'unpaid' : 'paid',
+      paymentDate: slot.isCurrent ? undefined : `15 ${MON_ABBR[slot.mon]} ${slot.year}`,
       unitsDiffPercentage: diff,
     });
   }
