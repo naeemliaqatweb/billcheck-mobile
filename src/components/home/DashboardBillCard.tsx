@@ -38,12 +38,23 @@ export const DashboardBillCard: React.FC<DashboardBillCardProps> = ({
   const dueDate = meter.lastDueDate;
   const status = meter.lastBillStatus;
 
+  // Clean nickname to avoid repeating company name e.g. "MEPCO • MEPCO (liaqat)"
+  const getDisplayNickname = () => {
+    const raw = meter.nickname?.trim();
+    if (!raw) return isGas ? (isUrdu ? 'گیس میٹر' : 'Home Gas') : (isUrdu ? 'بجلی میٹر' : 'Home');
+
+    const prefixRegex = new RegExp(`^${meter.company}\\s*[\\(-–:]*\\s*`, 'i');
+    const cleaned = raw.replace(prefixRegex, '').replace(/[\\)]+$/, '').trim();
+    if (!cleaned) return isGas ? (isUrdu ? 'گیس میٹر' : 'Home Gas') : (isUrdu ? 'بجلی میٹر' : 'Home');
+    return cleaned;
+  };
+
   // Determine status pill style
   const renderStatusBadge = () => {
     if (status === 'paid') {
       return (
         <View style={[styles.statusBadge, styles.statusPaidBadge]}>
-          <View style={[styles.statusDot, { backgroundColor: '#007237' }]} />
+          <View style={[styles.statusDot, { backgroundColor: '#62FF96' }]} />
           <Text style={styles.statusPaidText}>
             {isUrdu ? 'ادا شدہ' : 'PAID'}
           </Text>
@@ -54,9 +65,9 @@ export const DashboardBillCard: React.FC<DashboardBillCardProps> = ({
     if (status === 'overdue') {
       return (
         <View style={[styles.statusBadge, styles.statusUnpaidBadge]}>
-          <View style={[styles.statusDot, { backgroundColor: '#BA1A1A' }]} />
+          <View style={[styles.statusDot, { backgroundColor: '#FF8A80' }]} />
           <Text style={styles.statusUnpaidText}>
-            {isUrdu ? 'تاریخ گزر چکی' : 'OVERDUE'}
+            {isUrdu ? 'تاریخ گزر گئی' : 'OVERDUE'}
           </Text>
         </View>
       );
@@ -65,7 +76,7 @@ export const DashboardBillCard: React.FC<DashboardBillCardProps> = ({
     if (status === 'unpaid') {
       return (
         <View style={[styles.statusBadge, styles.statusUnpaidBadge]}>
-          <View style={[styles.statusDot, { backgroundColor: '#BA1A1A' }]} />
+          <View style={[styles.statusDot, { backgroundColor: '#FF8A80' }]} />
           <Text style={styles.statusUnpaidText}>
             {isUrdu ? 'غیر ادا شدہ' : 'UNPAID'}
           </Text>
@@ -75,9 +86,9 @@ export const DashboardBillCard: React.FC<DashboardBillCardProps> = ({
 
     return (
       <View style={[styles.statusBadge, styles.statusNeutralBadge]}>
-        <View style={[styles.statusDot, { backgroundColor: '#62FF96' }]} />
+        <View style={[styles.statusDot, { backgroundColor: '#94A3B8' }]} />
         <Text style={styles.statusNeutralText}>
-          {isUrdu ? 'محفوظ میٹر' : 'SAVED'}
+          {isUrdu ? 'محفوظ' : 'SAVED'}
         </Text>
       </View>
     );
@@ -89,16 +100,26 @@ export const DashboardBillCard: React.FC<DashboardBillCardProps> = ({
       <View style={styles.topZone}>
         <View style={styles.topHeaderLeft}>
           {/* Official Provider Logo */}
-          <ProviderLogo code={meter.company} size={38} />
+          <ProviderLogo code={meter.company} size={36} />
 
           {/* Provider and Nickname */}
-          <View>
+          <View style={styles.headerTextGroup}>
             <View style={styles.titleRow}>
               <Text style={styles.companyText}>{meter.company}</Text>
               <Text style={styles.bulletDot}>•</Text>
-              <Text style={styles.nicknameText}>{meter.nickname || (isGas ? 'Home Gas' : 'Home')}</Text>
+              <Text
+                style={styles.nicknameText}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {getDisplayNickname()}
+              </Text>
             </View>
-            <Text style={styles.refText}>
+            <Text
+              style={styles.refText}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               Ref: {meter.referenceNumber}
               {meter.lastBillMonth ? ` • ${meter.lastBillMonth}` : ''}
             </Text>
@@ -106,7 +127,7 @@ export const DashboardBillCard: React.FC<DashboardBillCardProps> = ({
         </View>
 
         {/* Right Status Pill & Delete Button */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <View style={styles.topHeaderRight}>
           {renderStatusBadge()}
           {onDeleteMeter && (
             <TouchableOpacity
@@ -115,7 +136,7 @@ export const DashboardBillCard: React.FC<DashboardBillCardProps> = ({
               style={styles.deleteCircleBtn}
               accessibilityLabel="Delete Meter"
             >
-              <AppIcon name="trash" size={13} color="#FF8A80" />
+              <AppIcon name="trash" size={12} color="#FF8A80" />
             </TouchableOpacity>
           )}
         </View>
@@ -247,61 +268,68 @@ const styles = StyleSheet.create({
   },
   topZone: {
     backgroundColor: '#0F1C2C',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 8,
   },
   topHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     flex: 1,
+    minWidth: 0,
   },
-  iconCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: '#213145',
-    borderWidth: 1,
-    borderColor: 'rgba(98, 255, 150, 0.35)',
+  headerTextGroup: {
+    flex: 1,
+    minWidth: 0,
     justifyContent: 'center',
-    alignItems: 'center',
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
   },
   companyText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '800',
     color: '#62FF96',
     letterSpacing: 0.3,
+    flexShrink: 0,
   },
   bulletDot: {
     color: '#778598',
-    fontSize: 12,
+    fontSize: 11,
+    flexShrink: 0,
   },
   nicknameText: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '700',
     color: '#FFFFFF',
+    flex: 1,
   },
   refText: {
     fontSize: 11,
-    color: '#778598',
-    letterSpacing: 0.5,
+    color: '#94A3B8',
+    letterSpacing: 0.3,
     marginTop: 2,
   },
-  statusBadge: {
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: 14,
+  topHeaderRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 6,
+    flexShrink: 0,
+  },
+  statusBadge: {
+    paddingHorizontal: 7.5,
+    paddingVertical: 3.5,
+    borderRadius: 7,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4.5,
+    flexShrink: 0,
   },
   statusDot: {
     width: 5,
@@ -309,30 +337,36 @@ const styles = StyleSheet.create({
     borderRadius: 2.5,
   },
   statusUnpaidBadge: {
-    backgroundColor: '#FFDAD6',
+    backgroundColor: 'rgba(239, 68, 68, 0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.35)',
   },
   statusUnpaidText: {
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '800',
-    color: '#93000A',
+    color: '#FF8A80',
     letterSpacing: 0.4,
   },
   statusNeutralBadge: {
-    backgroundColor: '#D3E4FE',
+    backgroundColor: 'rgba(148, 163, 184, 0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.25)',
   },
   statusNeutralText: {
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '800',
-    color: '#0B1C30',
+    color: '#D3E4FE',
     letterSpacing: 0.3,
   },
   statusPaidBadge: {
-    backgroundColor: '#D1FAE5',
+    backgroundColor: 'rgba(16, 185, 129, 0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.35)',
   },
   statusPaidText: {
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '800',
-    color: '#007237',
+    color: '#62FF96',
     letterSpacing: 0.4,
   },
   bottomZone: {
