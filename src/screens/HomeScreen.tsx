@@ -17,8 +17,6 @@ import { ApiService, generate12MonthHistory } from '../services/api';
 import { StorageService } from '../services/storage';
 import { AppIcon } from '../components/AppIcon';
 import { CustomPopup, PopupConfig } from '../components/CustomPopup';
-import { ProviderSelector } from '../components/ProviderSelector';
-import { ReferenceInputCard } from '../components/home/ReferenceInputCard';
 import { DashboardHeroCard } from '../components/home/DashboardHeroCard';
 import { DashboardBillCard } from '../components/home/DashboardBillCard';
 import { NewMeterFab } from '../components/NewMeterFab';
@@ -54,11 +52,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   // State
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [loadingMeterId, setLoadingMeterId] = useState<string | null>(null);
-  const [showLookupCard, setShowLookupCard] = useState(false);
-  const [utilityType, setUtilityType] = useState<'electricity' | 'gas'>('electricity');
-  const [selectedProvider, setSelectedProvider] = useState<ProviderInfo>(ELECTRICITY_PROVIDERS[0]);
-  const [referenceNo, setReferenceNo] = useState('');
-  const [lookupLoading, setLookupLoading] = useState(false);
   const [heroHistory, setHeroHistory] = useState<BillMonthHistory[]>([]);
   const [popup, setPopup] = useState<PopupConfig>({
     visible: false,
@@ -165,14 +158,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     };
   }, [filteredMeters, savedMeters, totalDueAmount]);
 
-  const activeProviders = utilityType === 'electricity' ? ELECTRICITY_PROVIDERS : GAS_PROVIDERS;
-
-  const handleSelectType = (type: 'electricity' | 'gas') => {
-    setUtilityType(type);
-    setSelectedProvider(type === 'electricity' ? ELECTRICITY_PROVIDERS[0] : GAS_PROVIDERS[0]);
-    setReferenceNo('');
-  };
-
   const handleFetchFailure = (provider: ProviderInfo, refNo: string) => {
     const portalUrl = provider.portalUrl || 'https://bill.pitc.com.pk/';
     setPopup({
@@ -217,33 +202,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       ELECTRICITY_PROVIDERS[0];
     const portalUrl = prov.portalUrl || 'https://bill.pitc.com.pk/';
     Linking.openURL(portalUrl);
-  };
-
-  // Lookup new bill
-  const handleLookupBill = async () => {
-    const cleanRef = referenceNo.replace(/[^0-9a-zA-Z]/g, '').trim();
-    if (!cleanRef || cleanRef.length < 8) {
-      setPopup({
-        visible: true,
-        type: 'error',
-        title: t.errorTitle,
-        message: t.invalidRef,
-        primaryText: isUrdu ? 'ٹھیک ہے' : 'OK',
-        onClose: () => setPopup((p) => ({ ...p, visible: false })),
-      });
-      return;
-    }
-
-    setLookupLoading(true);
-    try {
-      const bill = await ApiService.fetchBill(selectedProvider.code, cleanRef);
-      await StorageService.cacheBill(bill);
-      onBillChecked(bill);
-    } catch {
-      handleFetchFailure(selectedProvider, cleanRef);
-    } finally {
-      setLookupLoading(false);
-    }
   };
 
   return (
@@ -426,111 +384,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <View style={[styles.syncConnectedBadge, darkMode ? styles.syncConnectedBadgeDark : styles.syncConnectedBadgeLight]}>
               <Text style={styles.syncConnectedText}>{t.connectedBadge}</Text>
             </View>
-          </View>
-
-          {/* Check Any Other Bill (Collapsible / Direct Lookup) */}
-          <View style={[styles.checkNewBillCard, darkMode ? styles.darkCard : styles.lightCard]}>
-            <TouchableOpacity
-              style={[styles.checkNewBillHeader, isUrdu && styles.rtlRow]}
-              onPress={() => setShowLookupCard(!showLookupCard)}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.checkNewBillTitleRow, isUrdu && styles.rtlRow]}>
-                <AppIcon name="search" size={20} color="#62FF96" />
-                <View>
-                  <Text style={[styles.sectionTitle, darkMode ? styles.darkText : styles.lightText, isUrdu && styles.rtlText]}>
-                    {t.checkNewBillTitle}
-                  </Text>
-                  <Text style={[styles.sectionSub, darkMode ? styles.darkSub : styles.lightSub, isUrdu && styles.rtlText]}>
-                    {t.checkNewBillSub}
-                  </Text>
-                </View>
-              </View>
-              <AppIcon
-                name={showLookupCard ? 'chevron-up' : 'chevron-down'}
-                size={20}
-                color={darkMode ? '#94A3B8' : '#64748B'}
-              />
-            </TouchableOpacity>
-
-            {showLookupCard && (
-              <View style={styles.lookupContent}>
-                {/* Utility Switcher */}
-                <View
-                  style={[
-                    styles.utilitySwitcherWrap,
-                    darkMode ? styles.utilitySwitcherDark : styles.utilitySwitcherLight,
-                  ]}
-                >
-                  <TouchableOpacity
-                    style={[
-                      styles.utilitySwitcherTab,
-                      utilityType === 'electricity' && styles.utilitySwitcherTabActiveElectric,
-                    ]}
-                    onPress={() => handleSelectType('electricity')}
-                  >
-                    <Text
-                      style={[
-                        styles.utilitySwitcherTabText,
-                        utilityType === 'electricity'
-                          ? styles.utilitySwitcherTabTextActive
-                          : (darkMode ? styles.utilitySwitcherTabTextInactiveDark : styles.utilitySwitcherTabTextInactiveLight),
-                      ]}
-                    >
-                      {t.electricityBills}
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.utilitySwitcherTab,
-                      utilityType === 'gas' && styles.utilitySwitcherTabActiveGas,
-                    ]}
-                    onPress={() => handleSelectType('gas')}
-                  >
-                    <Text
-                      style={[
-                        styles.utilitySwitcherTabText,
-                        utilityType === 'gas'
-                          ? styles.utilitySwitcherTabTextActive
-                          : (darkMode ? styles.utilitySwitcherTabTextInactiveDark : styles.utilitySwitcherTabTextInactiveLight),
-                      ]}
-                    >
-                      {t.gasBills}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                {/* Provider Selector */}
-                <ProviderSelector
-                  providers={activeProviders}
-                  selectedProvider={selectedProvider}
-                  onSelectProvider={setSelectedProvider}
-                  darkMode={darkMode}
-                  label={t.selectProvider}
-                  isUrdu={isUrdu}
-                />
-
-                {/* Reference Input Card */}
-                <ReferenceInputCard
-                  utilityType={utilityType}
-                  selectedProvider={selectedProvider}
-                  referenceNo={referenceNo}
-                  onChangeReferenceNo={setReferenceNo}
-                  onCheckBill={handleLookupBill}
-                  loading={lookupLoading}
-                  darkMode={darkMode}
-                  isUrdu={isUrdu}
-                  labels={{
-                    referenceNumber: t.referenceNumber,
-                    consumerId: t.consumerId,
-                    whereToFindRef: t.whereToFindRef,
-                    refExplanation: t.refExplanation,
-                    checkBillBtn: t.checkBillBtn,
-                  }}
-                />
-              </View>
-            )}
           </View>
 
           <DisclaimerBanner language={language} darkMode={darkMode} />

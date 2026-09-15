@@ -215,67 +215,6 @@ export const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#006D35',
   },
-
-  // Check Any Bill Collapsible Card
-  checkNewBillCard: {
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-  },
-  checkNewBillHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  checkNewBillTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flex: 1,
-  },
-
-  // Lookup Section & Utility Switcher
-  lookupContent: {
-    marginTop: 14,
-  },
-  utilitySwitcherWrap: {
-    flexDirection: 'row',
-    padding: 4,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  utilitySwitcherDark: {
-    backgroundColor: '#0F1C2C',
-  },
-  utilitySwitcherLight: {
-    backgroundColor: '#EFF4FF',
-  },
-  utilitySwitcherTab: {
-    flex: 1,
-    paddingVertical: 8,
-    alignItems: 'center',
-    borderRadius: 8,
-    backgroundColor: 'transparent',
-  },
-  utilitySwitcherTabActiveElectric: {
-    backgroundColor: '#059669',
-  },
-  utilitySwitcherTabActiveGas: {
-    backgroundColor: '#0284C7',
-  },
-  utilitySwitcherTabText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  utilitySwitcherTabTextActive: {
-    color: '#FFFFFF',
-  },
-  utilitySwitcherTabTextInactiveDark: {
-    color: '#94A3B8',
-  },
-  utilitySwitcherTabTextInactiveLight: {
-    color: '#64748B',
-  },
   bottomSpacer: {
     height: 80,
   },
