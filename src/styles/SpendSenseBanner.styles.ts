@@ -1,0 +1,184 @@
+import { StyleSheet } from 'react-native';
+import { COLORS } from './common.styles';
+
+export const styles = StyleSheet.create({
+  container: {
+    marginVertical: 14,
+    marginHorizontal: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    overflow: 'hidden',
+    padding: 16,
+  },
+  darkContainer: {
+    backgroundColor: '#0F172A',
+    borderColor: 'rgba(16, 185, 129, 0.3)',
+  },
+  lightContainer: {
+    backgroundColor: '#FFFFFF',
+    borderColor: 'rgba(16, 185, 129, 0.35)',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  featuredBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.25)',
+  },
+  featuredText: {
+    color: '#10B981',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  freeBadge: {
+    backgroundColor: 'rgba(56, 189, 248, 0.12)',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  freeBadgeText: {
+    color: '#0284C7',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  contentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  logoWrap: {
+    width: 58,
+    height: 58,
+    borderRadius: 16,
+    backgroundColor: '#E6F4FE',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(16, 185, 129, 0.4)',
+    overflow: 'hidden',
+  },
+  logoImage: {
+    width: 54,
+    height: 54,
+    borderRadius: 14,
+  },
+  textWrap: {
+    flex: 1,
+  },
+  appNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  appName: {
+    fontSize: 17,
+    fontWeight: '900',
+    letterSpacing: -0.3,
+  },
+  tagline: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#10B981',
+    marginTop: 1,
+  },
+  description: {
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: 8,
+  },
+  featuresRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 10,
+  },
+  featurePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  darkPill: {
+    backgroundColor: 'rgba(30, 41, 59, 0.8)',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  lightPill: {
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  pillText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(148, 163, 184, 0.15)',
+  },
+  ratingWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  ratingStar: {
+    color: '#F59E0B',
+    fontSize: 12,
+  },
+  ratingText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  installBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#10B981',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+  },
+  installBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  darkText: {
+    color: COLORS.darkText,
+  },
+  lightText: {
+    color: COLORS.lightText,
+  },
+  darkSub: {
+    color: COLORS.darkSub,
+  },
+  lightSub: {
+    color: COLORS.lightSub,
+  },
+  rtlText: {
+    textAlign: 'right',
+  },
+});
