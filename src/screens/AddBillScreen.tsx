@@ -227,10 +227,6 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
         {/* ── Form Card Container ── */}
         <AddBillFormFields
           selectedProvider={selectedProvider}
-          onSelectProvider={(prov) => setSelectedProvider(prov)}
-          availableProviders={
-            utilityType === 'electricity' ? ELECTRICITY_PROVIDERS : GAS_PROVIDERS
-          }
           onChangeProvider={onChangeProvider}
           referenceNo={referenceNo}
           onChangeReferenceNo={(text) => setReferenceNo(text.replace(/[^0-9a-zA-Z]/g, ''))}
