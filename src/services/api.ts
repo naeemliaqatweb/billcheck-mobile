@@ -2,12 +2,14 @@ import { BillData, BillMonthHistory } from '../types/bill';
 import { StorageService } from './storage';
 
 // ─── Backend URLs ────────────────────────────────────────────────────────────
-// Priority order: Real machine IP → emulator bridge → localhost
+// Priority order: Live Vercel Production Cloud → Real machine IP → emulator bridge → localhost
 const BACKEND_URLS = [
-  'http://192.168.4.223:3001/api/bills',  // Real phone on same WiFi
-  'http://10.0.2.2:3001/api/bills',       // Android emulator bridge
-  'http://localhost:3001/api/bills',       // Fallback
+  'https://billcheck-backend-eight.vercel.app/api/bills', // Live Vercel Production Server
+  'http://192.168.4.223:3001/api/bills',                   // Real phone on same WiFi
+  'http://10.0.2.2:3001/api/bills',                        // Android emulator bridge
+  'http://localhost:3001/api/bills',                       // Fallback
 ];
+
 
 // Cache fresh for 6 hours (same bill won't change in 6hrs)
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
