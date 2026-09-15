@@ -181,4 +181,59 @@ class BillNotificationModule(private val reactContext: ReactApplicationContext) 
             promise.resolve(false)
         }
     }
+
+    @ReactMethod
+    fun printOfficialHtml(html: String, jobName: String, baseUrl: String?, promise: Promise) {
+        try {
+            val currentAct = reactApplicationContext.currentActivity
+            if (currentAct == null) {
+                promise.resolve(false)
+                return
+            }
+
+            Handler(Looper.getMainLooper()).post {
+                try {
+                    val webView = WebView(currentAct)
+                    webView.settings.javaScriptEnabled = true
+                    webView.settings.domStorageEnabled = true
+                    webView.settings.loadWithOverviewMode = true
+                    webView.settings.useWideViewPort = true
+
+                    webView.webViewClient = object : WebViewClient() {
+                        private var hasPrinted = false
+
+                        override fun onPageFinished(view: WebView?, loadedUrl: String?) {
+                            super.onPageFinished(view, loadedUrl)
+                            if (hasPrinted) return
+                            hasPrinted = true
+
+                            try {
+                                val printManager = currentAct.getSystemService(Context.PRINT_SERVICE) as? PrintManager
+                                if (printManager != null && view != null) {
+                                    val printAdapter = view.createPrintDocumentAdapter(jobName)
+                                    val printAttributes = PrintAttributes.Builder()
+                                        .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
+                                        .setColorMode(PrintAttributes.COLOR_MODE_COLOR)
+                                        .build()
+                                    printManager.print(jobName, printAdapter, printAttributes)
+                                    promise.resolve(true)
+                                } else {
+                                    promise.resolve(false)
+                                }
+                            } catch (e: Exception) {
+                                promise.resolve(false)
+                            }
+                        }
+                    }
+
+                    val effectiveBaseUrl = if (!baseUrl.isNullOrBlank()) baseUrl else "https://bill.pitc.com.pk"
+                    webView.loadDataWithBaseURL(effectiveBaseUrl, html, "text/html", "UTF-8", null)
+                } catch (e: Exception) {
+                    promise.resolve(false)
+                }
+            }
+        } catch (e: Exception) {
+            promise.resolve(false)
+        }
+    }
 }
