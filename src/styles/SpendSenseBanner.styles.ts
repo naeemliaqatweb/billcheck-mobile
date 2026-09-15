@@ -102,13 +102,13 @@ export const styles = StyleSheet.create({
     fontWeight: '800',
   },
   darkContainer: {
-    backgroundColor: '#0F172A',
-    borderColor: 'rgba(16, 185, 129, 0.3)',
+    backgroundColor: '#16253B',
+    borderColor: 'rgba(16, 185, 129, 0.35)',
   },
   lightContainer: {
     backgroundColor: '#FFFFFF',
-    borderColor: 'rgba(16, 185, 129, 0.35)',
-    shadowColor: '#10B981',
+    borderColor: '#D5E2EE',
+    shadowColor: '#0A1C30',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 10,
@@ -208,14 +208,14 @@ export const styles = StyleSheet.create({
     borderRadius: 8,
   },
   darkPill: {
-    backgroundColor: 'rgba(30, 41, 59, 0.8)',
+    backgroundColor: '#0F1C2C',
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: '#284163',
   },
   lightPill: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F0F5FA',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#D5E2EE',
   },
   pillText: {
     fontSize: 10,

@@ -338,24 +338,43 @@ export const DashboardBillCard: React.FC<DashboardBillCardProps> = ({
 
           {/* View Live Bill Details button */}
           <TouchableOpacity
-            style={[styles.viewBillBtn, isGas && styles.gasViewBtn]}
+            style={[
+              styles.viewBillBtn,
+              darkMode ? styles.viewBillBtnDark : styles.viewBillBtnLight,
+              isGas && (darkMode ? styles.gasViewBtnDark : styles.gasViewBtnLight),
+            ]}
             onPress={() => onCheckBill(meter)}
             disabled={isLoading}
             activeOpacity={0.85}
           >
             {isLoading ? (
-              <ActivityIndicator size="small" color={isGas ? '#0F1C2C' : '#00210B'} />
+              <ActivityIndicator
+                size="small"
+                color={
+                  isGas
+                    ? '#FFFFFF'
+                    : darkMode
+                    ? '#003314'
+                    : '#FFFFFF'
+                }
+              />
             ) : (
               <>
                 <AppIcon
                   name="receipt"
                   size={16}
-                  color={isGas ? '#0F1C2C' : '#00210B'}
+                  color={
+                    isGas
+                      ? '#FFFFFF'
+                      : darkMode
+                      ? '#003314'
+                      : '#FFFFFF'
+                  }
                 />
                 <Text
                   style={[
                     styles.viewBillText,
-                    isGas && styles.gasViewText,
+                    darkMode ? styles.viewBillTextDark : styles.viewBillTextLight,
                   ]}
                 >
                   {isUrdu ? 'بل دیکھیں' : 'View Bill'}
@@ -377,13 +396,13 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   darkCard: {
-    backgroundColor: '#1E293B',
-    borderColor: '#334155',
+    backgroundColor: '#16253B',
+    borderColor: '#284163',
   },
   lightCard: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
+    borderColor: '#D5E2EE',
+    shadowColor: '#0A1C30',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
@@ -496,7 +515,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   bottomZoneDark: {
-    backgroundColor: '#1E293B',
+    backgroundColor: '#16253B',
   },
   bottomZoneLight: {
     backgroundColor: '#FFFFFF',
@@ -514,11 +533,11 @@ const styles = StyleSheet.create({
   },
   consumerContainerDark: {
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#284163',
   },
   consumerContainerLight: {
-    backgroundColor: '#F8FAFC',
-    borderColor: '#E2E8F0',
+    backgroundColor: '#F0F5FA',
+    borderColor: '#D5E2EE',
   },
   consumerLeftGroup: {
     flexDirection: 'row',
@@ -585,12 +604,12 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   downloadBtnDark: {
-    borderColor: '#334155',
+    borderColor: '#284163',
     backgroundColor: '#0F1C2C',
   },
   downloadBtnLight: {
     borderColor: '#0F1C2C',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F0F5FA',
   },
   downloadBtnText: {
     fontSize: 12.5,
@@ -600,7 +619,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   downloadBtnTextLight: {
-    color: '#0F1C2C',
+    color: '#0A1C30',
   },
   viewBillBtn: {
     flex: 1,
@@ -612,40 +631,52 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
     paddingVertical: 0,
     paddingHorizontal: 8,
-    backgroundColor: '#3FFF8B',
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 6,
-    shadowColor: '#3FFF8B',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.25,
     shadowRadius: 6,
     elevation: 3,
   },
-  gasViewBtn: {
-    backgroundColor: '#E2E8F0',
+  viewBillBtnDark: {
+    backgroundColor: '#3FFF8B',
+    shadowColor: '#3FFF8B',
+  },
+  viewBillBtnLight: {
+    backgroundColor: '#059669',
+    shadowColor: '#059669',
+  },
+  gasViewBtnDark: {
+    backgroundColor: '#284163',
+    shadowOpacity: 0,
+  },
+  gasViewBtnLight: {
+    backgroundColor: '#0F1C2C',
     shadowOpacity: 0,
   },
   viewBillText: {
     fontSize: 12.5,
     fontWeight: '800',
-    color: '#00210B',
   },
-  gasViewText: {
-    color: '#0F1C2C',
+  viewBillTextDark: {
+    color: '#002B12',
+  },
+  viewBillTextLight: {
+    color: '#FFFFFF',
   },
   darkText: {
     color: '#F8FAFC',
   },
   lightText: {
-    color: '#0B1C30',
+    color: '#0A1C30',
   },
   darkSub: {
     color: '#94A3B8',
   },
   lightSub: {
-    color: '#334155',
+    color: '#334E68',
   },
   predictionRow: {
     flexDirection: 'row',

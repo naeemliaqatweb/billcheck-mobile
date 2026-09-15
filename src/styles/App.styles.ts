@@ -24,15 +24,15 @@ export const styles = StyleSheet.create({
   },
   darkBottomBar: {
     backgroundColor: '#0F1C2C',
-    borderTopColor: 'rgba(116, 119, 125, 0.18)',
+    borderTopColor: '#1E2D42',
   },
   lightBottomBar: {
     backgroundColor: '#FFFFFF',
-    borderTopColor: '#E2E8F0',
-    shadowColor: '#000',
+    borderTopColor: '#D5E2EE',
+    shadowColor: '#0A1C30',
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
     elevation: 8,
   },
   tabItem: {
@@ -68,10 +68,10 @@ export const styles = StyleSheet.create({
     fontWeight: '500',
   },
   darkTabLabel: {
-    color: '#74777D',
+    color: '#7E8B9B',
   },
   lightTabLabel: {
-    color: '#8E9196',
+    color: '#486581',
   },
   tabActiveDot: {
     width: 4,

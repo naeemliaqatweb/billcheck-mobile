@@ -5,10 +5,10 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   darkBg: {
-    backgroundColor: '#070E17',
+    backgroundColor: '#070E18',
   },
   lightBg: {
-    backgroundColor: '#F8F9FF',
+    backgroundColor: '#F0F5FA',
   },
   contentContainer: {
     paddingBottom: 160, // Space for fixed bottom action bar
@@ -824,16 +824,16 @@ export const styles = StyleSheet.create({
 
   // Utility typography & helpers
   darkText: {
-    color: '#F8F9FF',
+    color: '#F8FAFC',
   },
   lightText: {
-    color: '#0B1C30',
+    color: '#0A1C30',
   },
   darkSub: {
-    color: '#778598',
+    color: '#94A3B8',
   },
   lightSub: {
-    color: '#334155',
+    color: '#334E68',
   },
   rtlText: {
     textAlign: 'right',

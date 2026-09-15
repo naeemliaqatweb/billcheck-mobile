@@ -8,10 +8,10 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   darkBg: {
-    backgroundColor: '#030712',
+    backgroundColor: '#070E18',
   },
   lightBg: {
-    backgroundColor: '#F8F9FF',
+    backgroundColor: '#F0F5FA',
   },
   // Top App Bar
   topAppBar: {
@@ -22,7 +22,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
+    borderBottomColor: '#1E2D42',
     zIndex: 40,
   },
   brandTitleRow: {
@@ -409,40 +409,40 @@ export const styles = StyleSheet.create({
 
   // Shared Dark/Light helpers
   darkCardBg: {
-    backgroundColor: '#111827',
-    borderColor: '#1F2937',
+    backgroundColor: '#16253B',
+    borderColor: '#284163',
   },
   lightCardBg: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
+    borderColor: '#D5E2EE',
   },
   darkMenuHeader: {
-    backgroundColor: '#162032',
-    borderBottomColor: '#1F2937',
+    backgroundColor: '#0F1C2C',
+    borderBottomColor: '#284163',
   },
   lightMenuHeader: {
-    backgroundColor: '#F1F5F9',
-    borderBottomColor: '#E2E8F0',
+    backgroundColor: '#F0F5FA',
+    borderBottomColor: '#D5E2EE',
   },
   darkBox: {
-    backgroundColor: '#1E293B',
-    borderColor: '#334155',
+    backgroundColor: '#16253B',
+    borderColor: '#284163',
   },
   lightBox: {
-    backgroundColor: '#EFF4FF',
-    borderColor: '#D3E4FE',
+    backgroundColor: '#EBF4FC',
+    borderColor: '#CCE0F5',
   },
   darkText: {
     color: '#F8FAFC',
   },
   lightText: {
-    color: '#0B1C30',
+    color: '#0A1C30',
   },
   darkSub: {
     color: '#94A3B8',
   },
   lightSub: {
-    color: '#64748B',
+    color: '#334E68',
   },
   rtlText: {
     textAlign: 'right',

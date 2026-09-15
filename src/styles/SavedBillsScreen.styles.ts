@@ -5,10 +5,10 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   darkBg: {
-    backgroundColor: '#070E17',
+    backgroundColor: '#070E18',
   },
   lightBg: {
-    backgroundColor: '#F8F9FF',
+    backgroundColor: '#F0F5FA',
   },
   container: {
     flex: 1,
@@ -26,7 +26,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
+    borderBottomColor: '#1E2D42',
     zIndex: 40,
   },
   topAppLeft: {
@@ -316,11 +316,11 @@ export const styles = StyleSheet.create({
   },
   emptyCardLight: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#C4C6CC',
+    borderColor: '#D5E2EE',
   },
   emptyCardDark: {
-    backgroundColor: '#0F1C2C',
-    borderColor: '#24354D',
+    backgroundColor: '#16253B',
+    borderColor: '#284163',
   },
   emptyIconCircle: {
     width: 64,
@@ -367,16 +367,16 @@ export const styles = StyleSheet.create({
 
   // Utility typography
   darkText: {
-    color: '#F8F9FF',
+    color: '#F8FAFC',
   },
   lightText: {
-    color: '#0B1C30',
+    color: '#0A1C30',
   },
   darkSub: {
-    color: '#778598',
+    color: '#94A3B8',
   },
   lightSub: {
-    color: '#44474C',
+    color: '#334E68',
   },
   rtlText: {
     textAlign: 'right',

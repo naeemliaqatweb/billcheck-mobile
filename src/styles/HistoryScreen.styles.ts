@@ -5,10 +5,10 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   darkBg: {
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#070E18',
   },
   lightBg: {
-    backgroundColor: '#F8F9FF',
+    backgroundColor: '#F0F5FA',
   },
   scrollContainer: {
     flex: 1,
@@ -26,7 +26,7 @@ export const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
+    borderBottomColor: '#1E2D42',
     zIndex: 40,
   },
   topAppLeft: {

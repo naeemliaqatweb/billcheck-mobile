@@ -25,9 +25,9 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
   darkMode,
   labels,
 }) => {
-  // Uniform active & inactive brand colors across all tabs (matching Stitch design)
+  // Uniform active & inactive brand colors across all tabs (matching Navy & Emerald design)
   const activeColor = darkMode ? '#3FFF8B' : '#006D35';
-  const inactiveColor = darkMode ? '#74777D' : '#8E9196';
+  const inactiveColor = darkMode ? '#7E8B9B' : '#486581';
 
   const tabs: {
     id: TabName;

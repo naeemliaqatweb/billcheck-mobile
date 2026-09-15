@@ -12,10 +12,10 @@ export const styles = StyleSheet.create({
     paddingBottom: 110,
   },
   darkBg: {
-    backgroundColor: '#070E17',
+    backgroundColor: '#070E18',
   },
   lightBg: {
-    backgroundColor: '#F8F9FF',
+    backgroundColor: '#F0F5FA',
   },
 
   // TopAppBar
@@ -26,7 +26,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
+    borderBottomColor: '#1E2D42',
     zIndex: 40,
   },
   brandTitleRow: {
@@ -64,13 +64,13 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sectionFilterCardDark: {
-    backgroundColor: '#1E293B',
-    borderColor: '#334155',
+    backgroundColor: '#16253B',
+    borderColor: '#284163',
   },
   sectionFilterCardLight: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
+    borderColor: '#D5E2EE',
+    shadowColor: '#0A1C30',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 6,
@@ -93,7 +93,7 @@ export const styles = StyleSheet.create({
   // Segmented Filter Tabs
   filterTabsWrap: {
     flexDirection: 'row',
-    backgroundColor: '#EFF4FF',
+    backgroundColor: '#E4EEF8',
     padding: 3,
     borderRadius: 20,
     gap: 2,
@@ -108,26 +108,26 @@ export const styles = StyleSheet.create({
   },
   filterTabActive: {
     backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
+    shadowColor: '#0A1C30',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
   },
   filterTabActiveDark: {
-    backgroundColor: '#213145',
+    backgroundColor: '#213550',
   },
   filterTabText: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#64748B',
+    color: '#486581',
   },
   filterTabTextActive: {
-    color: '#0B1C30',
+    color: '#006D35',
     fontWeight: '800',
   },
   filterTabTextActiveDark: {
-    color: '#FFFFFF',
+    color: '#3FFF8B',
     fontWeight: '800',
   },
 
@@ -145,12 +145,12 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
   },
   emptyBillsBoxDark: {
-    backgroundColor: '#1E293B',
-    borderColor: '#334155',
+    backgroundColor: '#16253B',
+    borderColor: '#284163',
   },
   emptyBillsBoxLight: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
+    borderColor: '#D5E2EE',
   },
   emptyBillsTitle: {
     fontSize: 15,
@@ -174,12 +174,12 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   syncBannerDark: {
-    backgroundColor: '#1E293B',
-    borderColor: '#334155',
+    backgroundColor: '#16253B',
+    borderColor: '#284163',
   },
   syncBannerLight: {
-    backgroundColor: '#EFF4FF',
-    borderColor: '#D3E4FE',
+    backgroundColor: '#EBF4FC',
+    borderColor: '#CCE0F5',
   },
   syncBannerLeft: {
     flexDirection: 'row',
@@ -203,11 +203,11 @@ export const styles = StyleSheet.create({
   },
   syncConnectedBadgeDark: {
     backgroundColor: '#0F1C2C',
-    borderColor: '#334155',
+    borderColor: '#284163',
   },
   syncConnectedBadgeLight: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#CBD5E1',
+    borderColor: '#CCE0F5',
   },
   syncConnectedText: {
     fontSize: 11,
@@ -223,21 +223,21 @@ export const styles = StyleSheet.create({
     color: '#F8FAFC',
   },
   lightText: {
-    color: '#0B1C30',
+    color: '#0A1C30',
   },
   darkSub: {
     color: '#94A3B8',
   },
   lightSub: {
-    color: '#334155',
+    color: '#334E68',
   },
   darkCard: {
-    backgroundColor: '#1E293B',
-    borderColor: '#334155',
+    backgroundColor: '#16253B',
+    borderColor: '#284163',
   },
   lightCard: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
+    borderColor: '#D5E2EE',
   },
   rtlRow: {
     flexDirection: 'row-reverse',

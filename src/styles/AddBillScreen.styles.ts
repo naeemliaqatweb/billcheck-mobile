@@ -8,10 +8,10 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   darkBg: {
-    backgroundColor: '#030712',
+    backgroundColor: '#070E18',
   },
   lightBg: {
-    backgroundColor: '#F8F9FF',
+    backgroundColor: '#F0F5FA',
   },
 
   // Deep Navy Header Area
@@ -478,40 +478,40 @@ export const styles = StyleSheet.create({
 
   // Shared Dark/Light helpers
   darkCard: {
-    backgroundColor: '#111827',
-    borderColor: '#1F2937',
+    backgroundColor: '#16253B',
+    borderColor: '#284163',
   },
   lightCard: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
+    borderColor: '#D5E2EE',
   },
   darkBox: {
-    backgroundColor: '#1E293B',
-    borderColor: '#334155',
+    backgroundColor: '#16253B',
+    borderColor: '#284163',
   },
   lightBox: {
-    backgroundColor: '#EFF4FF',
-    borderColor: '#D3E4FE',
+    backgroundColor: '#EBF4FC',
+    borderColor: '#CCE0F5',
   },
   darkInput: {
-    backgroundColor: '#111827',
-    borderColor: '#334155',
+    backgroundColor: '#0F1C2C',
+    borderColor: '#284163',
   },
   lightInput: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#CBD5E1',
+    borderColor: '#D5E2EE',
   },
   darkText: {
     color: '#F8FAFC',
   },
   lightText: {
-    color: '#0B1C30',
+    color: '#0A1C30',
   },
   darkSub: {
     color: '#94A3B8',
   },
   lightSub: {
-    color: '#64748B',
+    color: '#334E68',
   },
   rtlRow: {
     flexDirection: 'row-reverse',
