@@ -19,31 +19,40 @@ export const styles = StyleSheet.create({
 
   // Top App Bar
   topAppBar: {
-    height: 54,
+    height: 56,
+    backgroundColor: '#0F1C2C',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(15, 28, 44, 0.8)',
+    borderBottomColor: '#1E293B',
+    zIndex: 40,
   },
   topAppLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
   },
-  menuBtn: {
-    padding: 4,
+  headerLogo: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
   },
   appTitleGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+    justifyContent: 'center',
   },
   appTitle: {
     fontSize: 17,
     fontWeight: '800',
+    color: '#FFFFFF',
     letterSpacing: -0.3,
+  },
+  appSubtitle: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#62FF96',
+    marginTop: 1,
   },
   proBadge: {
     backgroundColor: 'rgba(0, 109, 53, 0.25)',

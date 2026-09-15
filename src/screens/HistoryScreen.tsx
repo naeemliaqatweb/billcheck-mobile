@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Share,
+  Image,
 } from 'react-native';
 import { BillData, SavedMeter, BillMonthHistory } from '../types/bill';
 import { TRANSLATIONS, Language } from '../i18n/translations';
@@ -236,25 +237,21 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
 
   return (
     <View style={[styles.outerContainer, darkMode ? styles.darkBg : styles.lightBg]}>
-      {/* Top App Bar (Matching Stitch Screen 6) */}
+      {/* Top App Bar */}
       <View style={styles.topAppBar}>
         <View style={styles.topAppLeft}>
-          <TouchableOpacity
-            style={styles.menuBtn}
-            onPress={() => onNavigateHome && onNavigateHome()}
-            activeOpacity={0.7}
-            accessibilityLabel="Menu"
-          >
-            <AppIcon name="menu" size={20} color="#778598" />
-          </TouchableOpacity>
-
+          <Image
+            source={require('../assets/images/app-logo.png')}
+            style={styles.headerLogo}
+            resizeMode="contain"
+          />
           <View style={styles.appTitleGroup}>
-            <Text style={[styles.appTitle, darkMode ? styles.darkText : styles.lightText]}>
+            <Text style={styles.appTitle}>
               BillCheck PK
             </Text>
-            <View style={styles.proBadge}>
-              <Text style={styles.proBadgeText}>PRO</Text>
-            </View>
+            <Text style={styles.appSubtitle}>
+              {isUrdu ? 'تجزیہ و رجحانات' : 'Analytics & Trends'}
+            </Text>
           </View>
         </View>
 

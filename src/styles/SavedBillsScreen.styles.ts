@@ -19,20 +19,25 @@ export const styles = StyleSheet.create({
 
   // Top App Bar
   topAppBar: {
+    height: 56,
     backgroundColor: '#0F1C2C',
     paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(211, 228, 254, 0.12)',
+    borderBottomColor: '#1E293B',
+    zIndex: 40,
   },
   topAppLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+  },
+  headerLogo: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
   },
   backIconBtn: {
     width: 38,
@@ -53,8 +58,8 @@ export const styles = StyleSheet.create({
   },
   appBarSubtitle: {
     fontSize: 10.5,
-    fontWeight: '500',
-    color: '#778598',
+    fontWeight: '700',
+    color: '#62FF96',
     marginTop: 1,
   },
   topAppRight: {

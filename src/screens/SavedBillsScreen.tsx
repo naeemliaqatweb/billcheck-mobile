@@ -7,6 +7,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Share,
+  Image,
 } from 'react-native';
 import { SavedMeter, BillData } from '../types/bill';
 import { TRANSLATIONS, Language } from '../i18n/translations';
@@ -183,6 +184,11 @@ export const SavedBillsScreen: React.FC<SavedBillsScreenProps> = ({
       {/* Top App Bar */}
       <View style={styles.topAppBar}>
         <View style={styles.topAppLeft}>
+          <Image
+            source={require('../assets/images/app-logo.png')}
+            style={styles.headerLogo}
+            resizeMode="contain"
+          />
           <View style={styles.appBarTitleGroup}>
             <Text style={styles.appBarMainTitle}>BillCheck PK</Text>
             <Text style={styles.appBarSubtitle}>

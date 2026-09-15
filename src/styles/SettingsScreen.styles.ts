@@ -13,6 +13,43 @@ export const styles = StyleSheet.create({
   lightBg: {
     backgroundColor: '#F8F9FF',
   },
+  // Top App Bar
+  topAppBar: {
+    height: 56,
+    backgroundColor: '#0F1C2C',
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: '#1E293B',
+    zIndex: 40,
+  },
+  brandTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  headerLogo: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+  },
+  appBarTitleGroup: {
+    justifyContent: 'center',
+  },
+  brandTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.3,
+  },
+  appBarSubtitle: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#62FF96',
+    marginTop: 1,
+  },
   contentContainer: {
     paddingHorizontal: 16,
     paddingTop: 12,

@@ -6,6 +6,7 @@ import {
   ScrollView,
   Switch,
   Linking,
+  Image,
 } from 'react-native';
 import { TRANSLATIONS, Language } from '../i18n/translations';
 import { APP_CONFIG } from '../constants/appConfig';
@@ -159,6 +160,23 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   return (
     <View style={[styles.outerContainer, darkMode ? styles.darkBg : styles.lightBg]}>
+      {/* Top App Bar */}
+      <View style={styles.topAppBar}>
+        <View style={styles.brandTitleRow}>
+          <Image
+            source={require('../assets/images/app-logo.png')}
+            style={styles.headerLogo}
+            resizeMode="contain"
+          />
+          <View style={styles.appBarTitleGroup}>
+            <Text style={styles.brandTitle}>{APP_CONFIG.name}</Text>
+            <Text style={styles.appBarSubtitle}>
+              {isUrdu ? 'ترتیبات و معلومات' : 'Settings & Preferences'}
+            </Text>
+          </View>
+        </View>
+      </View>
+
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
