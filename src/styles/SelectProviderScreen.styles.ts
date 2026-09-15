@@ -16,7 +16,7 @@ export const styles = StyleSheet.create({
 
   // Deep Navy Header Area
   header: {
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 16,

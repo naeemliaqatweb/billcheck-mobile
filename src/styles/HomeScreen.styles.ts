@@ -21,7 +21,7 @@ export const styles = StyleSheet.create({
   // TopAppBar
   topAppBar: {
     height: 56,
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
@@ -99,7 +99,7 @@ export const styles = StyleSheet.create({
     gap: 2,
   },
   filterTabsWrapDark: {
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
   },
   filterTabItem: {
     paddingHorizontal: 10,
@@ -202,8 +202,8 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
   },
   syncConnectedBadgeDark: {
-    backgroundColor: '#0F1C2C',
-    borderColor: '#284163',
+    backgroundColor: '#0C2B4E',
+    borderColor: '#284E77',
   },
   syncConnectedBadgeLight: {
     backgroundColor: '#FFFFFF',

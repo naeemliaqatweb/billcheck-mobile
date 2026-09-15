@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   topZone: {
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
     paddingHorizontal: 14,
     paddingVertical: 11,
     flexDirection: 'row',
@@ -604,11 +604,11 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   downloadBtnDark: {
-    borderColor: '#284163',
-    backgroundColor: '#0F1C2C',
+    borderColor: '#284E77',
+    backgroundColor: '#0C2B4E',
   },
   downloadBtnLight: {
-    borderColor: '#0F1C2C',
+    borderColor: '#0C2B4E',
     backgroundColor: '#F0F5FA',
   },
   downloadBtnText: {
@@ -649,11 +649,11 @@ const styles = StyleSheet.create({
     shadowColor: '#059669',
   },
   gasViewBtnDark: {
-    backgroundColor: '#284163',
+    backgroundColor: '#284E77',
     shadowOpacity: 0,
   },
   gasViewBtnLight: {
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
     shadowOpacity: 0,
   },
   viewBillText: {
@@ -690,7 +690,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   predictionRowDark: {
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
     borderColor: 'rgba(98, 255, 150, 0.2)',
   },
   predictionRowLight: {

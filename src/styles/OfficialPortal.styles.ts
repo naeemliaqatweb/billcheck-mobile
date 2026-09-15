@@ -22,7 +22,7 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
   },
   portalRefBoxDark: {
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
     borderColor: '#24354D',
   },
   portalRefBoxLight: {
@@ -100,10 +100,10 @@ export const styles = StyleSheet.create({
   },
   openPortalSecondaryBtnLight: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#0F1C2C',
+    borderColor: '#0C2B4E',
   },
   openPortalSecondaryBtnDark: {
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
     borderColor: '#62FF96',
   },
   openPortalSecondaryText: {
@@ -122,7 +122,7 @@ export const styles = StyleSheet.create({
     backgroundColor: '#EFF4FF',
   },
   sourceCitationBoxDark: {
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
   },
   sourceCitationHeader: {
     fontSize: 10.5,

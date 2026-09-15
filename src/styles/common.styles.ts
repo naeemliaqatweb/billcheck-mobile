@@ -8,10 +8,10 @@ export const COLORS = {
   emeraldGlow: '#62FF96',    // Mint Green for accents & icons
   
   navyMidnight: '#070E18',   // Deepest Midnight Navy (Dark Canvas)
-  navyDeep: '#0F1C2C',       // Signature Header & TopBar Navy
-  navyCard: '#16253B',       // Elevated Card Dark Navy
-  navySurface: '#213550',    // Interactive Surface Dark Navy
-  navyBorder: '#284163',     // Dark Border Navy
+  navyDeep: '#0C2B4E',       // Signature Header & TopBar Rich Navy
+  navyCard: '#122D4D',       // Elevated Card Dark Navy
+  navySurface: '#1B3B60',    // Interactive Surface Dark Navy
+  navyBorder: '#284E77',     // Dark Border Navy
   
   navyTextLight: '#0A1C30',  // Authoritative Navy Text (Light Mode)
   navySubLight: '#334E68',   // Muted Navy Subtitle (Light Mode)
@@ -25,12 +25,12 @@ export const COLORS = {
 
   // Dark Theme Tokens (Deep Royal Navy & Glowing Emerald)
   darkBg: '#070E18',
-  darkCard: '#16253B',
-  darkBorder: '#284163',
+  darkCard: '#122D4D',
+  darkBorder: '#284E77',
   darkText: '#F8FAFC',
   darkSub: '#94A3B8',
-  darkInput: '#0F1C2C',
-  darkInputBorder: '#284163',
+  darkInput: '#0C2B4E',
+  darkInputBorder: '#284E77',
 
   // Light Theme Tokens (Crisp White, Ice-Navy, Deep Navy & Emerald)
   lightBg: '#F0F5FA',

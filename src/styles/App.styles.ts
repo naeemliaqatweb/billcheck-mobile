@@ -23,7 +23,7 @@ export const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   darkBottomBar: {
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
     borderTopColor: '#1E2D42',
   },
   lightBottomBar: {

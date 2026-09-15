@@ -227,7 +227,7 @@ export const DashboardHeroCard: React.FC<DashboardHeroCardProps> = ({
 
 const styles = StyleSheet.create({
   heroWrapper: {
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 28,
@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: '#62FF96',
     borderWidth: 1.5,
-    borderColor: '#0F1C2C',
+    borderColor: '#0C2B4E',
   },
   bentoCard: {
     backgroundColor: '#213145',

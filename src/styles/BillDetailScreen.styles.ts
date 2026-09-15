@@ -14,9 +14,9 @@ export const styles = StyleSheet.create({
     paddingBottom: 160, // Space for fixed bottom action bar
   },
 
-  // Official Top Navigation Bar (Deep Navy #0F1C2C)
+  // Official Top Navigation Bar (Deep Navy #0C2B4E)
   headerNavyContainer: {
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
     paddingTop: 12,
     paddingBottom: 10,
     paddingHorizontal: 16,
@@ -128,7 +128,7 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
   },
   bannerCompanyBadge: {
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 99,
@@ -163,11 +163,11 @@ export const styles = StyleSheet.create({
     elevation: 2,
   },
   summaryDarkCard: {
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
     borderColor: '#24354D',
   },
   summaryHeroTopZone: {
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(211, 228, 254, 0.15)',
@@ -499,7 +499,7 @@ export const styles = StyleSheet.create({
     marginVertical: 6,
   },
   barPeak: {
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
   },
   barOffPeak: {
     backgroundColor: '#006D35',
@@ -519,7 +519,7 @@ export const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 2,
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
   },
   legendOffPeakDot: {
     width: 7,
@@ -641,7 +641,7 @@ export const styles = StyleSheet.create({
     elevation: 1,
   },
   saveMeterCardDark: {
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
     borderColor: '#24354D',
   },
   saveMeterCardSaved: {
@@ -681,7 +681,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 8,
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
   },
   saveMeterPillSaved: {
     backgroundColor: '#3FFF8B',
@@ -755,16 +755,16 @@ export const styles = StyleSheet.create({
   },
   btnShareLight: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#0F1C2C',
+    borderColor: '#0C2B4E',
   },
   btnShareDark: {
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
     borderColor: '#62FF96',
   },
   btnShareTextLight: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#0F1C2C',
+    color: '#0C2B4E',
   },
   btnShareTextDark: {
     fontSize: 13,
@@ -774,7 +774,7 @@ export const styles = StyleSheet.create({
 
   // Direct Pay Quick Strip
   directPayCard: {
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 7,

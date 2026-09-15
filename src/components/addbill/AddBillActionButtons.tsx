@@ -32,11 +32,11 @@ export const AddBillActionButtons: React.FC<AddBillActionButtonsProps> = ({
         activeOpacity={0.85}
       >
         {loading ? (
-          <ActivityIndicator color="#0F1C2C" size="small" />
+          <ActivityIndicator color="#0C2B4E" size="small" />
         ) : (
           <>
             <Text style={styles.primaryCtaText}>{getBillCtaText}</Text>
-            <AppIcon name="arrow-forward" size={18} color="#0F1C2C" />
+            <AppIcon name="arrow-forward" size={18} color="#0C2B4E" />
           </>
         )}
       </TouchableOpacity>
@@ -53,7 +53,7 @@ export const AddBillActionButtons: React.FC<AddBillActionButtonsProps> = ({
         <AppIcon
           name="qr-scanner"
           size={18}
-          color={darkMode ? '#62FF96' : '#0F1C2C'}
+          color={darkMode ? '#62FF96' : '#0C2B4E'}
         />
         <Text
           style={[

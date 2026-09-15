@@ -16,7 +16,7 @@ export const styles = StyleSheet.create({
 
   // Deep Navy Header Area
   header: {
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 14,
@@ -125,7 +125,7 @@ export const styles = StyleSheet.create({
     borderColor: '#D3E4FE',
   },
   typeSegmentWrapDark: {
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
     borderColor: '#1F2937',
   },
   typeSegmentBtn: {
@@ -138,7 +138,7 @@ export const styles = StyleSheet.create({
     borderRadius: 20,
   },
   typeSegmentBtnActive: {
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
@@ -388,7 +388,7 @@ export const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -409,7 +409,7 @@ export const styles = StyleSheet.create({
     padding: 10,
   },
   mockupTopNavyBar: {
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 6,
@@ -514,7 +514,7 @@ export const styles = StyleSheet.create({
     marginBottom: 10,
   },
   primaryCtaText: {
-    color: '#0F1C2C',
+    color: '#0C2B4E',
     fontSize: 15,
     fontWeight: '800',
     letterSpacing: 0.2,
@@ -530,7 +530,7 @@ export const styles = StyleSheet.create({
     marginBottom: 16,
   },
   secondaryScanBtnLight: {
-    borderColor: '#0F1C2C',
+    borderColor: '#0C2B4E',
     backgroundColor: 'transparent',
   },
   secondaryScanBtnDark: {
@@ -557,24 +557,24 @@ export const styles = StyleSheet.create({
 
   // Shared Dark/Light helpers
   darkCard: {
-    backgroundColor: '#16253B',
-    borderColor: '#284163',
+    backgroundColor: '#122D4D',
+    borderColor: '#284E77',
   },
   lightCard: {
     backgroundColor: '#FFFFFF',
     borderColor: '#D5E2EE',
   },
   darkBox: {
-    backgroundColor: '#16253B',
-    borderColor: '#284163',
+    backgroundColor: '#122D4D',
+    borderColor: '#284E77',
   },
   lightBox: {
     backgroundColor: '#EBF4FC',
     borderColor: '#CCE0F5',
   },
   darkInput: {
-    backgroundColor: '#0F1C2C',
-    borderColor: '#284163',
+    backgroundColor: '#0C2B4E',
+    borderColor: '#284E77',
   },
   lightInput: {
     backgroundColor: '#FFFFFF',

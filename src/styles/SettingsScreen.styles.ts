@@ -16,7 +16,7 @@ export const styles = StyleSheet.create({
   // Top App Bar
   topAppBar: {
     height: 56,
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -58,7 +58,7 @@ export const styles = StyleSheet.create({
 
   // Deep Navy Hero Card
   heroCard: {
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
@@ -417,8 +417,8 @@ export const styles = StyleSheet.create({
     borderColor: '#D5E2EE',
   },
   darkMenuHeader: {
-    backgroundColor: '#0F1C2C',
-    borderBottomColor: '#284163',
+    backgroundColor: '#0C2B4E',
+    borderBottomColor: '#284E77',
   },
   lightMenuHeader: {
     backgroundColor: '#F0F5FA',

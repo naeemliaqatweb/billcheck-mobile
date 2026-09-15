@@ -113,7 +113,7 @@ export const OfficialPortalCard: React.FC<OfficialPortalCardProps> = ({
           activeOpacity={0.8}
         >
           <View style={styles.btnRowSm}>
-            <AppIcon name="business" size={15} color={darkMode ? '#62FF96' : '#0F1C2C'} />
+            <AppIcon name="business" size={15} color={darkMode ? '#62FF96' : '#0C2B4E'} />
             <Text style={[styles.openPortalSecondaryText, darkMode ? styles.darkText : styles.lightText]}>
               {bill.company} {isUrdu ? 'کی آفیشل ویب سائٹ وزٹ کریں' : 'Official Website'}
             </Text>

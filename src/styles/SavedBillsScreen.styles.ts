@@ -20,7 +20,7 @@ export const styles = StyleSheet.create({
   // Top App Bar
   topAppBar: {
     height: 56,
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -78,7 +78,7 @@ export const styles = StyleSheet.create({
 
   // Subheader Utility Banner with Circuit Motif
   circuitBanner: {
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 22,
@@ -207,7 +207,7 @@ export const styles = StyleSheet.create({
     elevation: 1,
   },
   searchBarDark: {
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
     borderColor: '#24354D',
   },
   searchInput: {
@@ -233,8 +233,8 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
   },
   filterChipActive: {
-    backgroundColor: '#0F1C2C',
-    borderColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
+    borderColor: '#0C2B4E',
   },
   filterChipInactiveLight: {
     backgroundColor: '#FFFFFF',
@@ -290,14 +290,14 @@ export const styles = StyleSheet.create({
     borderColor: '#C4C6CC',
   },
   addAnotherCardDark: {
-    backgroundColor: 'rgba(15, 28, 44, 0.4)',
+    backgroundColor: 'rgba(12, 43, 78, 0.4)',
     borderColor: '#24354D',
   },
   addIconCircle: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
     justifyContent: 'center',
     alignItems: 'center',
   },

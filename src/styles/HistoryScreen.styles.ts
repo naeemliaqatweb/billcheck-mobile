@@ -20,7 +20,7 @@ export const styles = StyleSheet.create({
   // Top App Bar
   topAppBar: {
     height: 56,
-    backgroundColor: '#0F1C2C',
+    backgroundColor: '#0C2B4E',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
