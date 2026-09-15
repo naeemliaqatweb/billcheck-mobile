@@ -133,7 +133,10 @@ export const DashboardTrendGraph: React.FC<DashboardTrendGraphProps> = ({
     const usableH = bottomY - topY;
 
     const pts = data6.map((item, idx) => {
-      const x = paddingX + idx * stepX;
+      // In Urdu (RTL), index 0 (oldest month) is on the right, index 5 (latest month) is on the left
+      const x = isUrdu
+        ? svgW - paddingX - idx * stepX
+        : paddingX + idx * stepX;
       const ratio = (item.amount - minAmount) / range;
       const y = bottomY - ratio * usableH;
       return { x, y, item, index: idx };
@@ -161,7 +164,7 @@ export const DashboardTrendGraph: React.FC<DashboardTrendGraphProps> = ({
     const dArea = `${dLine} L ${last.x} 50 L ${first.x} 50 Z`;
 
     return { linePath: dLine, areaPath: dArea, lastPoint: last };
-  }, [data6]);
+  }, [data6, isUrdu]);
 
   // Calculate dynamic trend percentage vs previous month
   const { trendText, isUp } = useMemo(() => {
@@ -225,9 +228,21 @@ export const DashboardTrendGraph: React.FC<DashboardTrendGraphProps> = ({
           }
         }}
       >
-        {/* Animated Mask revealing graph from left to right */}
-        <Animated.View style={[styles.animatedMask, { width: animatedWidth }]}>
-          <View style={[styles.fixedSvgWrapper, { width: containerWidth || 310 }]}>
+        {/* Animated Mask revealing graph (from left in LTR, from right in RTL) */}
+        <Animated.View
+          style={[
+            styles.animatedMask,
+            isUrdu ? styles.animatedMaskRTL : styles.animatedMaskLTR,
+            { width: animatedWidth },
+          ]}
+        >
+          <View
+            style={[
+              styles.fixedSvgWrapper,
+              isUrdu && styles.fixedSvgWrapperRTL,
+              { width: containerWidth || 310 },
+            ]}
+          >
             <Svg
               width="100%"
               height={60}
@@ -374,8 +389,22 @@ const styles = StyleSheet.create({
     height: 60,
     overflow: 'hidden',
   },
+  animatedMaskLTR: {
+    alignSelf: 'flex-start',
+  },
+  animatedMaskRTL: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+  },
   fixedSvgWrapper: {
     height: 60,
+  },
+  fixedSvgWrapperLTR: {},
+  fixedSvgWrapperRTL: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
   },
   svg: {
     overflow: 'visible',
