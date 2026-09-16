@@ -241,7 +241,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
         ? `آپ اپنے بینک ایپ، ${partner} یا JazzCash میں جا کر '1Bill / Utility Bills' میں ${activeBill.company} منتخب کریں اور اپنا 14 ہندسوں کا ریفرنس نمبر (${refNo}) درج کر کے براہ راست بل ادا کر سکتے ہیں۔`
         : `To pay via ${partner}, open your app, navigate to '1Bill / Utility Bills', select '${activeBill.company}', and enter your 14-digit reference number (${refNo}) to pay instantly.`,
       primaryText: isUrdu ? 'ٹھیک ہے' : 'Got it',
-      secondaryText: isUrdu ? 'ریفرنس نمبر کاپی کریں' : 'Copy Reference Number',
+      secondaryText: isUrdu ? 'ریفرنس کاپی کریں' : 'Copy Reference',
       onPrimaryPress: () => setPopup((p) => ({ ...p, visible: false })),
       onSecondaryPress: () => {
         setPopup((p) => ({ ...p, visible: false }));
