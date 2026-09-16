@@ -301,10 +301,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <View
               style={[
                 styles.metricIconBox,
-                darkMode ? styles.darkBox : styles.lightBox,
+                {
+                  backgroundColor: darkMode ? 'rgba(98, 255, 150, 0.12)' : '#E8F5E9',
+                  borderColor: darkMode ? 'rgba(98, 255, 150, 0.30)' : '#C8E6C9',
+                },
               ]}
             >
-              <AppIcon name="gauge" size={18} color="#006D35" />
+              <AppIcon name="gauge" size={18} color={darkMode ? '#62FF96' : '#006D35'} />
             </View>
             <View style={{ flex: 1 }}>
               <Text
@@ -339,10 +342,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <View
               style={[
                 styles.metricIconBox,
-                darkMode ? styles.darkBox : styles.lightBox,
+                {
+                  backgroundColor: darkMode ? 'rgba(255, 138, 128, 0.15)' : '#FFEBEE',
+                  borderColor: darkMode ? 'rgba(255, 138, 128, 0.32)' : '#FFCDD2',
+                },
               ]}
             >
-              <AppIcon name="flame" size={18} color="#006D35" />
+              <AppIcon name="flame" size={18} color={darkMode ? '#FF8A80' : '#D32F2F'} />
             </View>
             <View style={{ flex: 1 }}>
               <Text
@@ -401,10 +407,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <View
                 style={[
                   styles.menuIconBox,
-                  darkMode ? styles.darkBox : styles.lightBox,
+                  {
+                    backgroundColor: darkMode ? 'rgba(2, 132, 199, 0.15)' : '#E0F2FE',
+                    borderColor: darkMode ? 'rgba(56, 189, 248, 0.35)' : '#BAE6FD',
+                  },
                 ]}
               >
-                <AppIcon name="globe" size={18} color="#0284C7" />
+                <AppIcon name="globe" size={18} color={darkMode ? '#38BDF8' : '#0284C7'} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text
@@ -473,10 +482,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <View
                 style={[
                   styles.menuIconBox,
-                  darkMode ? styles.darkBox : styles.lightBox,
+                  {
+                    backgroundColor: darkMode ? 'rgba(99, 102, 241, 0.15)' : '#EEF2FF',
+                    borderColor: darkMode ? 'rgba(129, 140, 248, 0.35)' : '#C7D2FE',
+                  },
                 ]}
               >
-                <AppIcon name="moon" size={18} color="#6366F1" />
+                <AppIcon name="moon" size={18} color={darkMode ? '#818CF8' : '#6366F1'} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text
@@ -517,13 +529,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <View
                 style={[
                   styles.menuIconBox,
-                  darkMode ? styles.darkBox : styles.lightBox,
+                  {
+                    backgroundColor: darkMode ? 'rgba(98, 255, 150, 0.15)' : '#E8F5E9',
+                    borderColor: darkMode ? 'rgba(98, 255, 150, 0.35)' : '#C8E6C9',
+                  },
                 ]}
               >
                 <AppIcon
                   name="receipt-long"
                   size={18}
-                  color={darkMode ? '#F8FAFC' : '#0F172A'}
+                  color={darkMode ? '#62FF96' : '#006D35'}
                 />
               </View>
               <View style={{ flex: 1 }}>
@@ -551,13 +566,17 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <View
                 style={[
                   styles.countPill,
-                  darkMode ? styles.darkBox : styles.lightBox,
+                  {
+                    backgroundColor: darkMode ? 'rgba(98, 255, 150, 0.15)' : '#E8F5E9',
+                    borderColor: darkMode ? 'rgba(98, 255, 150, 0.30)' : '#C8E6C9',
+                    borderWidth: 1,
+                  },
                 ]}
               >
                 <Text
                   style={[
                     styles.countPillText,
-                    darkMode ? styles.darkText : styles.lightText,
+                    { color: darkMode ? '#62FF96' : '#006D35' },
                   ]}
                 >
                   {savedCount} {t.activeBadge}
@@ -581,13 +600,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <View
                 style={[
                   styles.menuIconBox,
-                  darkMode ? styles.darkBox : styles.lightBox,
+                  {
+                    backgroundColor: darkMode ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7',
+                    borderColor: darkMode ? 'rgba(251, 191, 36, 0.35)' : '#FDE68A',
+                  },
                 ]}
               >
                 <AppIcon
                   name="file-download"
                   size={18}
-                  color={darkMode ? '#F8FAFC' : '#0F172A'}
+                  color={darkMode ? '#FBBF24' : '#D97706'}
                 />
               </View>
               <View style={{ flex: 1 }}>
@@ -625,9 +647,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 style={[
                   styles.menuIconBox,
                   {
-                    backgroundColor: darkMode
-                      ? 'rgba(63, 255, 139, 0.15)'
-                      : 'rgba(0, 109, 53, 0.1)',
+                    backgroundColor: darkMode ? 'rgba(63, 255, 139, 0.15)' : '#E8F5E9',
+                    borderColor: darkMode ? 'rgba(63, 255, 139, 0.35)' : '#C8E6C9',
                   },
                 ]}
               >
@@ -683,14 +704,15 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 style={[
                   styles.menuIconBox,
                   {
-                    backgroundColor: darkMode ? '#006D35' : '#E8F7EE',
+                    backgroundColor: darkMode ? 'rgba(98, 255, 150, 0.18)' : '#E8F5E9',
+                    borderColor: darkMode ? 'rgba(98, 255, 150, 0.40)' : '#A7F3D0',
                   },
                 ]}
               >
                 <AppIcon
                   name="bell"
                   size={18}
-                  color={darkMode ? '#FFFFFF' : '#006D35'}
+                  color={darkMode ? '#62FF96' : '#006D35'}
                 />
               </View>
               <View style={{ flex: 1 }}>
@@ -740,13 +762,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <View
                 style={[
                   styles.menuIconBox,
-                  darkMode ? styles.darkBox : styles.lightBox,
+                  {
+                    backgroundColor: darkMode ? 'rgba(20, 184, 166, 0.15)' : '#CCFBF1',
+                    borderColor: darkMode ? 'rgba(45, 212, 191, 0.35)' : '#99F6E4',
+                  },
                 ]}
               >
                 <AppIcon
                   name="phone-call"
                   size={18}
-                  color={darkMode ? '#F8FAFC' : '#0F172A'}
+                  color={darkMode ? '#2DD4BF' : '#0D9488'}
                 />
               </View>
               <View style={{ flex: 1 }}>
@@ -787,13 +812,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <View
                 style={[
                   styles.menuIconBox,
-                  darkMode ? styles.darkBox : styles.lightBox,
+                  {
+                    backgroundColor: darkMode ? 'rgba(168, 85, 247, 0.15)' : '#F3E8FF',
+                    borderColor: darkMode ? 'rgba(192, 132, 252, 0.35)' : '#E9D5FF',
+                  },
                 ]}
               >
                 <AppIcon
                   name="corporate-fare"
                   size={18}
-                  color={darkMode ? '#F8FAFC' : '#0F172A'}
+                  color={darkMode ? '#C084FC' : '#9333EA'}
                 />
               </View>
               <View style={{ flex: 1 }}>
@@ -834,13 +862,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <View
                 style={[
                   styles.menuIconBox,
-                  darkMode ? styles.darkBox : styles.lightBox,
+                  {
+                    backgroundColor: darkMode ? 'rgba(244, 63, 94, 0.15)' : '#FFE4E6',
+                    borderColor: darkMode ? 'rgba(251, 113, 133, 0.35)' : '#FECDD3',
+                  },
                 ]}
               >
                 <AppIcon
                   name="security"
                   size={18}
-                  color={darkMode ? '#F8FAFC' : '#0F172A'}
+                  color={darkMode ? '#FB7185' : '#E11D48'}
                 />
               </View>
               <View style={{ flex: 1 }}>
@@ -883,7 +914,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <View
               style={[
                 styles.disclaimerIconBox,
-                darkMode ? styles.darkBox : styles.lightBox,
+                {
+                  backgroundColor: darkMode ? 'rgba(239, 68, 68, 0.15)' : '#FEE2E2',
+                  borderColor: darkMode ? 'rgba(239, 68, 68, 0.35)' : '#FECACA',
+                },
               ]}
             >
               <AppIcon name="shield" size={18} color="#EF4444" />

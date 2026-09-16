@@ -196,6 +196,7 @@ export const styles = StyleSheet.create({
     borderRadius: 9,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
   },
   metricLabel: {
     fontSize: 10.5,
@@ -265,6 +266,7 @@ export const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
   },
   menuRowTitle: {
     fontSize: 14,
@@ -426,8 +428,8 @@ export const styles = StyleSheet.create({
     borderBottomColor: '#D5E2EE',
   },
   darkBox: {
-    backgroundColor: '#16253B',
-    borderColor: '#284163',
+    backgroundColor: 'rgba(255, 255, 255, 0.07)',
+    borderColor: 'rgba(255, 255, 255, 0.16)',
   },
   lightBox: {
     backgroundColor: '#EBF4FC',
