@@ -45,9 +45,8 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
 }) => {
   const isUrdu = language === 'ur';
 
-  // Utility category filter: 'electricity' vs 'gas'
   const [utilityType, setUtilityType] = useState<'electricity' | 'gas'>('electricity');
-  const [selectedYear, setSelectedYear] = useState<string>('2024');
+  const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()));
 
   const [activeBill, setActiveBill] = useState<BillData | null>(currentBill);
   const [selectedMeterId, setSelectedMeterId] = useState<string | null>(
@@ -193,31 +192,26 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
     });
   };
 
-  // Build enriched history: providers return previous months only, so we
-  // append the current bill as the final entry if it isn't already there.
+  // Build enriched history with strict chronological ordering & deduplication
   const historyData: BillMonthHistory[] = useMemo(() => {
-    const base: BillMonthHistory[] = activeBill?.history12Months || [];
-    if (!activeBill || !activeBill.billMonth) return base;
+    const raw: BillMonthHistory[] = [...(activeBill?.history12Months || [])];
+    if (activeBill && activeBill.billMonth) {
+      const curLabel = activeBill.billMonth.trim().toUpperCase();
+      const exists = raw.some((h) => (h.month || '').trim().toUpperCase() === curLabel);
+      if (!exists) {
+        const yrStr = curLabel.split(/[\s\-_]+/)[1] || '26';
+        const fullYear = yrStr.length === 4 ? parseInt(yrStr, 10) : 2000 + parseInt(yrStr, 10);
 
-    // Normalise: 'AUG 26' and 'Aug 26' should be treated the same
-    const currentLabel = activeBill.billMonth.trim().toUpperCase();
-    const lastLabel = base.length > 0 ? (base[base.length - 1].month || '').trim().toUpperCase() : '';
-
-    if (lastLabel === currentLabel) return base; // already in history
-
-    // Derive 2-digit year from label e.g. 'AUG 26' -> 2026
-    const yrStr = currentLabel.split(' ')[1] || '26';
-    const fullYear = 2000 + parseInt(yrStr, 10);
-
-    const currentEntry: BillMonthHistory = {
-      month: activeBill.billMonth.trim().toUpperCase(), // e.g. 'AUG 26'
-      year: fullYear,
-      units: activeBill.unitsConsumed || 0,
-      amount: activeBill.payableWithinDueDate || 0,
-      status: activeBill.billStatus === 'paid' ? 'paid' : 'unpaid',
-    };
-
-    return [...base, currentEntry];
+        raw.push({
+          month: activeBill.billMonth.trim().toUpperCase(),
+          year: fullYear,
+          units: activeBill.unitsConsumed || 0,
+          amount: activeBill.payableWithinDueDate || 0,
+          status: activeBill.billStatus === 'paid' ? 'paid' : 'unpaid',
+        });
+      }
+    }
+    return raw;
   }, [activeBill]);
 
   const hasHistory = historyData.length > 0;

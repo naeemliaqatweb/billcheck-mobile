@@ -1,10 +1,12 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   Dimensions,
+  Animated,
+  Easing,
 } from 'react-native';
 import Svg, {
   Defs,
@@ -26,6 +28,33 @@ interface AnalyticsTelemetryChartProps {
   language?: 'en' | 'ur';
 }
 
+const MON_MAP: Record<string, number> = {
+  JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5,
+  JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11,
+};
+
+const URDU_MONTH_NAMES: Record<string, string> = {
+  JAN: 'جنوری', FEB: 'فروری', MAR: 'مارچ', APR: 'اپریل',
+  MAY: 'مئی', JUN: 'جون', JUL: 'جولائی', AUG: 'اگست',
+  SEP: 'ستمبر', OCT: 'اکتوبر', NOV: 'نومبر', DEC: 'دسمبر',
+};
+
+const formatMonthLabel = (mStr: string, isUrdu = false) => {
+  if (!mStr) return { mon: '', yr: '' };
+  const clean = mStr.trim().toUpperCase();
+  const parts = clean.split(/[\s\-_]+/);
+  const raw = parts[0] || '';
+  const yPart = parts[1] ? `'${parts[1].slice(-2)}` : '';
+
+  for (const [key, urVal] of Object.entries(URDU_MONTH_NAMES)) {
+    if (raw.startsWith(key)) {
+      const mon = isUrdu ? urVal : (key.charAt(0) + key.slice(1).toLowerCase());
+      return { mon, yr: yPart };
+    }
+  }
+  return { mon: raw.slice(0, 3), yr: yPart };
+};
+
 export const AnalyticsTelemetryChart: React.FC<AnalyticsTelemetryChartProps> = ({
   history,
   meterLabel = 'LESCO # 08 11254 0938400 U',
@@ -37,22 +66,116 @@ export const AnalyticsTelemetryChart: React.FC<AnalyticsTelemetryChartProps> = (
   const isGas = utilityType === 'gas';
   const unitLabel = isGas ? 'MMBTU' : 'kWh';
 
-  // Default to selecting the latest month
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const drawAnim = useRef(new Animated.Value(0)).current;
+
+  // Chronologically sort and deduplicate history
+  const chartData = useMemo(() => {
+    if (!history || history.length === 0) {
+      // Fallback dynamic 12 months
+      const SEASON_MUL = [0.38, 0.42, 0.55, 0.75, 0.95, 1.15, 1.20, 1.05, 0.85, 0.65, 0.45, 0.40];
+      const MON_ABBR = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+      const now = new Date();
+      const curM = now.getMonth();
+      const curY = now.getFullYear();
+
+      const slots: BillMonthHistory[] = [];
+      for (let offset = 11; offset >= 0; offset--) {
+        const d = new Date(curY, curM - offset, 1);
+        const m = d.getMonth();
+        const y = d.getFullYear();
+        const isCur = offset === 0;
+        const units = Math.max(50, Math.round(320 * SEASON_MUL[m]));
+        const amount = Math.round(units * 38.5);
+        slots.push({
+          month: `${MON_ABBR[m]} ${String(y).slice(-2)}`,
+          year: y,
+          units,
+          amount,
+          status: isCur ? 'unpaid' : 'paid',
+        });
+      }
+      return slots;
+    }
+
+    // Sort by timestamp (year * 12 + monthIndex)
+    const parsed = history.map((item) => {
+      let year = item.year || 2026;
+      let monIndex = 0;
+      const clean = (item.month || '').trim().toUpperCase();
+      const parts = clean.split(/[\s\-_]+/);
+      const mStr = parts[0] || '';
+      const yStr = parts[1] || '';
+
+      for (const [abbr, idx] of Object.entries(MON_MAP)) {
+        if (mStr.startsWith(abbr)) {
+          monIndex = idx;
+          break;
+        }
+      }
+
+      if (yStr) {
+        const yNum = parseInt(yStr.length === 2 ? `20${yStr}` : yStr, 10);
+        if (!isNaN(yNum) && yNum > 2000) year = yNum;
+      }
+
+      const timestamp = year * 12 + monIndex;
+      return { item, timestamp };
+    });
+
+    const seen = new Map<number, BillMonthHistory>();
+    parsed.forEach(({ item, timestamp }) => {
+      seen.set(timestamp, item);
+    });
+
+    return Array.from(seen.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map((entry) => entry[1])
+      .slice(-12);
+  }, [history]);
+
+  // Default to selecting the latest month (end of chart)
   const [selectedIndex, setSelectedIndex] = useState<number>(
-    history.length > 0 ? history.length - 1 : 0
+    chartData.length > 0 ? chartData.length - 1 : 0
   );
 
-  // Sync selected index to last entry whenever history prop changes (e.g. meter switch)
+  // Sync selected index when chart data changes
   useEffect(() => {
-    if (history.length > 0) {
-      setSelectedIndex(history.length - 1);
+    if (chartData.length > 0) {
+      setSelectedIndex(chartData.length - 1);
     }
-  }, [history]);
+  }, [chartData]);
 
-  const chartData = useMemo(() => {
-    if (!history || history.length === 0) return [];
-    return history.slice(-13); // Show up to 13 months (Aug 25 → Aug 26)
-  }, [history]);
+  // Smooth drawing animation when mounted or data updates
+  useEffect(() => {
+    drawAnim.setValue(0);
+    Animated.timing(drawAnim, {
+      toValue: 1,
+      duration: 1200,
+      easing: Easing.bezier(0.22, 1, 0.36, 1),
+      useNativeDriver: false,
+    }).start();
+  }, [drawAnim, chartData]);
+
+  // Continuous pulse animation for selected marker
+  useEffect(() => {
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.35,
+          duration: 900,
+          useNativeDriver: false,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1.0,
+          duration: 900,
+          useNativeDriver: false,
+        }),
+      ])
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, [pulseAnim]);
 
   const maxUnits = useMemo(() => {
     if (chartData.length === 0) return 100;
@@ -61,11 +184,17 @@ export const AnalyticsTelemetryChart: React.FC<AnalyticsTelemetryChartProps> = (
   }, [chartData]);
 
   const selectedItem = chartData[selectedIndex] || chartData[chartData.length - 1] || {
-    month: 'Nov 2024',
+    month: 'Aug 2026',
     units: 342,
     amount: 14320,
     status: 'paid',
   };
+
+  const selectedMonthFormatted = useMemo(() => {
+    const { mon, yr } = formatMonthLabel(selectedItem.month, isUrdu);
+    const yrNum = yr ? yr.replace("'", '20') : (selectedItem.year ? `${selectedItem.year}` : '2026');
+    return `${mon} ${yrNum}`.trim();
+  }, [selectedItem, isUrdu]);
 
   // SVG dimensions
   const screenWidth = Dimensions.get('window').width;
@@ -74,7 +203,7 @@ export const AnalyticsTelemetryChart: React.FC<AnalyticsTelemetryChartProps> = (
   const paddingLeft = 14;
   const paddingRight = 14;
   const chartBottomY = 130;
-  const chartTopY = 24;
+  const chartTopY = 22;
   const usableHeight = chartBottomY - chartTopY;
   const usableWidth = svgWidth - paddingLeft - paddingRight;
 
@@ -120,16 +249,6 @@ export const AnalyticsTelemetryChart: React.FC<AnalyticsTelemetryChartProps> = (
 
   const activePoint = points[selectedIndex] || points[points.length - 1];
 
-  // Split month string "AUG 25" into { mon: 'Aug', yr: "'25" }
-  const getMonthParts = (mStr: string) => {
-    if (!mStr) return { mon: '', yr: '' };
-    const parts = mStr.trim().toUpperCase().split(' ');
-    const raw = parts[0] || '';
-    const mon = raw.charAt(0) + raw.slice(1).toLowerCase();
-    const yr = parts[1] ? `'${parts[1].slice(-2)}` : '';
-    return { mon, yr };
-  };
-
   return (
     <View style={[styles.card, darkMode ? styles.cardDark : styles.cardLight]}>
       {/* Top Header Row */}
@@ -163,7 +282,7 @@ export const AnalyticsTelemetryChart: React.FC<AnalyticsTelemetryChartProps> = (
               {isUrdu ? 'منتخب شدہ بلنگ سائیکل' : 'Selected Billing Cycle'}
             </Text>
             <Text style={[styles.cycleMainLabel, darkMode ? styles.darkText : styles.lightText]}>
-              {selectedItem.month}: {selectedItem.units} {unitLabel}
+              {selectedMonthFormatted}: {selectedItem.units} {unitLabel}
             </Text>
           </View>
         </View>
@@ -178,14 +297,15 @@ export const AnalyticsTelemetryChart: React.FC<AnalyticsTelemetryChartProps> = (
         </View>
       </View>
 
-      {/* SVG Canvas Chart */}
+      {/* Animated SVG Canvas Chart */}
       <View style={styles.chartSvgContainer}>
         <Svg width={svgWidth} height={svgHeight}>
           <Defs>
-            {/* Area gradient under trend line */}
-            <LinearGradient id="glowGradient" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0%" stopColor="#3FFF8B" stopOpacity="0.35" />
-              <Stop offset="100%" stopColor="#3FFF8B" stopOpacity="0.0" />
+            {/* Radiant Area Gradient under Trend Line */}
+            <LinearGradient id="analyticsGlowGrad" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0%" stopColor="#62FF96" stopOpacity="0.55" />
+              <Stop offset="40%" stopColor="#3FFF8B" stopOpacity="0.25" />
+              <Stop offset="100%" stopColor="#006D35" stopOpacity="0.0" />
             </LinearGradient>
 
             {/* Standard Bar Gradient */}
@@ -197,14 +317,14 @@ export const AnalyticsTelemetryChart: React.FC<AnalyticsTelemetryChartProps> = (
             {/* Active Selected Bar Gradient */}
             <LinearGradient id="activeBarGrad" x1="0" y1="0" x2="0" y2="1">
               <Stop offset="0%" stopColor="#3FFF8B" stopOpacity="1" />
-              <Stop offset="100%" stopColor="#00E475" stopOpacity="0.5" />
+              <Stop offset="100%" stopColor="#00E475" stopOpacity="0.6" />
             </LinearGradient>
           </Defs>
 
-          {/* Grid Guideline lines */}
-          <Line x1="0" y1="30" x2={svgWidth} y2="30" stroke="#74777D" strokeDasharray="3,3" strokeOpacity="0.2" />
-          <Line x1="0" y1="70" x2={svgWidth} y2="70" stroke="#74777D" strokeDasharray="3,3" strokeOpacity="0.2" />
-          <Line x1="0" y1="110" x2={svgWidth} y2="110" stroke="#74777D" strokeDasharray="3,3" strokeOpacity="0.2" />
+          {/* Grid Guidelines */}
+          <Line x1="0" y1="30" x2={svgWidth} y2="30" stroke="#74777D" strokeDasharray="3,3" strokeOpacity="0.18" />
+          <Line x1="0" y1="70" x2={svgWidth} y2="70" stroke="#74777D" strokeDasharray="3,3" strokeOpacity="0.18" />
+          <Line x1="0" y1="110" x2={svgWidth} y2="110" stroke="#74777D" strokeDasharray="3,3" strokeOpacity="0.18" />
 
           {/* Render Bars */}
           {points.map((p) => {
@@ -223,16 +343,16 @@ export const AnalyticsTelemetryChart: React.FC<AnalyticsTelemetryChartProps> = (
             );
           })}
 
-          {/* Shaded Area Under Trend Line */}
-          {areaPath ? <Path d={areaPath} fill="url(#glowGradient)" /> : null}
+          {/* Shaded Glowing Area Under Trend Line */}
+          {areaPath ? <Path d={areaPath} fill="url(#analyticsGlowGrad)" /> : null}
 
-          {/* Curved Trend Line */}
+          {/* Curved Trend Line with Radiant Glow */}
           {linePath ? (
             <Path
               d={linePath}
               fill="none"
               stroke="#62FF96"
-              strokeWidth={2.4}
+              strokeWidth={2.8}
             />
           ) : null}
 
@@ -241,21 +361,21 @@ export const AnalyticsTelemetryChart: React.FC<AnalyticsTelemetryChartProps> = (
             <>
               <Line
                 x1={activePoint.x}
-                y1={chartTopY - 8}
+                y1={chartTopY - 6}
                 x2={activePoint.x}
                 y2={chartBottomY}
                 stroke="#3FFF8B"
-                strokeWidth={1.2}
+                strokeWidth={1.5}
                 strokeDasharray="2,2"
-                opacity={0.85}
+                opacity={0.9}
               />
               <Circle
                 cx={activePoint.x}
                 cy={activePoint.y}
-                r={5.5}
+                r={6}
                 fill="#FFFFFF"
-                stroke="#00E475"
-                strokeWidth={2.5}
+                stroke="#62FF96"
+                strokeWidth={2.8}
               />
             </>
           )}
@@ -284,6 +404,8 @@ export const AnalyticsTelemetryChart: React.FC<AnalyticsTelemetryChartProps> = (
       <View style={styles.monthLabelRow}>
         {chartData.map((item, idx) => {
           const isSelected = idx === selectedIndex;
+          const { mon, yr } = formatMonthLabel(item.month, isUrdu);
+          const isCurrentBill = item.status === 'unpaid';
 
           return (
             <TouchableOpacity
@@ -292,34 +414,28 @@ export const AnalyticsTelemetryChart: React.FC<AnalyticsTelemetryChartProps> = (
               activeOpacity={0.7}
               style={styles.monthCol}
             >
-              {(() => {
-                const { mon, yr } = getMonthParts(item.month);
-                const isCurrentBill = item.status === 'unpaid';
-                return (
-                  <>
-                    <Text
-                      style={[
-                        styles.monthText,
-                        isSelected && (darkMode ? styles.monthTextSelected : styles.monthTextSelectedLight),
-                        !isSelected && isCurrentBill && styles.monthTextCurrent,
-                        !isSelected && !isCurrentBill && (darkMode ? styles.darkSub : styles.lightSub),
-                      ]}
-                    >
-                      {mon}
-                    </Text>
-                    {yr ? (
-                      <Text
-                        style={[
-                          styles.monthYearText,
-                          isSelected && (darkMode ? styles.monthTextSelected : styles.monthTextSelectedLight),
-                        ]}
-                      >
-                        {yr}
-                      </Text>
-                    ) : null}
-                  </>
-                );
-              })()}
+              <Text
+                style={[
+                  styles.monthText,
+                  isSelected && (darkMode ? styles.monthTextSelected : styles.monthTextSelectedLight),
+                  !isSelected && isCurrentBill && styles.monthTextCurrent,
+                  !isSelected && !isCurrentBill && (darkMode ? styles.darkSub : styles.lightSub),
+                ]}
+                numberOfLines={1}
+              >
+                {mon}
+              </Text>
+              {yr ? (
+                <Text
+                  style={[
+                    styles.monthYearText,
+                    isSelected && (darkMode ? styles.monthTextSelected : styles.monthTextSelectedLight),
+                  ]}
+                  numberOfLines={1}
+                >
+                  {yr}
+                </Text>
+              ) : null}
             </TouchableOpacity>
           );
         })}
