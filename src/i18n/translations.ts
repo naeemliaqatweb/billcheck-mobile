@@ -121,8 +121,9 @@ export const TRANSLATIONS = {
     clearCacheSuccessMsg: 'All cached bills and saved meters have been cleared from local storage.',
     confirmResetBtn: 'Yes, Reset App',
     cancelBtn: 'Cancel',
-    appFooterVersion: 'App Version 1.2.0 (Build 420) • Made with pride in Pakistan',
-    appFooterLicense: 'Licensed under MIT Utility Framework • Arcloom Tech 2025',
+    appFooterVersion: 'Version 1.0.0 • BillCheck PK',
+    appFooterLicense: 'Arcloom Tech • All Rights Reserved',
+
     trackedDiscos: 'Tracked DISCOs',
     trackedDiscosVal: 'LESCO • K-Electric',
     trackedGas: 'Tracked Gas',
@@ -354,8 +355,9 @@ export const TRANSLATIONS = {
     clearCacheSuccessMsg: 'تمام کیش شدہ بل اور محفوظ میٹرز موبائل کی میموری سے صاف کر دیے گئے ہیں۔',
     confirmResetBtn: 'ہاں، ری سیٹ کریں',
     cancelBtn: 'منسوخ کریں',
-    appFooterVersion: 'ایپ ورژن 1.2.0 (بلڈ 420) • فخرِ پاکستان',
-    appFooterLicense: 'ارکلوم ٹیک 2025 • MIT یوٹیلیٹی فریم ورک کے تحت لائسنس یافتہ',
+    appFooterVersion: 'ورژن 1.0.0 • بل چیک پی کے',
+    appFooterLicense: 'ارکلوم ٹیک • تمام جملہ حقوق محفوظ ہیں',
+
     trackedDiscos: 'بجلی کی کمپنیاں',
     trackedDiscosVal: 'لیسکو • کے-الیکٹرک',
     trackedGas: 'سوئی گیس کمپنیاں',

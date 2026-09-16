@@ -24,3 +24,9 @@ export const getProviderLogo = (code?: string): ImageSourcePropType | null => {
   const key = code.trim().toUpperCase();
   return PROVIDER_LOGOS[key] || null;
 };
+
+export const hasLocalLogo = (code?: string): boolean => {
+  if (!code) return false;
+  return !!PROVIDER_LOGOS[code.trim().toUpperCase()];
+};
+

@@ -15,7 +15,6 @@ import { AdBanner } from '../components/AdBanner';
 import { AppIcon } from '../components/AppIcon';
 import { CustomPopup, PopupConfig } from '../components/CustomPopup';
 import { StorageService } from '../services/storage';
-import { NotificationService } from '../services/notification';
 import { styles } from '../styles/SettingsScreen.styles';
 
 interface SettingsScreenProps {
@@ -70,44 +69,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const handleToggleNotifications = async (val: boolean) => {
     setNotificationsEnabled(val);
     await StorageService.setNotifications(val);
-  };
-
-  const handleTestNotification = async () => {
-    const title = isUrdu
-      ? '⚡ نیا بل جاری: LESCO (گھر کا میٹر)'
-      : '⚡ New Bill Released: LESCO (Home)';
-    const message = isUrdu
-      ? 'اگست کا نیا بل Rs. 14,250 جاری ہو گیا ہے۔ آخری تاریخ: 22 اگست'
-      : 'Your new bill for AUG 26 (Rs. 14,250) is now ready. Due Date: 22 Aug';
-
-    await NotificationService.requestNotificationPermission();
-
-    await NotificationService.triggerSystemNotification(
-      title,
-      message,
-      'test_bill_alert'
-    );
-
-    // Also record in in-app notification center
-    await NotificationService.addNotification({
-      title,
-      message,
-      company: 'LESCO',
-      referenceNumber: '15115371598719',
-      billMonth: 'AUG 26',
-      billAmount: 14250,
-    });
-
-    setPopup({
-      visible: true,
-      type: 'success',
-      title: isUrdu ? 'ٹیسٹ نوٹیفکیشن بھیج دیا گیا!' : 'Test Notification Sent!',
-      message: isUrdu
-        ? 'موبائل کے ٹاپ بار (نوٹیفکیشن بار) پر چیک کریں، بالکل واٹس ایپ کی طرح نوٹیفکیشن موصول ہو چکا ہے۔'
-        : 'Check your phone’s top status bar drawer. The system push notification has been triggered.',
-      primaryText: isUrdu ? 'بہترین' : 'Awesome',
-      onClose: () => setPopup((p) => ({ ...p, visible: false })),
-    });
   };
 
   const showPrivacyPolicy = () => {
@@ -262,7 +223,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               </View>
             </View>
             <View style={styles.heroVersionBadge}>
-              <Text style={styles.heroVersionText}>v1.2.0</Text>
+              <Text style={styles.heroVersionText}>v1.0.0</Text>
             </View>
           </View>
 
@@ -686,71 +647,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               thumbColor={notificationsEnabled ? '#3FFF8B' : '#FFFFFF'}
             />
           </View>
-
-          {/* Row 5b: Test Live Notification (Temporary Test Button) */}
-          <TouchableOpacity
-            style={[
-              styles.menuRow,
-              styles.menuRowBorder,
-              {
-                backgroundColor: darkMode ? 'rgba(98, 255, 150, 0.08)' : 'rgba(0, 109, 53, 0.06)',
-              },
-            ]}
-            onPress={handleTestNotification}
-            activeOpacity={0.75}
-          >
-            <View style={styles.menuRowLeft}>
-              <View
-                style={[
-                  styles.menuIconBox,
-                  {
-                    backgroundColor: darkMode ? 'rgba(98, 255, 150, 0.18)' : '#E8F5E9',
-                    borderColor: darkMode ? 'rgba(98, 255, 150, 0.40)' : '#A7F3D0',
-                  },
-                ]}
-              >
-                <AppIcon
-                  name="bell"
-                  size={18}
-                  color={darkMode ? '#62FF96' : '#006D35'}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={[
-                    styles.menuRowTitle,
-                    { color: darkMode ? '#62FF96' : '#006D35', fontWeight: '800' },
-                    isUrdu && styles.rtlText,
-                  ]}
-                >
-                  {isUrdu ? '🧪 نوٹیفکیشن ٹیسٹ کریں (Test Notification)' : '🧪 Test Live Push Notification'}
-                </Text>
-                <Text
-                  style={[
-                    styles.menuRowSubtitle,
-                    darkMode ? styles.darkSub : styles.lightSub,
-                    isUrdu && styles.rtlText,
-                  ]}
-                >
-                  {isUrdu
-                    ? 'موبائل پر واٹس ایپ جیسا نوٹیفکیشن چیک کرنے کے لیے کلک کریں'
-                    : 'Tap to trigger a sample bill alert in system notification bar'}
-                </Text>
-              </View>
-            </View>
-            <View
-              style={{
-                backgroundColor: darkMode ? '#006D35' : '#047857',
-                paddingHorizontal: 10,
-                paddingVertical: 4,
-                borderRadius: 6,
-              }}
-            >
-              <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '800' }}>
-                {isUrdu ? 'ٹیسٹ' : 'TEST'}
-              </Text>
-            </View>
-          </TouchableOpacity>
 
           {/* Row 6: DISCO & SNGPL Helpline Directory */}
           <TouchableOpacity
