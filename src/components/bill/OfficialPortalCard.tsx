@@ -95,7 +95,7 @@ export const OfficialPortalCard: React.FC<OfficialPortalCardProps> = ({
         activeOpacity={0.8}
       >
         <View style={styles.btnRowSm}>
-          <AppIcon name="globe" size={17} color="#005226" />
+          <AppIcon name="globe" size={17} color="#FFFFFF" />
           <Text style={styles.openPortalPrimaryText}>
             {isUrdu ? 'لائیو سرکاری پورٹل کھولیں' : 'Open Official Bill Portal'}
           </Text>

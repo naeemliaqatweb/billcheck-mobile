@@ -100,7 +100,7 @@ export const OfficialBillModal: React.FC<OfficialBillModalProps> = ({
               onPress={onSaveToGallery || handleShare}
               activeOpacity={0.8}
             >
-              <AppIcon name="file-down" size={16} color="#005226" />
+              <AppIcon name="file-down" size={16} color="#FFFFFF" />
               <Text style={styles.actionBtnPrimaryText}>
                 {isUrdu ? 'گیلری / فون میں محفوظ کریں' : 'Save PDF to Phone'}
               </Text>
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
   actionBtnPrimaryText: {
     fontSize: 12,
     fontWeight: '800',
-    color: '#005226',
+    color: '#FFFFFF',
   },
   actionBtnSecondary: {
     flex: 1,
@@ -458,8 +458,8 @@ const styles = StyleSheet.create({
     borderColor: '#BA1A1A',
   },
   statusPaid: {
-    backgroundColor: '#D1FADF',
-    borderColor: '#006D35',
+    backgroundColor: '#059669',
+    borderColor: '#059669',
   },
   statusUnpaidText: {
     fontSize: 10,
@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
   statusPaidText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#006D35',
+    color: '#FFFFFF',
   },
   sheet2ColGrid: {
     flexDirection: 'row',

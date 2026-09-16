@@ -350,26 +350,14 @@ export const DashboardBillCard: React.FC<DashboardBillCardProps> = ({
             {isLoading ? (
               <ActivityIndicator
                 size="small"
-                color={
-                  isGas
-                    ? '#FFFFFF'
-                    : darkMode
-                    ? '#003314'
-                    : '#FFFFFF'
-                }
+                color="#FFFFFF"
               />
             ) : (
               <>
                 <AppIcon
                   name="receipt"
                   size={16}
-                  color={
-                    isGas
-                      ? '#FFFFFF'
-                      : darkMode
-                      ? '#003314'
-                      : '#FFFFFF'
-                  }
+                  color="#FFFFFF"
                 />
                 <Text
                   style={[

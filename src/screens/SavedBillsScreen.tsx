@@ -371,7 +371,7 @@ export const SavedBillsScreen: React.FC<SavedBillsScreenProps> = ({
               <AppIcon
                 name="bolt"
                 size={14}
-                color={filterType === 'electricity' ? '#62FF96' : '#006D35'}
+                color={filterType === 'electricity' ? '#FFFFFF' : '#006D35'}
               />
               <Text
                 style={
@@ -398,7 +398,7 @@ export const SavedBillsScreen: React.FC<SavedBillsScreenProps> = ({
               <AppIcon
                 name="flame"
                 size={14}
-                color={filterType === 'gas' ? '#62FF96' : '#BA1A1A'}
+                color={filterType === 'gas' ? '#FFFFFF' : '#BA1A1A'}
               />
               <Text
                 style={

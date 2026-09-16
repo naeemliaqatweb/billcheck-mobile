@@ -761,9 +761,9 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
             activeOpacity={0.85}
           >
             {isDownloadingPdf ? (
-              <ActivityIndicator size="small" color="#005226" />
+              <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
-              <AppIcon name="file-down" size={18} color="#005226" />
+              <AppIcon name="file-down" size={18} color="#FFFFFF" />
             )}
             <Text style={styles.btnDownloadPdfText}>
               {isDownloadingPdf

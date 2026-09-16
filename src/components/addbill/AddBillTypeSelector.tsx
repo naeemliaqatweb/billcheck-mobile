@@ -37,7 +37,7 @@ export const AddBillTypeSelector: React.FC<AddBillTypeSelectorProps> = ({
         <AppIcon
           name="bolt"
           size={18}
-          color={utilityType === 'electricity' ? '#62FF96' : darkMode ? '#94A3B8' : '#64748B'}
+          color={utilityType === 'electricity' ? '#FFFFFF' : darkMode ? '#94A3B8' : '#64748B'}
         />
         <Text
           style={[

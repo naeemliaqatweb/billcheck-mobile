@@ -691,7 +691,7 @@ export const styles = StyleSheet.create({
   saveMeterPillText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#62FF96',
+    color: '#FFFFFF',
   },
   saveMeterPillTextSaved: {
     fontSize: 11,
