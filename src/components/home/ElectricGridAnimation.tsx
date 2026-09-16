@@ -103,7 +103,7 @@ export const ElectricGridAnimation: React.FC<ElectricGridAnimationProps> = ({
         source={require('../../assets/images/electric_grid_bg.webp')}
         style={[
           styles.bgImage,
-          { opacity: darkMode ? 0.78 : 0.65 },
+          { opacity: darkMode ? 0.58 : 0.48 },
         ]}
         resizeMode="cover"
       />

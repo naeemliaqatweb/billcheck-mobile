@@ -265,13 +265,14 @@ export const DashboardTrendGraph: React.FC<DashboardTrendGraphProps> = ({
             >
               <Defs>
                 <LinearGradient id="dashboardGlowGrad" x1="0" y1="0" x2="0" y2="1">
-                  <Stop offset="0%" stopColor="#3FFF8B" stopOpacity="0.38" />
-                  <Stop offset="60%" stopColor="#3FFF8B" stopOpacity="0.10" />
-                  <Stop offset="100%" stopColor="#3FFF8B" stopOpacity="0.0" />
+                  <Stop offset="0%" stopColor="#62FF96" stopOpacity="0.70" />
+                  <Stop offset="40%" stopColor="#3FFF8B" stopOpacity="0.40" />
+                  <Stop offset="80%" stopColor="#059669" stopOpacity="0.18" />
+                  <Stop offset="100%" stopColor="#0C2B4E" stopOpacity="0.0" />
                 </LinearGradient>
               </Defs>
 
-              {/* Area fill under curve */}
+              {/* Area fill under curve with rich radiant green glow */}
               {areaPath ? <Path d={areaPath} fill="url(#dashboardGlowGrad)" /> : null}
 
               {/* Outer glow stroke */}
@@ -279,8 +280,8 @@ export const DashboardTrendGraph: React.FC<DashboardTrendGraphProps> = ({
                 <Path
                   d={linePath}
                   fill="none"
-                  stroke="rgba(63, 255, 139, 0.35)"
-                  strokeWidth={5}
+                  stroke="rgba(98, 255, 150, 0.50)"
+                  strokeWidth={6}
                 />
               ) : null}
 
@@ -289,8 +290,8 @@ export const DashboardTrendGraph: React.FC<DashboardTrendGraphProps> = ({
                 <Path
                   d={linePath}
                   fill="none"
-                  stroke="#3FFF8B"
-                  strokeWidth={2.5}
+                  stroke="#62FF96"
+                  strokeWidth={3}
                 />
               ) : null}
 
