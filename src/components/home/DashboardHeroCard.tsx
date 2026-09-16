@@ -103,6 +103,13 @@ export const DashboardHeroCard: React.FC<DashboardHeroCardProps> = ({
 
   return (
     <View style={styles.heroWrapper}>
+      {/* Decorative vertical lines */}
+      <View style={styles.circuitDecoration} pointerEvents="none">
+        <View style={styles.circuitLine} />
+        <View style={styles.circuitLine} />
+        <View style={styles.circuitLine} />
+      </View>
+
       <View style={styles.heroContent}>
         {/* Top Bar Row: Greeting & Actions */}
         <View style={[styles.topRow, isUrdu && styles.rtlRow]}>
@@ -218,7 +225,7 @@ const styles = StyleSheet.create({
   circuitLine: {
     width: 1,
     height: '100%',
-    backgroundColor: '#62FF96',
+    backgroundColor: '#FFFFFF',
   },
   heroContent: {
     zIndex: 10,
