@@ -99,14 +99,28 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   // Helper to ensure current bill month is always the last entry in history
   const enrichWithCurrentBill = (bill: BillData): BillMonthHistory[] => {
     const base = bill.history12Months || [];
-    if (!bill.billMonth) return base;
+    if (!bill.billMonth || base.length === 0) return base;
 
     const currentLabel = bill.billMonth.trim().toUpperCase();
-    const lastLabel = base.length > 0 ? (base[base.length - 1].month || '').trim().toUpperCase() : '';
 
+    // Check if currentLabel already exists in base
+    const existingIndex = base.findIndex((b) => (b.month || '').trim().toUpperCase() === currentLabel);
+    if (existingIndex !== -1) {
+      const updated = [...base];
+      updated[existingIndex] = {
+        ...updated[existingIndex],
+        units: bill.unitsConsumed || updated[existingIndex].units,
+        amount: bill.payableWithinDueDate || updated[existingIndex].amount,
+        status: bill.billStatus === 'paid' ? 'paid' : 'unpaid',
+      };
+      // Slice up to the current bill month so no future months exist after it
+      return updated.slice(0, existingIndex + 1);
+    }
+
+    const lastLabel = (base[base.length - 1].month || '').trim().toUpperCase();
     if (lastLabel === currentLabel) return base;
 
-    const yrStr = currentLabel.split(' ')[1] || '26';
+    const yrStr = currentLabel.split(/[\s-]+/)[1] || '26';
     const fullYear = 2000 + (parseInt(yrStr, 10) || 26);
 
     const currentEntry: BillMonthHistory = {
@@ -142,15 +156,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     // 3. If primary meter has lastBillAmount, generate dynamic history
     if (primaryMeter && primaryMeter.lastBillAmount && primaryMeter.lastBillAmount > 0) {
       const estimatedUnits = Math.max(50, Math.round(primaryMeter.lastBillAmount / 38));
-      const dyn = generate12MonthHistory(estimatedUnits, primaryMeter.lastBillAmount);
+      const dyn = generate12MonthHistory(estimatedUnits, primaryMeter.lastBillAmount, primaryMeter.lastBillMonth);
       setHeroHistory(dyn);
       return;
     }
 
     // 4. Default dynamic history based on current total due or fallback
+    const targetMonth = filteredMeters[0]?.lastBillMonth || savedMeters[0]?.lastBillMonth;
     const baseAmount = totalDueAmount > 0 ? totalDueAmount : 14500;
     const baseUnits = Math.max(80, Math.round(baseAmount / 38));
-    const dyn = generate12MonthHistory(baseUnits, baseAmount);
+    const dyn = generate12MonthHistory(baseUnits, baseAmount, targetMonth);
     setHeroHistory(dyn);
   }, [filteredMeters, savedMeters, totalDueAmount]);
 
@@ -338,6 +353,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 <Text
                   style={[
                     styles.filterTabText,
+                    !darkMode && styles.filterTabTextLight,
                     filterType === 'all' && (darkMode ? styles.filterTabTextActiveDark : styles.filterTabTextActive),
                   ]}
                 >
@@ -356,6 +372,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 <Text
                   style={[
                     styles.filterTabText,
+                    !darkMode && styles.filterTabTextLight,
                     filterType === 'electricity' && (darkMode ? styles.filterTabTextActiveDark : styles.filterTabTextActive),
                   ]}
                 >
@@ -374,6 +391,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 <Text
                   style={[
                     styles.filterTabText,
+                    !darkMode && styles.filterTabTextLight,
                     filterType === 'gas' && (darkMode ? styles.filterTabTextActiveDark : styles.filterTabTextActive),
                   ]}
                 >
@@ -392,7 +410,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   darkMode ? styles.emptyBillsBoxDark : styles.emptyBillsBoxLight,
                 ]}
               >
-                <AppIcon name="receipt" size={32} color="#778598" />
+                <AppIcon name="receipt" size={32} color="#CBD5E1" />
                 <Text style={[styles.emptyBillsTitle, darkMode ? styles.darkText : styles.lightText]}>
                   {t.noSavedBills}
                 </Text>
@@ -422,7 +440,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           {/* Quick Utility Sync Banner */}
           <View style={[styles.syncBanner, darkMode ? styles.syncBannerDark : styles.syncBannerLight, isUrdu && styles.rtlRow]}>
             <View style={[styles.syncBannerLeft, isUrdu && styles.rtlRow]}>
-              <AppIcon name="refresh" size={24} color="#006D35" />
+              <AppIcon name="refresh" size={24} color={darkMode ? '#62FF96' : '#006D35'} />
               <View>
                 <Text style={[styles.syncBannerTitle, darkMode ? styles.darkText : styles.lightText, isUrdu && styles.rtlText]}>
                   {t.autoFetchEnabled}
@@ -433,7 +451,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               </View>
             </View>
             <View style={[styles.syncConnectedBadge, darkMode ? styles.syncConnectedBadgeDark : styles.syncConnectedBadgeLight]}>
-              <Text style={styles.syncConnectedText}>{t.connectedBadge}</Text>
+              <Text style={[styles.syncConnectedText, darkMode && styles.syncConnectedTextDark]}>
+                {t.connectedBadge}
+              </Text>
             </View>
           </View>
 

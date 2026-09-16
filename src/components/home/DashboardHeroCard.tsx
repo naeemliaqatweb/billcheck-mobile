@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
   syncText: {
     fontSize: 11,
     fontWeight: '500',
-    color: '#778598',
+    color: '#FFFFFF',
   },
   actionsRow: {
     flexDirection: 'row',
@@ -309,14 +309,14 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: '#213145',
     borderWidth: 1,
-    borderColor: 'rgba(116, 119, 125, 0.3)',
+    borderColor: 'rgba(255, 255, 255, 0.25)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   actionBtnText: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#62FF96',
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
   notificationBtn: {
     width: 40,
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: '#213145',
     borderWidth: 1,
-    borderColor: 'rgba(116, 119, 125, 0.3)',
+    borderColor: 'rgba(255, 255, 255, 0.25)',
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(116, 119, 125, 0.3)',
+    borderColor: 'rgba(255, 255, 255, 0.18)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
@@ -359,8 +359,8 @@ const styles = StyleSheet.create({
   },
   bentoLabel: {
     fontSize: 12,
-    fontWeight: '500',
-    color: '#A7C8FF',
+    fontWeight: '600',
+    color: '#FFFFFF',
     marginBottom: 4,
   },
   bentoAmount: {
@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   unpaidBadge: {
-    backgroundColor: '#3FFF8B',
+    backgroundColor: '#059669',
     paddingHorizontal: 10,
     paddingVertical: 4.5,
     borderRadius: 20,
@@ -382,12 +382,12 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#007237',
+    backgroundColor: '#FFFFFF',
   },
   unpaidBadgeText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#007237',
+    color: '#FFFFFF',
   },
   rtlText: {
     textAlign: 'right',

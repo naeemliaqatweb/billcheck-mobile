@@ -144,11 +144,11 @@ export const styles = StyleSheet.create({
   // Segmented Pill Switcher
   segmentedContainer: {
     flexDirection: 'row',
-    backgroundColor: '#001B3C',
+    backgroundColor: '#0C2B4E',
     padding: 4,
     borderRadius: 99,
     borderWidth: 1,
-    borderColor: 'rgba(116, 119, 125, 0.25)',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   segmentedBtn: {
     flex: 1,
@@ -161,8 +161,8 @@ export const styles = StyleSheet.create({
     borderRadius: 99,
   },
   segmentedBtnActive: {
-    backgroundColor: '#006D35',
-    shadowColor: '#3FFF8B',
+    backgroundColor: '#059669',
+    shadowColor: '#059669',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.4,
     shadowRadius: 8,
@@ -170,12 +170,12 @@ export const styles = StyleSheet.create({
   },
   segmentedText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#778598',
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   segmentedTextActive: {
     color: '#FFFFFF',
-    fontWeight: '800',
+    fontWeight: '900',
   },
 
   // Meter Selector Chips
@@ -208,12 +208,12 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
   },
   meterChipActive: {
-    backgroundColor: '#006D35',
-    borderColor: '#3FFF8B',
+    backgroundColor: '#059669',
+    borderColor: '#059669',
   },
   meterChipDark: {
-    backgroundColor: '#001B3C',
-    borderColor: 'rgba(116, 119, 125, 0.3)',
+    backgroundColor: '#0C2B4E',
+    borderColor: 'rgba(255, 255, 255, 0.25)',
   },
   meterChipLight: {
     backgroundColor: '#FFFFFF',
@@ -222,6 +222,7 @@ export const styles = StyleSheet.create({
   meterChipText: {
     fontSize: 11.5,
     fontWeight: '700',
+    color: '#FFFFFF',
   },
 
   // Empty State Card
@@ -248,11 +249,11 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 7,
-    backgroundColor: '#006D35',
+    backgroundColor: '#059669',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
-    shadowColor: '#3FFF8B',
+    shadowColor: '#059669',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
@@ -283,8 +284,8 @@ export const styles = StyleSheet.create({
     gap: 7,
   },
   actionBtnOutlineDark: {
-    backgroundColor: 'rgba(0, 27, 60, 0.5)',
-    borderColor: 'rgba(116, 119, 125, 0.35)',
+    backgroundColor: '#0C2B4E',
+    borderColor: 'rgba(255, 255, 255, 0.25)',
   },
   actionBtnOutlineLight: {
     backgroundColor: '#FFFFFF',
@@ -293,17 +294,18 @@ export const styles = StyleSheet.create({
   actionBtnOutlineText: {
     fontSize: 13,
     fontWeight: '700',
+    color: '#FFFFFF',
   },
   actionBtnPrimary: {
     flex: 1,
     height: 48,
     borderRadius: 10,
-    backgroundColor: '#006D35',
+    backgroundColor: '#059669',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 7,
-    shadowColor: '#3FFF8B',
+    shadowColor: '#059669',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.35,
     shadowRadius: 8,
@@ -323,7 +325,7 @@ export const styles = StyleSheet.create({
     color: '#0B1C30',
   },
   darkSub: {
-    color: '#778598',
+    color: '#CBD5E1',
   },
   lightSub: {
     color: '#44474C',

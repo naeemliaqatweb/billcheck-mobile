@@ -29,18 +29,38 @@ const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
  * NOTE: This is only called in generateOfflineBill() when the real API
  * is unreachable. Live bills get their history directly from the backend JSON.
  */
-export function generate12MonthHistory(currentUnits: number, currentAmount: number): BillMonthHistory[] {
+export function generate12MonthHistory(
+  currentUnits: number,
+  currentAmount: number,
+  anchorBillMonth?: string
+): BillMonthHistory[] {
   // Seasonal multipliers indexed by month (0=Jan, 7=Aug peak, 11=Dec trough)
   const SEASON_MUL = [0.38, 0.42, 0.55, 0.75, 0.95, 1.15, 1.20, 1.05, 0.85, 0.65, 0.45, 0.40];
   const MON_ABBR = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
   const now = new Date();
-  const curM = now.getMonth();       // 0-11
-  const curY = now.getFullYear();
+  let curM = now.getMonth();       // 0-11
+  let curY = now.getFullYear();
 
-  // Build 13 slots: [curMonth-12, curMonth-11, …, curMonth-1, curMonth]
+  if (anchorBillMonth) {
+    const parts = anchorBillMonth.trim().toUpperCase().split(/[\s-]+/);
+    const mStr = parts[0] || '';
+    const yStr = parts[1] || '';
+    const mIdx = MON_ABBR.findIndex((abbr) => mStr.startsWith(abbr));
+    if (mIdx !== -1) {
+      curM = mIdx;
+    }
+    if (yStr) {
+      const parsedY = parseInt(yStr.length === 2 ? `20${yStr}` : yStr, 10);
+      if (!isNaN(parsedY) && parsedY > 2000) {
+        curY = parsedY;
+      }
+    }
+  }
+
+  // Build 12 slots ending at anchor month: [curMonth-11, …, curMonth-1, curMonth]
   const slots: Array<{ mon: number; year: number; isCurrent: boolean }> = [];
-  for (let offset = 12; offset >= 0; offset--) {
+  for (let offset = 11; offset >= 0; offset--) {
     // new Date(year, month-offset) handles year rollover automatically
     const d = new Date(curY, curM - offset, 1);
     slots.push({ mon: d.getMonth(), year: d.getFullYear(), isCurrent: offset === 0 });
@@ -454,7 +474,7 @@ async function fetchDirectFromPitc(company: string, cleanRef: string): Promise<B
       tvFee: 35,
       gstAmount: Math.round(payableWithinDueDate * 0.18),
       electricityDuty: 0,
-      history12Months: generate12MonthHistory(units, payableWithinDueDate),
+      history12Months: generate12MonthHistory(units, payableWithinDueDate, billMonth),
       fetchedAt: new Date().toISOString(),
       sourceUrl: `https://bill.pitc.com.pk/${company.toLowerCase()}bill/general?refno=${cleanRef}`,
       isMockData: false,

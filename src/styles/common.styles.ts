@@ -28,7 +28,7 @@ export const COLORS = {
   darkCard: '#122D4D',
   darkBorder: '#284E77',
   darkText: '#F8FAFC',
-  darkSub: '#94A3B8',
+  darkSub: '#CBD5E1',
   darkInput: '#0C2B4E',
   darkInputBorder: '#284E77',
 

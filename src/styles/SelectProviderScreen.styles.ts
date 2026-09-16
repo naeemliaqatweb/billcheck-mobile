@@ -128,21 +128,21 @@ export const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
   filterCapsuleActive: {
-    backgroundColor: '#006D35',
-    borderColor: '#3FFF8B',
+    backgroundColor: '#059669',
+    borderColor: '#059669',
   },
   filterCapsuleActiveDark: {
-    backgroundColor: '#006D35',
-    borderColor: '#3FFF8B',
+    backgroundColor: '#059669',
+    borderColor: '#059669',
   },
   filterCapsuleText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.8)',
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   filterCapsuleTextActive: {
     color: '#FFFFFF',
-    fontWeight: '700',
+    fontWeight: '800',
   },
   capsuleBadge: {
     paddingHorizontal: 6,
@@ -151,7 +151,7 @@ export const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
   },
   capsuleBadgeActive: {
-    backgroundColor: '#3FFF8B',
+    backgroundColor: '#006D35',
   },
   capsuleBadgeText: {
     fontSize: 10,
@@ -159,7 +159,7 @@ export const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   capsuleBadgeTextActive: {
-    color: '#0B1C30',
+    color: '#FFFFFF',
   },
 
   // Main Content Scroll

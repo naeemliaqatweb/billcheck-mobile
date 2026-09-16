@@ -146,15 +146,16 @@ export const styles = StyleSheet.create({
     elevation: 2,
   },
   typeSegmentBtnActiveDark: {
-    backgroundColor: '#006D35',
+    backgroundColor: '#059669',
   },
   typeSegmentText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   typeSegmentTextActive: {
     color: '#FFFFFF',
-    fontWeight: '700',
+    fontWeight: '800',
   },
 
   // Form Card Container
@@ -430,8 +431,9 @@ export const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   mockupTopTag: {
-    color: '#94A3B8',
+    color: '#FFFFFF',
     fontSize: 9.5,
+    fontWeight: '600',
   },
   mockupGrid: {
     flexDirection: 'row',
@@ -448,10 +450,6 @@ export const styles = StyleSheet.create({
     flex: 1.4,
     borderRadius: 6,
     borderWidth: 1.5,
-    borderColor: '#006D35',
-    backgroundColor: 'rgba(63, 255, 139, 0.15)',
-    padding: 4,
-    justifyContent: 'center',
   },
   mockupLabel: {
     fontSize: 9,
@@ -461,7 +459,7 @@ export const styles = StyleSheet.create({
   mockupHighlightLabel: {
     fontSize: 9,
     fontWeight: '800',
-    color: '#006D35',
+    color: '#059669',
     textTransform: 'uppercase',
   },
   mockupVal: {
@@ -472,9 +470,14 @@ export const styles = StyleSheet.create({
   mockupHighlightVal: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#004689',
+    color: '#059669',
     marginTop: 1,
     fontFamily: 'monospace',
+  },
+  mockupValue: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    textAlign: 'center',
   },
   mockupFooterRow: {
     flexDirection: 'row',
@@ -489,6 +492,18 @@ export const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
   },
+  mockupFooterNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+    paddingTop: 6,
+    borderTopWidth: 1,
+  },
+  mockupFooterLabel: {
+    fontSize: 9.5,
+    fontWeight: '600',
+  },
   mockupFooterDue: {
     fontSize: 10,
     fontWeight: '700',
@@ -499,22 +514,22 @@ export const styles = StyleSheet.create({
   primaryCtaBtn: {
     height: 52,
     borderRadius: 12,
-    backgroundColor: '#3FFF8B',
+    backgroundColor: '#059669',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    shadowColor: '#00E676',
+    shadowColor: '#059669',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.35,
     shadowRadius: 10,
     elevation: 4,
     borderWidth: 1,
-    borderColor: 'rgba(0, 109, 53, 0.3)',
+    borderColor: 'rgba(255, 255, 255, 0.25)',
     marginBottom: 10,
   },
   primaryCtaText: {
-    color: '#0C2B4E',
+    color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '800',
     letterSpacing: 0.2,

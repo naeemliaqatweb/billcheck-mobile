@@ -49,11 +49,24 @@ export const DashboardTrendGraph: React.FC<DashboardTrendGraphProps> = ({
 
   // Extract or build 6 latest months of data
   const data6 = useMemo(() => {
-    if (history && history.length >= 6) {
-      return history.slice(-6);
-    }
     if (history && history.length > 0) {
-      return history;
+      // Deduplicate any repeated months from newest (end) to oldest (start)
+      const seen = new Set<string>();
+      const deduped: BillMonthHistory[] = [];
+      for (let i = history.length - 1; i >= 0; i--) {
+        const item = history[i];
+        const key = (item.month || '').trim().toUpperCase();
+        if (key && !seen.has(key)) {
+          seen.add(key);
+          deduped.unshift(item);
+        }
+      }
+      if (deduped.length >= 6) {
+        return deduped.slice(-6);
+      }
+      if (deduped.length > 0) {
+        return deduped;
+      }
     }
     // Fallback dynamic 6 months relative to current date
     const SEASON_MUL = [0.38, 0.42, 0.55, 0.75, 0.95, 1.15, 1.20, 1.05, 0.85, 0.65, 0.45, 0.40];
@@ -360,15 +373,15 @@ const styles = StyleSheet.create({
   },
   trendLabel: {
     fontSize: 11.5,
-    fontWeight: '500',
-    color: '#A7C8FF',
+    fontWeight: '600',
+    color: '#FFFFFF',
     letterSpacing: 0.2,
   },
   trendValueBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(63, 255, 139, 0.12)',
+    backgroundColor: 'rgba(63, 255, 139, 0.15)',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
@@ -425,12 +438,12 @@ const styles = StyleSheet.create({
   },
   monthText: {
     fontSize: 10.5,
-    fontWeight: '500',
-    color: '#778598',
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   monthTextActive: {
-    color: '#62FF96',
-    fontWeight: '800',
+    color: '#3FFF8B',
+    fontWeight: '900',
   },
   rtlText: {
     textAlign: 'right',

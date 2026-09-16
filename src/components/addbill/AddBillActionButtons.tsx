@@ -32,11 +32,11 @@ export const AddBillActionButtons: React.FC<AddBillActionButtonsProps> = ({
         activeOpacity={0.85}
       >
         {loading ? (
-          <ActivityIndicator color="#0C2B4E" size="small" />
+          <ActivityIndicator color="#FFFFFF" size="small" />
         ) : (
           <>
             <Text style={styles.primaryCtaText}>{getBillCtaText}</Text>
-            <AppIcon name="arrow-forward" size={18} color="#0C2B4E" />
+            <AppIcon name="arrow-forward" size={18} color="#FFFFFF" />
           </>
         )}
       </TouchableOpacity>

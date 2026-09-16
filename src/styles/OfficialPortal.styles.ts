@@ -69,24 +69,24 @@ export const styles = StyleSheet.create({
     color: '#62FF96',
   },
   openPortalPrimaryBtn: {
-    backgroundColor: '#3FFF8B',
+    backgroundColor: '#059669',
     borderRadius: 10,
     paddingVertical: 12,
     paddingHorizontal: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(0, 109, 53, 0.3)',
+    borderColor: 'rgba(255, 255, 255, 0.25)',
   },
   openPortalPrimaryText: {
-    color: '#005226',
+    color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '800',
     textAlign: 'center',
     marginBottom: 2,
   },
   portalSubBtnText: {
-    color: '#005226',
-    opacity: 0.8,
+    color: '#FFFFFF',
+    opacity: 0.9,
     fontSize: 9.5,
     fontFamily: 'monospace',
     textAlign: 'center',
@@ -110,6 +110,7 @@ export const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     textAlign: 'center',
+    color: '#FFFFFF',
   },
   sourceCitationBox: {
     padding: 10,
@@ -127,12 +128,13 @@ export const styles = StyleSheet.create({
   sourceCitationHeader: {
     fontSize: 10.5,
     fontWeight: '800',
-    color: '#006D35',
+    color: '#62FF96',
   },
   sourceCitationText: {
     fontSize: 9.5,
     lineHeight: 14,
     marginTop: 3,
+    color: '#FFFFFF',
   },
   darkText: {
     color: '#F8F9FF',

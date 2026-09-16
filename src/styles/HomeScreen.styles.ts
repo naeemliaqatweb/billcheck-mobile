@@ -115,11 +115,14 @@ export const styles = StyleSheet.create({
     elevation: 2,
   },
   filterTabActiveDark: {
-    backgroundColor: '#213550',
+    backgroundColor: '#059669',
   },
   filterTabText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  filterTabTextLight: {
     color: '#486581',
   },
   filterTabTextActive: {
@@ -127,8 +130,8 @@ export const styles = StyleSheet.create({
     fontWeight: '800',
   },
   filterTabTextActiveDark: {
-    color: '#3FFF8B',
-    fontWeight: '800',
+    color: '#FFFFFF',
+    fontWeight: '900',
   },
 
   // Saved Bills List
@@ -202,8 +205,8 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
   },
   syncConnectedBadgeDark: {
-    backgroundColor: '#0C2B4E',
-    borderColor: '#284E77',
+    backgroundColor: '#059669',
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   syncConnectedBadgeLight: {
     backgroundColor: '#FFFFFF',
@@ -211,8 +214,11 @@ export const styles = StyleSheet.create({
   },
   syncConnectedText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '800',
     color: '#006D35',
+  },
+  syncConnectedTextDark: {
+    color: '#FFFFFF',
   },
   bottomSpacer: {
     height: 80,
@@ -226,7 +232,7 @@ export const styles = StyleSheet.create({
     color: '#0A1C30',
   },
   darkSub: {
-    color: '#94A3B8',
+    color: '#CBD5E1',
   },
   lightSub: {
     color: '#334E68',

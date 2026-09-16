@@ -85,8 +85,8 @@ export const styles = StyleSheet.create({
   },
   metaFetchedText: {
     fontSize: 10,
-    fontWeight: '500',
-    color: '#778598',
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   metaAuthenticText: {
     fontSize: 10,
@@ -180,7 +180,7 @@ export const styles = StyleSheet.create({
   heroPayableLabel: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#778598',
+    color: '#FFFFFF',
     letterSpacing: 0.6,
     textTransform: 'uppercase',
   },
@@ -214,39 +214,39 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
   },
   statusChipUnpaid: {
-    backgroundColor: 'rgba(186, 26, 26, 0.15)',
-    borderColor: '#BA1A1A',
+    backgroundColor: '#DC2626',
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   statusChipPaid: {
-    backgroundColor: 'rgba(0, 109, 53, 0.2)',
-    borderColor: '#00E475',
+    backgroundColor: '#059669',
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   statusDotUnpaid: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#FF6B6B',
+    backgroundColor: '#FFFFFF',
   },
   statusDotPaid: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#62FF96',
+    backgroundColor: '#FFFFFF',
   },
   statusChipTextUnpaid: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#FF6B6B',
+    color: '#FFFFFF',
   },
   statusChipTextPaid: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#62FF96',
+    color: '#FFFFFF',
   },
   statusSubText: {
     fontSize: 10,
-    fontWeight: '500',
-    color: '#778598',
+    fontWeight: '600',
+    color: '#CBD5E1',
     marginTop: 3,
   },
   heroDivider: {
@@ -273,8 +273,8 @@ export const styles = StyleSheet.create({
   },
   heroInfoBoxLabel: {
     fontSize: 10,
-    fontWeight: '600',
-    color: '#778598',
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   heroInfoBoxValue: {
     fontSize: 13,
@@ -672,10 +672,12 @@ export const styles = StyleSheet.create({
   saveMeterTitle: {
     fontSize: 13,
     fontWeight: '800',
+    color: '#FFFFFF',
   },
   saveMeterSub: {
     fontSize: 10,
     marginTop: 1,
+    color: '#CBD5E1',
   },
   saveMeterPill: {
     paddingHorizontal: 12,
@@ -684,7 +686,7 @@ export const styles = StyleSheet.create({
     backgroundColor: '#0C2B4E',
   },
   saveMeterPillSaved: {
-    backgroundColor: '#3FFF8B',
+    backgroundColor: '#059669',
   },
   saveMeterPillText: {
     fontSize: 11,
@@ -694,7 +696,7 @@ export const styles = StyleSheet.create({
   saveMeterPillTextSaved: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#005226',
+    color: '#FFFFFF',
   },
 
   // Fixed Bottom Action Bar (Stitch 100% Match)
@@ -730,18 +732,18 @@ export const styles = StyleSheet.create({
     flex: 1,
     height: 48,
     borderRadius: 10,
-    backgroundColor: '#3FFF8B',
+    backgroundColor: '#059669',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 7,
     borderWidth: 1,
-    borderColor: 'rgba(0, 109, 53, 0.3)',
+    borderColor: 'rgba(255, 255, 255, 0.25)',
   },
   btnDownloadPdfText: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#005226',
+    color: '#FFFFFF',
   },
   btnShareBill: {
     flex: 1,
@@ -769,7 +771,7 @@ export const styles = StyleSheet.create({
   btnShareTextDark: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#62FF96',
+    color: '#FFFFFF',
   },
 
   // Direct Pay Quick Strip
@@ -819,7 +821,7 @@ export const styles = StyleSheet.create({
   payPartnerTextHighlight: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#62FF96',
+    color: '#FFFFFF',
   },
 
   // Utility typography & helpers

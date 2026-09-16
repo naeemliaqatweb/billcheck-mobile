@@ -110,7 +110,7 @@ export const DashboardBillCard: React.FC<DashboardBillCardProps> = ({
           style={[styles.statusBadge, styles.statusPaidBadge]}
           accessibilityLabel="Mark Bill Unpaid"
         >
-          <View style={[styles.statusDot, { backgroundColor: '#62FF96' }]} />
+          <View style={[styles.statusDot, { backgroundColor: '#FFFFFF' }]} />
           <Text style={styles.statusPaidText}>
             {isUrdu ? 'ادا شدہ' : 'PAID'}
           </Text>
@@ -127,7 +127,7 @@ export const DashboardBillCard: React.FC<DashboardBillCardProps> = ({
           style={[styles.statusBadge, styles.statusUnpaidBadge]}
           accessibilityLabel="Mark Bill Paid"
         >
-          <View style={[styles.statusDot, { backgroundColor: '#FF8A80' }]} />
+          <View style={[styles.statusDot, { backgroundColor: '#FFFFFF' }]} />
           <Text style={styles.statusUnpaidText}>
             {isUrdu ? 'تاریخ گزر گئی' : 'OVERDUE'}
           </Text>
@@ -144,7 +144,7 @@ export const DashboardBillCard: React.FC<DashboardBillCardProps> = ({
           style={[styles.statusBadge, styles.statusUnpaidBadge]}
           accessibilityLabel="Mark Bill Paid"
         >
-          <View style={[styles.statusDot, { backgroundColor: '#FF8A80' }]} />
+          <View style={[styles.statusDot, { backgroundColor: '#FFFFFF' }]} />
           <Text style={styles.statusUnpaidText}>
             {isUrdu ? 'غیر ادا شدہ' : 'UNPAID'}
           </Text>
@@ -160,7 +160,7 @@ export const DashboardBillCard: React.FC<DashboardBillCardProps> = ({
         style={[styles.statusBadge, styles.statusNeutralBadge]}
         accessibilityLabel="Mark Bill Paid"
       >
-        <View style={[styles.statusDot, { backgroundColor: '#94A3B8' }]} />
+        <View style={[styles.statusDot, { backgroundColor: '#FFFFFF' }]} />
         <Text style={styles.statusNeutralText}>
           {isUrdu ? 'محفوظ' : 'SAVED'}
         </Text>
@@ -442,7 +442,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   bulletDot: {
-    color: '#778598',
+    color: '#FFFFFF',
     fontSize: 11,
     flexShrink: 0,
   },
@@ -454,7 +454,7 @@ const styles = StyleSheet.create({
   },
   refText: {
     fontSize: 11,
-    color: '#94A3B8',
+    color: '#FFFFFF',
     letterSpacing: 0.3,
     marginTop: 2,
   },
@@ -479,36 +479,36 @@ const styles = StyleSheet.create({
     borderRadius: 2.5,
   },
   statusUnpaidBadge: {
-    backgroundColor: 'rgba(239, 68, 68, 0.16)',
+    backgroundColor: '#DC2626',
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.35)',
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   statusUnpaidText: {
     fontSize: 9.5,
     fontWeight: '800',
-    color: '#FF8A80',
+    color: '#FFFFFF',
     letterSpacing: 0.4,
   },
   statusNeutralBadge: {
-    backgroundColor: 'rgba(148, 163, 184, 0.14)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.25)',
+    borderColor: 'rgba(255, 255, 255, 0.35)',
   },
   statusNeutralText: {
     fontSize: 9.5,
     fontWeight: '800',
-    color: '#D3E4FE',
+    color: '#FFFFFF',
     letterSpacing: 0.3,
   },
   statusPaidBadge: {
-    backgroundColor: 'rgba(16, 185, 129, 0.16)',
+    backgroundColor: '#059669',
     borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.35)',
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   statusPaidText: {
     fontSize: 9.5,
     fontWeight: '800',
-    color: '#62FF96',
+    color: '#FFFFFF',
     letterSpacing: 0.4,
   },
   bottomZone: {
@@ -564,7 +564,7 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: '600',
     marginBottom: 2,
   },
   amountVal: {
@@ -641,8 +641,8 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   viewBillBtnDark: {
-    backgroundColor: '#3FFF8B',
-    shadowColor: '#3FFF8B',
+    backgroundColor: '#059669',
+    shadowColor: '#059669',
   },
   viewBillBtnLight: {
     backgroundColor: '#059669',
@@ -661,7 +661,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   viewBillTextDark: {
-    color: '#002B12',
+    color: '#FFFFFF',
   },
   viewBillTextLight: {
     color: '#FFFFFF',
@@ -673,7 +673,7 @@ const styles = StyleSheet.create({
     color: '#0A1C30',
   },
   darkSub: {
-    color: '#94A3B8',
+    color: '#CBD5E1',
   },
   lightSub: {
     color: '#334E68',
@@ -699,10 +699,10 @@ const styles = StyleSheet.create({
   },
   predictionText: {
     fontSize: 11,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   predictionTextDark: {
-    color: '#94A3B8',
+    color: '#FFFFFF',
   },
   predictionTextLight: {
     color: '#166534',

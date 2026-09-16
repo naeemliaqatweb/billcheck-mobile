@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   cardDark: {
-    backgroundColor: '#001B3C',
+    backgroundColor: '#0C2B4E',
     borderColor: 'rgba(0, 109, 53, 0.4)',
     shadowColor: '#00E676',
     shadowOffset: { width: 0, height: 4 },
@@ -433,8 +433,8 @@ const styles = StyleSheet.create({
   },
   cycleSubLabel: {
     fontSize: 10,
-    color: '#778598',
-    fontWeight: '500',
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
   cycleMainLabel: {
     fontSize: 13,
@@ -490,8 +490,8 @@ const styles = StyleSheet.create({
   },
   monthYearText: {
     fontSize: 8,
-    fontWeight: '500',
-    color: '#778598',
+    fontWeight: '600',
+    color: '#CBD5E1',
     textAlign: 'center',
     marginTop: 1,
   },
@@ -524,7 +524,7 @@ const styles = StyleSheet.create({
     color: '#0B1C30',
   },
   darkSub: {
-    color: '#778598',
+    color: '#CBD5E1',
   },
   lightSub: {
     color: '#44474C',

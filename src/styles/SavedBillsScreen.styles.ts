@@ -108,8 +108,8 @@ export const styles = StyleSheet.create({
   },
   liveTagText: {
     fontSize: 10,
-    fontWeight: '500',
-    color: '#778598',
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   bannerHeadline: {
     fontSize: 24,
@@ -119,8 +119,8 @@ export const styles = StyleSheet.create({
   },
   bannerDescription: {
     fontSize: 12,
-    fontWeight: '400',
-    color: '#778598',
+    fontWeight: '500',
+    color: '#FFFFFF',
     marginTop: 3,
   },
 
@@ -151,8 +151,8 @@ export const styles = StyleSheet.create({
   },
   bentoLabel: {
     fontSize: 9.5,
-    fontWeight: '600',
-    color: '#778598',
+    fontWeight: '700',
+    color: '#FFFFFF',
     textTransform: 'uppercase',
   },
   bentoVal: {
@@ -233,8 +233,8 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
   },
   filterChipActive: {
-    backgroundColor: '#0C2B4E',
-    borderColor: '#0C2B4E',
+    backgroundColor: '#059669',
+    borderColor: '#059669',
   },
   filterChipInactiveLight: {
     backgroundColor: '#FFFFFF',
@@ -255,12 +255,12 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
   },
   filterChipTextInactiveDark: {
-    color: '#94A3B8',
+    color: '#FFFFFF',
     fontSize: 11.5,
     fontWeight: '600',
   },
   countBadgeActive: {
-    backgroundColor: '#62FF96',
+    backgroundColor: '#006D35',
     width: 16,
     height: 16,
     borderRadius: 8,
@@ -268,7 +268,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   countBadgeTextActive: {
-    color: '#00210B',
+    color: '#FFFFFF',
     fontSize: 9.5,
     fontWeight: '900',
   },

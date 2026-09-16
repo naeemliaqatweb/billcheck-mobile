@@ -107,9 +107,9 @@ export const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   heroSubtitle: {
-    color: '#778598',
+    color: '#FFFFFF',
     fontSize: 11,
-    fontWeight: '500',
+    fontWeight: '600',
     marginTop: 1,
   },
   heroVersionBadge: {
@@ -164,8 +164,9 @@ export const styles = StyleSheet.create({
     marginTop: 2,
   },
   heroUserStatusText: {
-    color: '#778598',
+    color: '#CBD5E1',
     fontSize: 11,
+    fontWeight: '500',
   },
   activeDot: {
     width: 6,
@@ -228,7 +229,7 @@ export const styles = StyleSheet.create({
   },
   menuHeaderText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '800',
     letterSpacing: 0.8,
     textTransform: 'uppercase',
   },
@@ -238,7 +239,7 @@ export const styles = StyleSheet.create({
     color: '#006D35',
   },
   menuHeaderBadgeDark: {
-    color: '#3FFF8B',
+    color: '#62FF96',
   },
   menuRow: {
     flexDirection: 'row',
@@ -301,7 +302,7 @@ export const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   langChoiceActive: {
-    backgroundColor: '#006D35',
+    backgroundColor: '#059669',
   },
   langChoiceText: {
     fontSize: 12,
@@ -372,7 +373,7 @@ export const styles = StyleSheet.create({
     color: '#006D35',
   },
   disclaimerFooterRightDark: {
-    color: '#3FFF8B',
+    color: '#62FF96',
   },
 
   // Reset & Footer Section
@@ -439,7 +440,7 @@ export const styles = StyleSheet.create({
     color: '#0A1C30',
   },
   darkSub: {
-    color: '#94A3B8',
+    color: '#CBD5E1',
   },
   lightSub: {
     color: '#334E68',
