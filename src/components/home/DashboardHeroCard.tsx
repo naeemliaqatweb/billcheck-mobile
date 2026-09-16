@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { AppIcon } from '../AppIcon';
 import { DashboardTrendGraph } from './DashboardTrendGraph';
+import { ElectricGridAnimation } from './ElectricGridAnimation';
 import { Language } from '../../i18n/translations';
 import { BillMonthHistory } from '../../types/bill';
 
@@ -115,12 +116,8 @@ export const DashboardHeroCard: React.FC<DashboardHeroCardProps> = ({
 
   return (
     <View style={styles.heroWrapper}>
-      {/* Decorative vertical circuit lines */}
-      <View style={styles.circuitDecoration} pointerEvents="none">
-        <View style={styles.circuitLine} />
-        <View style={styles.circuitLine} />
-        <View style={styles.circuitLine} />
-      </View>
+      {/* Dynamic Animated National Grid Background */}
+      <ElectricGridAnimation darkMode={darkMode} />
 
       <View style={styles.heroContent}>
         {/* Top Bar Row: Greeting & Actions */}
@@ -341,16 +338,16 @@ const styles = StyleSheet.create({
     borderColor: '#0C2B4E',
   },
   bentoCard: {
-    backgroundColor: '#213145',
+    backgroundColor: 'rgba(22, 37, 59, 0.88)',
     borderRadius: 16,
     padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.18)',
-    shadowColor: '#000',
+    borderWidth: 1.5,
+    borderColor: 'rgba(98, 255, 150, 0.28)',
+    shadowColor: '#62FF96',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 4,
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 5,
   },
   bentoTopRow: {
     flexDirection: 'row',
