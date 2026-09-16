@@ -26,18 +26,7 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({
   const avgAmount = Math.round(total12Amount / history.length);
 
   return (
-    <View style={[styles.container, darkMode ? styles.darkContainer : styles.lightContainer]}>
-      {/* Title */}
-      <View style={styles.titleRow}>
-        <View style={styles.titleLeft}>
-          <AppIcon name="calendar" size={16} color="#006D35" />
-          <Text style={[styles.title, darkMode ? styles.darkText : styles.lightText]}>
-            {isUrdu ? '12 ماہ کا مکمل بل ریکارڈ' : '12-Month Billing Archive'}
-          </Text>
-        </View>
-        <Text style={styles.badge12}>12 Months</Text>
-      </View>
-
+    <View style={styles.container}>
       {/* 12-Month Statistics Cards */}
       <View style={styles.statsRow}>
         <View style={[styles.statBox, darkMode ? styles.darkStatBox : styles.lightStatBox]}>
@@ -104,9 +93,11 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({
                 {displayMonth}
               </Text>
               {isLatest && (
-                <Text style={styles.currentBadgeText}>
-                  {isUrdu ? 'موجودہ' : 'Current'}
-                </Text>
+                <View style={[styles.currentBadgeContainer, darkMode ? styles.currentBadgeDark : styles.currentBadgeLight]}>
+                  <Text style={styles.currentBadgeText}>
+                    {isUrdu ? 'موجودہ' : 'Current'}
+                  </Text>
+                </View>
               )}
             </View>
 

@@ -34,6 +34,14 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
+  headerProviderLogo: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: 'rgba(98, 255, 150, 0.6)',
+  },
   headerCircleBtn: {
     width: 38,
     height: 38,
@@ -122,6 +130,12 @@ export const styles = StyleSheet.create({
     gap: 8,
     flex: 1,
     marginRight: 10,
+  },
+  bannerProviderLogo: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
   },
   bannerCompanyName: {
     fontSize: 12,

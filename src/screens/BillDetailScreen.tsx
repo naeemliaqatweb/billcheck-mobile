@@ -11,6 +11,7 @@ import {
   NativeModules,
   Platform,
   ToastAndroid,
+  Image,
 } from 'react-native';
 import { BillData } from '../types/bill';
 import { TRANSLATIONS, Language } from '../i18n/translations';
@@ -21,6 +22,7 @@ import { StorageService } from '../services/storage';
 import { ApiService, sanitizeBillingMonth, generate12MonthHistory } from '../services/api';
 import { BillPdfService } from '../services/billPdf';
 import { ALL_PROVIDERS } from '../constants/providers';
+import { getProviderLogo } from '../constants/providerLogos';
 import { AppIcon } from '../components/AppIcon';
 import { CustomPopup, PopupConfig } from '../components/CustomPopup';
 import { AccordionSection } from '../components/bill/AccordionSection';
@@ -101,12 +103,14 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
     }
   };
 
-  const [openHistory, setOpenHistory] = useState(false);
+  const [openConsumption, setOpenConsumption] = useState(false);
+  const [openArchive, setOpenArchive] = useState(false);
   const [openPortal, setOpenPortal] = useState(false);
   const [openNotices, setOpenNotices] = useState(false);
 
   const provider = ALL_PROVIDERS.find((p) => p.code === activeBill.company);
   const providerFullName = activeBill.companyName || provider?.fullName || `${activeBill.company} Electric Supply Company`;
+  const providerLogo = getProviderLogo(activeBill.company);
   const portalUrl = provider?.portalUrl || activeBill.sourceUrl || 'https://bill.pitc.com.pk/';
   const officialSite = provider?.officialSite || 'https://www.lesco.gov.pk/';
 
@@ -329,11 +333,22 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
             >
               <AppIcon name="back" size={20} color="#FFFFFF" />
             </TouchableOpacity>
+
+            {providerLogo ? (
+              <Image
+                source={providerLogo}
+                style={styles.headerProviderLogo}
+                resizeMode="contain"
+              />
+            ) : null}
+
             <View style={styles.headerTitleGroup}>
               <Text style={styles.headerTitleText}>{t.billDetails}</Text>
               <View style={styles.headerVerifiedRow}>
                 <View style={styles.pulseDot} />
-                <Text style={styles.headerVerifiedText}>{t.discoVerified}</Text>
+                <Text style={styles.headerVerifiedText}>
+                  {activeBill.company} • {t.discoVerified}
+                </Text>
               </View>
             </View>
           </View>
@@ -375,7 +390,15 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
         {/* Verification Banner Pill */}
         <View style={[styles.bannerContainer, darkMode ? styles.bannerDark : styles.bannerLight]}>
           <View style={styles.bannerLeftRow}>
-            <AppIcon name="verified" size={18} color="#006D35" />
+            {providerLogo ? (
+              <Image
+                source={providerLogo}
+                style={styles.bannerProviderLogo}
+                resizeMode="contain"
+              />
+            ) : (
+              <AppIcon name="verified" size={18} color="#006D35" />
+            )}
             <Text
               style={[styles.bannerCompanyName, darkMode ? styles.darkText : styles.lightText]}
               numberOfLines={1}
@@ -694,22 +717,34 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
             </Text>
           </View>
 
-          {/* Section: 12-Month History (Collapsible) */}
+          {/* Section 4: 12-Month Consumption Trend (Collapsible) */}
           <AccordionSection
-            id="history"
-            title="12-Month Consumption & History"
-            urduTitle="12 ماہ کی بلنگ ہسٹری اور یونٹس"
+            id="consumptionTrend"
+            title="12-Month Consumption Trend"
+            urduTitle="12 ماہ بجلی استعمال کا رجحان"
             iconName="stats"
-            badge={`${displayHistory?.length || 12} Months`}
-            isOpen={openHistory}
-            onToggle={() => setOpenHistory(!openHistory)}
+            badge="kWh Trend"
+            isOpen={openConsumption}
+            onToggle={() => setOpenConsumption(!openConsumption)}
             darkMode={darkMode}
             isUrdu={isUrdu}
           >
             <ConsumptionChart history={displayHistory} darkMode={darkMode} language={language} />
-            <View style={{ marginTop: 12 }}>
-              <HistoryTable history={displayHistory} darkMode={darkMode} language={language} />
-            </View>
+          </AccordionSection>
+
+          {/* Section 5: 12-Month Billing Archive (Collapsible) */}
+          <AccordionSection
+            id="billingArchive"
+            title="12-Month Billing Archive"
+            urduTitle="12 ماہ کا مکمل بل ریکارڈ"
+            iconName="calendar"
+            badge={`${displayHistory?.length || 12} Months`}
+            isOpen={openArchive}
+            onToggle={() => setOpenArchive(!openArchive)}
+            darkMode={darkMode}
+            isUrdu={isUrdu}
+          >
+            <HistoryTable history={displayHistory} darkMode={darkMode} language={language} />
           </AccordionSection>
 
           {/* Official Notices (if present) */}

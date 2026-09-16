@@ -34,69 +34,12 @@ export const ConsumptionChart: React.FC<ConsumptionChartProps> = ({
   const displayData = [...history].reverse();
   const maxUnits = Math.max(...displayData.map((h) => h.units), 100);
 
-  const handleScrollLeft = () => {
-    const newX = Math.max(0, scrollOffsetX.current - 140);
-    scrollRef.current?.scrollTo({ x: newX, animated: true });
-  };
-
-  const handleScrollRight = () => {
-    const newX = scrollOffsetX.current + 140;
-    scrollRef.current?.scrollTo({ x: newX, animated: true });
-  };
-
   const onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     scrollOffsetX.current = event.nativeEvent.contentOffset.x;
   };
 
   return (
-    <View style={[styles.container, darkMode ? styles.darkContainer : styles.lightContainer]}>
-      {/* Title & Navigation Controls Header */}
-      <View style={styles.titleRow}>
-        <View style={styles.titleLeft}>
-          <AppIcon name="stats" size={17} color={darkMode ? '#62FF96' : '#006D35'} />
-          <Text style={[styles.title, darkMode ? styles.darkText : styles.lightText]}>
-            {isUrdu ? 'ماہانہ بجلی کا استعمال (kWh)' : '12-Month Consumption Trend'}
-          </Text>
-        </View>
-
-        {/* Scroll Arrows & Unit Badge */}
-        <View style={styles.headerRight}>
-          <TouchableOpacity
-            style={[styles.arrowButton, darkMode ? styles.arrowButtonDark : styles.arrowButtonLight]}
-            onPress={handleScrollLeft}
-            activeOpacity={0.7}
-            accessibilityLabel="Scroll left"
-            accessibilityRole="button"
-          >
-            <AppIcon
-              name="chevron-left"
-              size={15}
-              color={darkMode ? '#62FF96' : '#006D35'}
-            />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.arrowButton, darkMode ? styles.arrowButtonDark : styles.arrowButtonLight]}
-            onPress={handleScrollRight}
-            activeOpacity={0.7}
-            accessibilityLabel="Scroll right"
-            accessibilityRole="button"
-          >
-            <AppIcon
-              name="chevron-right"
-              size={15}
-              color={darkMode ? '#62FF96' : '#006D35'}
-            />
-          </TouchableOpacity>
-
-          <View style={[styles.unitBadge, darkMode ? styles.unitBadgeDark : styles.unitBadgeLight]}>
-            <Text style={[styles.unitBadgeText, darkMode ? styles.unitBadgeTextDark : styles.unitBadgeTextLight]}>
-              kWh
-            </Text>
-          </View>
-        </View>
-      </View>
-
+    <View style={styles.container}>
       {/* Subtitle / Navigation Hint */}
       <View style={styles.hintRow}>
         <View style={styles.hintBadge}>
@@ -105,7 +48,7 @@ export const ConsumptionChart: React.FC<ConsumptionChartProps> = ({
           </Text>
         </View>
         <Text style={[styles.hintText, darkMode ? styles.darkSub : styles.lightSub]}>
-          {isUrdu ? 'مزید مہینے دیکھنے کے لیے اسکرول کریں' : 'Scroll or use arrows for older months'}
+          {isUrdu ? 'مزید مہینے دیکھنے کے لیے اسکرول کریں' : 'Scroll horizontally for older months'}
         </Text>
       </View>
 
@@ -226,89 +169,7 @@ export const ConsumptionChart: React.FC<ConsumptionChartProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    marginTop: 6,
-  },
-  darkContainer: {
-    backgroundColor: '#132033',
-    borderColor: '#24354D',
-  },
-  lightContainer: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#D3E4FE',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  titleLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    flex: 1,
-  },
-  title: {
-    fontSize: 13.5,
-    fontWeight: '800',
-  },
-  darkText: {
-    color: '#F8F9FF',
-  },
-  lightText: {
-    color: '#0F172A',
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  arrowButton: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  arrowButtonDark: {
-    backgroundColor: '#1B2C42',
-    borderColor: '#2D4465',
-  },
-  arrowButtonLight: {
-    backgroundColor: '#EEF4FF',
-    borderColor: '#BFDBFE',
-  },
-  unitBadge: {
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 5,
-  },
-  unitBadgeDark: {
-    backgroundColor: '#0F1C2C',
-  },
-  unitBadgeLight: {
-    backgroundColor: '#E8F7EE',
-    borderWidth: 1,
-    borderColor: '#A7F3D0',
-  },
-  unitBadgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-  },
-  unitBadgeTextDark: {
-    color: '#62FF96',
-  },
-  unitBadgeTextLight: {
-    color: '#006D35',
+    paddingTop: 4,
   },
   hintRow: {
     flexDirection: 'row',
