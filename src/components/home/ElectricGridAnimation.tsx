@@ -103,12 +103,12 @@ export const ElectricGridAnimation: React.FC<ElectricGridAnimationProps> = ({
         source={require('../../assets/images/electric_grid_bg.webp')}
         style={[
           styles.bgImage,
-          { opacity: darkMode ? 0.32 : 0.22 },
+          { opacity: darkMode ? 0.78 : 0.65 },
         ]}
         resizeMode="cover"
       />
 
-      {/* 2. Deep Navy Gradient / Solid Protection Tint */}
+      {/* 2. Deep Navy Gradient / Protection Tint for High Clarity */}
       <View
         style={[
           styles.overlayTint,
@@ -227,10 +227,10 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFill,
   },
   tintDark: {
-    backgroundColor: 'rgba(12, 43, 78, 0.65)',
+    backgroundColor: 'rgba(10, 28, 48, 0.42)',
   },
   tintLight: {
-    backgroundColor: 'rgba(12, 43, 78, 0.72)',
+    backgroundColor: 'rgba(10, 28, 48, 0.50)',
   },
   energyBeam: {
     position: 'absolute',

@@ -95,19 +95,6 @@ export const DashboardHeroCard: React.FC<DashboardHeroCardProps> = ({
 }) => {
   const isUrdu = language === 'ur';
 
-  // Pulse animation for green indicator
-  const dotPulse = useRef(new Animated.Value(1)).current;
-  useEffect(() => {
-    const pulse = Animated.loop(
-      Animated.sequence([
-        Animated.timing(dotPulse, { toValue: 1.4, duration: 800, useNativeDriver: true }),
-        Animated.timing(dotPulse, { toValue: 1.0, duration: 800, useNativeDriver: true }),
-      ])
-    );
-    pulse.start();
-    return () => pulse.stop();
-  }, [dotPulse]);
-
   // Current dynamic bill month text (e.g. "Aug 2026" or "اگست 2026")
   const activeMonthText = useMemo(
     () => formatCurrentBillMonth(history, billMonth, isUrdu),
@@ -116,9 +103,6 @@ export const DashboardHeroCard: React.FC<DashboardHeroCardProps> = ({
 
   return (
     <View style={styles.heroWrapper}>
-      {/* Dynamic Animated National Grid Background */}
-      <ElectricGridAnimation darkMode={darkMode} />
-
       <View style={styles.heroContent}>
         {/* Top Bar Row: Greeting & Actions */}
         <View style={[styles.topRow, isUrdu && styles.rtlRow]}>
@@ -127,12 +111,6 @@ export const DashboardHeroCard: React.FC<DashboardHeroCardProps> = ({
               {isUrdu ? 'خوش آمدید!' : 'Welcome Back!'}
             </Text>
             <View style={[styles.subLocationRow, isUrdu && styles.rtlRow]}>
-              <Animated.View
-                style={[
-                  styles.syncDot,
-                  { transform: [{ scale: dotPulse }] },
-                ]}
-              />
               <Text
                 style={[styles.locationText, isUrdu && styles.rtlText]}
                 numberOfLines={1}
@@ -180,8 +158,11 @@ export const DashboardHeroCard: React.FC<DashboardHeroCardProps> = ({
           </View>
         </View>
 
-        {/* Bento Spending Metric Card */}
+        {/* Bento Spending Metric Card with Animated Electric Grid Background */}
         <View style={styles.bentoCard}>
+          {/* Dynamic Animated National Grid Background inside Total Due Card */}
+          <ElectricGridAnimation darkMode={darkMode} />
+
           <View style={[styles.bentoTopRow, isUrdu && styles.rtlRow]}>
             <View>
               <Text style={[styles.bentoLabel, isUrdu && styles.rtlText]}>
@@ -194,14 +175,7 @@ export const DashboardHeroCard: React.FC<DashboardHeroCardProps> = ({
 
             {/* Electric Green Unpaid Badge */}
             <View style={styles.unpaidBadge}>
-              <Animated.View
-                style={[
-                  styles.unpaidPingDot,
-                  {
-                    transform: [{ scale: dotPulse }],
-                  },
-                ]}
-              />
+              <View style={styles.unpaidPingDot} />
               <Text style={styles.unpaidBadgeText}>
                 {unpaidBillsCount > 0
                   ? `${unpaidBillsCount} ${isUrdu ? 'غیر ادا شدہ بل' : 'Unpaid Bills'}`
@@ -338,16 +312,18 @@ const styles = StyleSheet.create({
     borderColor: '#0C2B4E',
   },
   bentoCard: {
-    backgroundColor: 'rgba(22, 37, 59, 0.88)',
-    borderRadius: 16,
+    backgroundColor: '#0F2238',
+    borderRadius: 18,
     padding: 16,
     borderWidth: 1.5,
-    borderColor: 'rgba(98, 255, 150, 0.28)',
+    borderColor: 'rgba(98, 255, 150, 0.40)',
+    position: 'relative',
+    overflow: 'hidden',
     shadowColor: '#62FF96',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 5,
+    shadowOpacity: 0.20,
+    shadowRadius: 14,
+    elevation: 6,
   },
   bentoTopRow: {
     flexDirection: 'row',
