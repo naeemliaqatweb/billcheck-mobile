@@ -48,10 +48,22 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
   const [utilityType, setUtilityType] = useState<'electricity' | 'gas'>('electricity');
   const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()));
 
-  const [activeBill, setActiveBill] = useState<BillData | null>(currentBill);
-  const [selectedMeterId, setSelectedMeterId] = useState<string | null>(
-    currentBill ? `${currentBill.company}_${currentBill.referenceNo}` : (savedMeters[0]?.id || null)
-  );
+  const isGasBill = (bill?: BillData | null): boolean => {
+    if (!bill) return false;
+    const comp = (bill.company || '').toUpperCase();
+    return bill.utilityType === 'gas' || comp === 'SNGPL' || comp === 'SSGC' || comp.includes('GAS');
+  };
+
+  const [activeBill, setActiveBill] = useState<BillData | null>(() => {
+    if (currentBill) {
+      const isGas = isGasBill(currentBill);
+      if (utilityType === 'gas' && isGas) return currentBill;
+      if (utilityType === 'electricity' && !isGas) return currentBill;
+    }
+    return null;
+  });
+
+  const [selectedMeterId, setSelectedMeterId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [popup, setPopup] = useState<PopupConfig>({
@@ -67,32 +79,6 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
       return m.utilityType !== 'gas';
     });
   }, [savedMeters, utilityType]);
-
-  useEffect(() => {
-    const initHistory = async () => {
-      if (currentBill && currentBill.history12Months && currentBill.history12Months.length > 0) {
-        setActiveBill(currentBill);
-        setSelectedMeterId(`${currentBill.company}_${currentBill.referenceNo}`);
-        setUtilityType(currentBill.company?.toLowerCase().includes('gas') || currentBill.company === 'SNGPL' || currentBill.company === 'SSGC' ? 'gas' : 'electricity');
-        return;
-      }
-
-      if (savedMeters.length > 0) {
-        const matching = savedMeters.find((m) => utilityType === 'gas' ? m.utilityType === 'gas' : m.utilityType !== 'gas') || savedMeters[0];
-        await loadMeterData(matching);
-        return;
-      }
-
-      // Check last cached bill from storage
-      const lastChecked = await StorageService.getLastCheckedBill();
-      if (lastChecked && lastChecked.history12Months && lastChecked.history12Months.length > 0) {
-        setActiveBill(lastChecked);
-        setSelectedMeterId(`${lastChecked.company}_${lastChecked.referenceNo}`);
-      }
-    };
-
-    initHistory();
-  }, [currentBill, savedMeters, utilityType]);
 
   const loadMeterData = async (meter: SavedMeter) => {
     setLoading(true);
@@ -116,6 +102,82 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
       setLoading(false);
     }
   };
+
+  // Switch utility tab and reload matching data strictly for that tab
+  const handleTabChange = async (type: 'electricity' | 'gas') => {
+    setUtilityType(type);
+    const matchingMeters = savedMeters.filter((m) =>
+      type === 'gas' ? m.utilityType === 'gas' : m.utilityType !== 'gas'
+    );
+
+    const isCurrentMatching = currentBill && (
+      type === 'gas' ? isGasBill(currentBill) : !isGasBill(currentBill)
+    );
+
+    if (isCurrentMatching && currentBill?.history12Months && currentBill.history12Months.length > 0) {
+      setActiveBill(currentBill);
+      setSelectedMeterId(`${currentBill.company}_${currentBill.referenceNo}`);
+      return;
+    }
+
+    if (matchingMeters.length > 0) {
+      await loadMeterData(matchingMeters[0]);
+      return;
+    }
+
+    // Check last cached bill ONLY if it strictly matches this tab
+    const lastChecked = await StorageService.getLastCheckedBill();
+    if (lastChecked && lastChecked.history12Months && lastChecked.history12Months.length > 0) {
+      const isLastMatching = type === 'gas' ? isGasBill(lastChecked) : !isGasBill(lastChecked);
+      if (isLastMatching) {
+        setActiveBill(lastChecked);
+        setSelectedMeterId(`${lastChecked.company}_${lastChecked.referenceNo}`);
+        return;
+      }
+    }
+
+    // No matching meter for this tab -> show not found / add meter state!
+    setActiveBill(null);
+    setSelectedMeterId(null);
+  };
+
+  useEffect(() => {
+    const initHistory = async () => {
+      const matchingMeters = savedMeters.filter((m) =>
+        utilityType === 'gas' ? m.utilityType === 'gas' : m.utilityType !== 'gas'
+      );
+
+      const isCurrentMatching = currentBill && (
+        utilityType === 'gas' ? isGasBill(currentBill) : !isGasBill(currentBill)
+      );
+
+      if (isCurrentMatching && currentBill?.history12Months && currentBill.history12Months.length > 0) {
+        setActiveBill(currentBill);
+        setSelectedMeterId(`${currentBill.company}_${currentBill.referenceNo}`);
+        return;
+      }
+
+      if (matchingMeters.length > 0) {
+        await loadMeterData(matchingMeters[0]);
+        return;
+      }
+
+      const lastChecked = await StorageService.getLastCheckedBill();
+      if (lastChecked && lastChecked.history12Months && lastChecked.history12Months.length > 0) {
+        const isLastMatching = utilityType === 'gas' ? isGasBill(lastChecked) : !isGasBill(lastChecked);
+        if (isLastMatching) {
+          setActiveBill(lastChecked);
+          setSelectedMeterId(`${lastChecked.company}_${lastChecked.referenceNo}`);
+          return;
+        }
+      }
+
+      setActiveBill(null);
+      setSelectedMeterId(null);
+    };
+
+    initHistory();
+  }, [currentBill, savedMeters]);
 
   const handleRefreshActiveMeter = async () => {
     if (!activeBill) return;
@@ -306,7 +368,7 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
                 styles.segmentedBtn,
                 utilityType === 'electricity' && styles.segmentedBtnActive,
               ]}
-              onPress={() => setUtilityType('electricity')}
+              onPress={() => handleTabChange('electricity')}
               activeOpacity={0.85}
             >
               <AppIcon
@@ -327,9 +389,9 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
             <TouchableOpacity
               style={[
                 styles.segmentedBtn,
-                utilityType === 'gas' && styles.segmentedBtnActive,
+                utilityType === 'gas' && [styles.segmentedBtnActive, { backgroundColor: '#EA580C' }],
               ]}
-              onPress={() => setUtilityType('gas')}
+              onPress={() => handleTabChange('gas')}
               activeOpacity={0.85}
             >
               <AppIcon
@@ -375,7 +437,7 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
                       <AppIcon
                         name={m.utilityType === 'gas' ? 'flame' : 'zap'}
                         size={13}
-                        color={isSelected ? '#FFFFFF' : '#62FF96'}
+                        color={isSelected ? '#FFFFFF' : (m.utilityType === 'gas' ? '#FF6B00' : '#62FF96')}
                       />
                       <Text
                         style={[
@@ -401,25 +463,40 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
             <SkeletonLoader darkMode={darkMode} />
           ) : !hasHistory ? (
             <View style={[styles.emptyCard, darkMode ? styles.darkCard : styles.lightCard]}>
-              <AppIcon name="stats" size={44} color="#62FF96" />
+              <AppIcon
+                name={utilityType === 'gas' ? 'flame' : 'zap'}
+                size={44}
+                color={utilityType === 'gas' ? '#FF6B00' : '#62FF96'}
+              />
               <Text style={[styles.emptyTitle, darkMode ? styles.darkText : styles.lightText]}>
-                {isUrdu ? 'کوئی ٹیلی میٹری ڈیٹا موجود نہیں' : 'No Telemetry Data Available'}
+                {utilityType === 'gas'
+                  ? (isUrdu ? 'کوئی سوئی گیس میٹر موجود نہیں' : 'No Gas Meter Added')
+                  : (isUrdu ? 'کوئی بجلی کا میٹر موجود نہیں' : 'No Electricity Meter Added')}
               </Text>
               <Text style={[styles.emptyDesc, darkMode ? styles.darkSub : styles.lightSub]}>
-                {isUrdu
-                  ? 'اپنا پہلا بل چیک کریں یا لیسکو کا ریئل 12 ماہ کا لائیو ٹیلی میٹری ڈیٹا لوڈ کریں۔'
-                  : 'Check a bill on the home screen or load the live LESCO 12-month telemetry dataset below.'}
+                {utilityType === 'gas'
+                  ? (isUrdu
+                      ? 'آپ نے ابھی تک کوئی سوئی گیس (SNGPL / SSGC) میٹر محفوظ نہیں کیا۔ گیس اینالیٹکس دیکھنے کے لیے نیا میٹر شامل کریں۔'
+                      : 'You have not added any Sui Gas (SNGPL / SSGC) meters yet. Add a gas meter to view telemetry analytics.')
+                  : (isUrdu
+                      ? 'آپ نے ابھی تک کوئی بجلی کا میٹر محفوظ نہیں کیا۔ اینالیٹکس دیکھنے کے لیے نیا میٹر شامل کریں۔'
+                      : 'You have not added any electricity meters yet. Add a meter to view consumption telemetry.')}
               </Text>
-              <TouchableOpacity
-                style={styles.demoMeterBtn}
-                onPress={handleLoadDemoMeter}
-                activeOpacity={0.8}
-              >
-                <AppIcon name="bolt" size={16} color="#FFFFFF" />
-                <Text style={styles.demoMeterBtnText}>
-                  {isUrdu ? 'لیسکو 12 ماہ کا لائیو ڈیٹا لوڈ کریں' : 'Load Live LESCO 12-Mo Data (15115371598719)'}
-                </Text>
-              </TouchableOpacity>
+
+              {onOpenSelectProvider && (
+                <TouchableOpacity
+                  style={[styles.demoMeterBtn, utilityType === 'gas' && { backgroundColor: '#EA580C' }]}
+                  onPress={onOpenSelectProvider}
+                  activeOpacity={0.8}
+                >
+                  <AppIcon name="plus" size={16} color="#FFFFFF" />
+                  <Text style={styles.demoMeterBtnText}>
+                    {utilityType === 'gas'
+                      ? (isUrdu ? 'سوئی گیس میٹر شامل کریں' : 'Add Gas Meter (SNGPL / SSGC)')
+                      : (isUrdu ? 'بجلی کا میٹر شامل کریں' : 'Add Electricity Meter')}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           ) : (
             <>
