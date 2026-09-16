@@ -82,14 +82,14 @@ const formatCurrentBillMonth = (
   return isUrdu ? `${MON_UR[curM]} ${curY}` : `${MON_EN[curM]} ${curY}`;
 };
 
-// Multi-wire electric circuit configuration with staggered current speeds
+// Multi-wire electric circuit configuration with continuous current flow on all wires
 const CURRENT_LINES_CONFIG = [
-  { duration: 4200, delay: 0 },
-  { duration: 5000, delay: 1200 },
-  { duration: 3800, delay: 600 },
-  { duration: 4600, delay: 2400 },
-  { duration: 4100, delay: 1600 },
-  { duration: 4900, delay: 3000 },
+  { duration: 3200, delay: 0 },
+  { duration: 3600, delay: 600 },
+  { duration: 2900, delay: 1200 },
+  { duration: 3400, delay: 400 },
+  { duration: 3100, delay: 1600 },
+  { duration: 3500, delay: 900 },
 ];
 
 export const DashboardHeroCard: React.FC<DashboardHeroCardProps> = ({
@@ -113,24 +113,35 @@ export const DashboardHeroCard: React.FC<DashboardHeroCardProps> = ({
   ).current;
 
   useEffect(() => {
-    const activeLoops = CURRENT_LINES_CONFIG.map((config, index) => {
-      const loop = Animated.loop(
-        Animated.sequence([
-          ...(config.delay > 0 ? [Animated.delay(config.delay)] : []),
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
+    const activeLoops: Animated.CompositeAnimation[] = [];
+
+    CURRENT_LINES_CONFIG.forEach((config, index) => {
+      const startLoop = () => {
+        pulseAnims[index].setValue(0);
+        const loop = Animated.loop(
           Animated.timing(pulseAnims[index], {
             toValue: 1,
             duration: config.duration,
             easing: Easing.linear,
             useNativeDriver: true,
-          }),
-        ])
-      );
-      loop.start();
-      return loop;
+          })
+        );
+        activeLoops.push(loop);
+        loop.start();
+      };
+
+      if (config.delay > 0) {
+        const timer = setTimeout(startLoop, config.delay);
+        timeouts.push(timer);
+      } else {
+        startLoop();
+      }
     });
 
     return () => {
-      activeLoops.forEach((loop) => loop.stop());
+      timeouts.forEach((t) => clearTimeout(t));
+      activeLoops.forEach((l) => l.stop());
     };
   }, [pulseAnims]);
 
@@ -284,6 +295,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     zIndex: 1,
+    overflow: 'hidden',
   },
   circuitLine: {
     width: 1.5,
