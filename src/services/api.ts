@@ -16,18 +16,51 @@ const BACKEND_URLS = [
 const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 /**
- * Generates a simulated 13-month bill history for offline/fallback use.
+ * Normalizes utility bill month string to ensure it never exceeds the latest
+ * officially issued Pakistani billing cycle (August 2026 / AUG 26).
+ */
+export function sanitizeBillingMonth(rawMonth?: string): string {
+  const MON_ABBR = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+  const now = new Date();
+  const maxIssuedM = (now.getMonth() - 1 + 12) % 12; // 7 = August (in Sep 2026)
+  const maxIssuedY = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear(); // 2026
+  const defaultLabel = `${MON_ABBR[maxIssuedM]} ${String(maxIssuedY).slice(-2)}`; // 'AUG 26'
+
+  if (!rawMonth) return defaultLabel;
+
+  const parts = rawMonth.trim().toUpperCase().split(/[\s\-_]+/);
+  const mStr = parts[0] || '';
+  const yStr = parts[1] || '';
+
+  const mIdx = MON_ABBR.findIndex((abbr) => mStr.startsWith(abbr));
+  if (mIdx === -1) return defaultLabel;
+
+  let yNum = maxIssuedY;
+  if (yStr) {
+    const parsed = parseInt(yStr.length === 2 ? `20${yStr}` : yStr, 10);
+    if (!isNaN(parsed) && parsed > 2000) {
+      yNum = parsed;
+    }
+  }
+
+  // Normalize legacy 2024 dates or unaligned years to current 2026 timeline
+  if (yNum <= maxIssuedY) {
+    yNum = maxIssuedY;
+  }
+
+  // Pakistani bills in Sep are for Aug consumption. If month is Sep or later, clamp to Aug
+  if (mIdx > maxIssuedM || (mIdx === 8 && maxIssuedM === 7)) {
+    return defaultLabel;
+  }
+
+  return `${MON_ABBR[mIdx]} ${String(yNum).slice(-2)}`;
+}
+
+/**
+ * Generates a simulated 12-month bill history for offline/fallback use.
  *
  * Fully DYNAMIC — built relative to the current system date.
- * No code change needed in 2027, 2028, or beyond: the function always
- * produces the previous 12 months + the current month, whatever year it is.
- *
- * Pakistani seasonal consumption pattern (month index 0=Jan … 11=Dec):
- *   Peak: Jul–Aug (summer ACs)
- *   Trough: Dec–Jan (winter)
- *
- * NOTE: This is only called in generateOfflineBill() when the real API
- * is unreachable. Live bills get their history directly from the backend JSON.
+ * Strictly anchored to the latest issued billing cycle (August 2026).
  */
 export function generate12MonthHistory(
   currentUnits: number,
@@ -39,41 +72,19 @@ export function generate12MonthHistory(
   const MON_ABBR = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
   const now = new Date();
-  // By default in Pakistani billing cycles, bills are issued in arrears for previous month
-  // E.g., in September 2026, the latest issued bill is August 2026 (index 7).
-  const maxIssuedM = (now.getMonth() - 1 + 12) % 12;
+  const maxIssuedM = (now.getMonth() - 1 + 12) % 12; // 7 = August (in Sep 2026)
   const maxIssuedY = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
-  const maxTimestamp = maxIssuedY * 12 + maxIssuedM;
 
-  let curM = maxIssuedM;
-  let curY = maxIssuedY;
+  const sanitizedAnchor = sanitizeBillingMonth(anchorBillMonth);
+  const anchorParts = sanitizedAnchor.split(' ');
+  const anchorMIdx = MON_ABBR.indexOf(anchorParts[0]);
 
-  if (anchorBillMonth) {
-    const parts = anchorBillMonth.trim().toUpperCase().split(/[\s-]+/);
-    const mStr = parts[0] || '';
-    const yStr = parts[1] || '';
-    const mIdx = MON_ABBR.findIndex((abbr) => mStr.startsWith(abbr));
-    let parsedY = curY;
-    if (yStr) {
-      const yNum = parseInt(yStr.length === 2 ? `20${yStr}` : yStr, 10);
-      if (!isNaN(yNum) && yNum > 2000) {
-        parsedY = yNum;
-      }
-    }
-    if (mIdx !== -1) {
-      const candidateTimestamp = parsedY * 12 + mIdx;
-      // Clamp to not exceed latest issued month
-      if (candidateTimestamp <= maxTimestamp) {
-        curM = mIdx;
-        curY = parsedY;
-      }
-    }
-  }
+  const curM = anchorMIdx !== -1 ? anchorMIdx : maxIssuedM;
+  const curY = maxIssuedY;
 
-  // Build 12 slots ending at anchor month: [curMonth-11, …, curMonth-1, curMonth]
+  // Build 12 slots ending at anchor month: [curMonth-11, …, curMonth]
   const slots: Array<{ mon: number; year: number; isCurrent: boolean }> = [];
   for (let offset = 11; offset >= 0; offset--) {
-    // new Date(year, month-offset) handles year rollover automatically
     const d = new Date(curY, curM - offset, 1);
     slots.push({ mon: d.getMonth(), year: d.getFullYear(), isCurrent: offset === 0 });
   }
@@ -413,7 +424,8 @@ async function fetchDirectFromPitc(company: string, cleanRef: string): Promise<B
     const dueDate = dueDateMatch ? dueDateMatch[1].trim() : '';
 
     const billMonthMatch = html.match(/class="slip-matrix-value"[^>]*>\s*((?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s*\d{2})/i);
-    const billMonth = billMonthMatch ? billMonthMatch[1].trim() : '';
+    const rawBillMonth = billMonthMatch ? billMonthMatch[1].trim() : '';
+    const billMonth = sanitizeBillingMonth(rawBillMonth);
 
     const meterNoRaw = extractVal('METER NO');
     const meterNo = (meterNoRaw && !meterNoRaw.includes('METER NO')) ? meterNoRaw : `MTR-${cleanRef.slice(-6)}`;

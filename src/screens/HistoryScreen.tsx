@@ -14,7 +14,7 @@ import { Language } from '../i18n/translations';
 import { AdBanner } from '../components/AdBanner';
 import { AppIcon } from '../components/AppIcon';
 import { StorageService } from '../services/storage';
-import { ApiService } from '../services/api';
+import { ApiService, sanitizeBillingMonth, generate12MonthHistory } from '../services/api';
 import { AnalyticsTelemetryChart } from '../components/analytics/AnalyticsTelemetryChart';
 import { AnalyticsBentoGrid } from '../components/analytics/AnalyticsBentoGrid';
 import { RegulatoryNoticeCard } from '../components/analytics/RegulatoryNoticeCard';
@@ -254,26 +254,81 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
     });
   };
 
-  // Build enriched history with strict chronological ordering & deduplication
+  // Build enriched history with strict chronological ordering & deduplication anchored at AUG 26
   const historyData: BillMonthHistory[] = useMemo(() => {
-    const raw: BillMonthHistory[] = [...(activeBill?.history12Months || [])];
-    if (activeBill && activeBill.billMonth) {
-      const curLabel = activeBill.billMonth.trim().toUpperCase();
-      const exists = raw.some((h) => (h.month || '').trim().toUpperCase() === curLabel);
-      if (!exists) {
-        const yrStr = curLabel.split(/[\s\-_]+/)[1] || '26';
-        const fullYear = yrStr.length === 4 ? parseInt(yrStr, 10) : 2000 + parseInt(yrStr, 10);
+    const MON_ABBR = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    const now = new Date();
+    const maxM = (now.getMonth() - 1 + 12) % 12; // 7 = August (in Sep 2026)
+    const maxY = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear(); // 2026
+    const maxTimestamp = maxY * 12 + maxM;
 
-        raw.push({
-          month: activeBill.billMonth.trim().toUpperCase(),
-          year: fullYear,
-          units: activeBill.unitsConsumed || 0,
-          amount: activeBill.payableWithinDueDate || 0,
+    let list: BillMonthHistory[] = [];
+
+    if (activeBill?.history12Months && activeBill.history12Months.length > 0) {
+      list = activeBill.history12Months.map((item) => {
+        const clean = (item.month || '').trim().toUpperCase();
+        const parts = clean.split(/[\s\-_]+/);
+        const mStr = parts[0] || '';
+        let yNum = item.year || maxY;
+        const mIdx = MON_ABBR.findIndex((abbr) => mStr.startsWith(abbr));
+
+        // Normalize older 2024 dates or unaligned sample years to 2026 timeline
+        if (yNum < maxY - 1) {
+          yNum = maxY;
+        }
+
+        const validMIdx = mIdx !== -1 ? mIdx : maxM;
+        const label = `${MON_ABBR[validMIdx]} ${String(yNum).slice(-2)}`;
+
+        return {
+          ...item,
+          month: label,
+          year: yNum,
+        };
+      });
+    }
+
+    // Bind current active bill data (amount e.g. 2596, units) to latest billing month (AUG 26)
+    if (activeBill) {
+      const activeMonthLabel = sanitizeBillingMonth(activeBill.billMonth);
+      const existsIdx = list.findIndex((h) => (h.month || '').trim().toUpperCase() === activeMonthLabel);
+
+      if (existsIdx !== -1) {
+        list[existsIdx] = {
+          ...list[existsIdx],
+          units: activeBill.unitsConsumed || list[existsIdx].units,
+          amount: activeBill.payableWithinDueDate || list[existsIdx].amount,
+          status: activeBill.billStatus === 'paid' ? 'paid' : 'unpaid',
+        };
+      } else {
+        list.push({
+          month: activeMonthLabel,
+          year: maxY,
+          units: activeBill.unitsConsumed || 120,
+          amount: activeBill.payableWithinDueDate || 2596,
           status: activeBill.billStatus === 'paid' ? 'paid' : 'unpaid',
         });
       }
     }
-    return raw;
+
+    // Filter out unissued future months (> August 2026)
+    const valid = list.filter((item) => {
+      const parts = (item.month || '').trim().toUpperCase().split(/[\s\-_]+/);
+      const mIdx = MON_ABBR.findIndex((abbr) => (parts[0] || '').startsWith(abbr));
+      const yStr = parts[1] || '';
+      const yNum = item.year || (yStr ? parseInt(`20${yStr}`, 10) : maxY);
+      if (mIdx === -1) return true;
+      const ts = yNum * 12 + mIdx;
+      return ts <= maxTimestamp;
+    });
+
+    if (valid.length > 0) {
+      return valid.slice(-12);
+    }
+
+    const units = activeBill?.unitsConsumed || 120;
+    const amount = activeBill?.payableWithinDueDate || 2596;
+    return generate12MonthHistory(units, amount, 'AUG 26');
   }, [activeBill]);
 
   const hasHistory = historyData.length > 0;

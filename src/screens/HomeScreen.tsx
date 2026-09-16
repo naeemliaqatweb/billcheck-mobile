@@ -14,7 +14,7 @@ import { TRANSLATIONS, Language } from '../i18n/translations';
 import { APP_CONFIG } from '../constants/appConfig';
 import { DisclaimerBanner } from '../components/DisclaimerBanner';
 import { AdBanner } from '../components/AdBanner';
-import { ApiService, generate12MonthHistory } from '../services/api';
+import { ApiService, generate12MonthHistory, sanitizeBillingMonth } from '../services/api';
 import { StorageService } from '../services/storage';
 import { NotificationService } from '../services/notification';
 import { BillPdfService } from '../services/billPdf';
@@ -99,9 +99,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   // Helper to ensure current bill month is always the last entry in history
   const enrichWithCurrentBill = (bill: BillData): BillMonthHistory[] => {
     const base = bill.history12Months || [];
-    if (!bill.billMonth || base.length === 0) return base;
-
-    const currentLabel = bill.billMonth.trim().toUpperCase();
+    const currentLabel = sanitizeBillingMonth(bill.billMonth);
+    if (base.length === 0) return generate12MonthHistory(bill.unitsConsumed || 120, bill.payableWithinDueDate || 2596, currentLabel);
 
     // Check if currentLabel already exists in base
     const existingIndex = base.findIndex((b) => (b.month || '').trim().toUpperCase() === currentLabel);

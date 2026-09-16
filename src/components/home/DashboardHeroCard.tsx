@@ -12,6 +12,7 @@ import { DashboardTrendGraph } from './DashboardTrendGraph';
 import { ElectricGridAnimation } from './ElectricGridAnimation';
 import { Language } from '../../i18n/translations';
 import { BillMonthHistory } from '../../types/bill';
+import { sanitizeBillingMonth } from '../../services/api';
 
 interface DashboardHeroCardProps {
   location?: string;
@@ -47,39 +48,22 @@ const formatCurrentBillMonth = (
   customBillMonth?: string,
   isUrdu = false
 ) => {
-  if (customBillMonth) {
-    const parts = customBillMonth.trim().toUpperCase().split(/[\s-]+/);
-    const m = parts[0] || '';
-    const y = parts[1] ? (parts[1].length === 2 ? `20${parts[1]}` : parts[1]) : '';
-    for (const [key, urVal] of Object.entries(URDU_MONTH_NAMES)) {
-      if (m.startsWith(key)) {
-        return isUrdu ? `${urVal} ${y}`.trim() : `${key.charAt(0) + key.slice(1).toLowerCase()} ${y}`.trim();
-      }
-    }
-    return customBillMonth;
-  }
+  const target = customBillMonth
+    ? sanitizeBillingMonth(customBillMonth)
+    : (history && history.length > 0 ? sanitizeBillingMonth(history[history.length - 1]?.month) : 'AUG 26');
 
-  if (history && history.length > 0) {
-    const latest = history[history.length - 1];
-    if (latest?.month) {
-      const parts = latest.month.trim().toUpperCase().split(/[\s-]+/);
-      const m = parts[0] || '';
-      const y = parts[1] ? (parts[1].length === 2 ? `20${parts[1]}` : parts[1]) : (latest.year ? `${latest.year}` : '');
-      for (const [key, urVal] of Object.entries(URDU_MONTH_NAMES)) {
-        if (m.startsWith(key)) {
-          return isUrdu ? `${urVal} ${y}`.trim() : `${key.charAt(0) + key.slice(1).toLowerCase()} ${y}`.trim();
-        }
-      }
+  const parts = target.trim().toUpperCase().split(/[\s-]+/);
+  const m = parts[0] || 'AUG';
+  const y = parts[1] ? (parts[1].length === 2 ? `20${parts[1]}` : parts[1]) : '2026';
+
+  for (const [key, urVal] of Object.entries(URDU_MONTH_NAMES)) {
+    if (m.startsWith(key)) {
+      return isUrdu ? `${urVal} ${y}`.trim() : `${key.charAt(0) + key.slice(1).toLowerCase()} ${y}`.trim();
     }
   }
 
   // Fallback to latest issued Pakistani billing cycle (August 2026)
-  const now = new Date();
-  const MON_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const MON_UR = ['جنوری', 'فروری', 'مارچ', 'اپریل', 'مئی', 'جون', 'جولائی', 'اگست', 'ستمبر', 'اکتوبر', 'نومبر', 'دسمبر'];
-  const curM = (now.getMonth() - 1 + 12) % 12; // Latest completed/issued month (August)
-  const curY = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
-  return isUrdu ? `${MON_UR[curM]} ${curY}` : `${MON_EN[curM]} ${curY}`;
+  return isUrdu ? `اگست 2026` : `Aug 2026`;
 };
 
 // Multi-wire electric circuit configuration with continuous current flow on all wires

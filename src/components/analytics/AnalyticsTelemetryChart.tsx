@@ -217,10 +217,11 @@ export const AnalyticsTelemetryChart: React.FC<AnalyticsTelemetryChartProps> = (
   }, [chartData]);
 
   const selectedItem = chartData[selectedIndex] || chartData[chartData.length - 1] || {
-    month: 'Aug 2026',
-    units: 342,
-    amount: 14320,
-    status: 'paid',
+    month: 'AUG 26',
+    year: 2026,
+    units: 120,
+    amount: 2596,
+    status: 'unpaid',
   };
 
   const selectedMonthFormatted = useMemo(() => {
