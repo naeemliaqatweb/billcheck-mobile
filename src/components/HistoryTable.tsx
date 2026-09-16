@@ -77,6 +77,16 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({
         const diff = item.unitsDiffPercentage || 0;
         const isUp = diff > 0;
 
+        const parts = (item.month || '').trim().split(' ');
+        const rawMon = parts[0] || '';
+        const rawYr = parts[1] ? `'${parts[1]}` : "'26";
+        const urduMonths: Record<string, string> = {
+          JAN: 'جنوری', FEB: 'فروری', MAR: 'مارچ', APR: 'اپریل',
+          MAY: 'مئی', JUN: 'جون', JUL: 'جولائی', AUG: 'اگست',
+          SEP: 'ستمبر', OCT: 'اکتوبر', NOV: 'نومبر', DEC: 'دسمبر',
+        };
+        const displayMonth = isUrdu ? `${urduMonths[rawMon.toUpperCase()] || rawMon} ${rawYr}` : item.month;
+
         return (
           <View
             key={item.month}
@@ -91,7 +101,7 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({
             {/* Month Column */}
             <View style={{ flex: 1.2 }}>
               <Text style={[styles.monthText, darkMode ? styles.darkText : styles.lightText, isLatest && styles.boldText]}>
-                {item.month}
+                {displayMonth}
               </Text>
               {isLatest && (
                 <Text style={styles.currentBadgeText}>

@@ -2,6 +2,7 @@ import { NativeModules, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StorageService } from './storage';
 import { ApiService } from './api';
+import { getMeterDisplayName } from '../utils/meterUtils';
 
 const NOTIFICATIONS_STORAGE_KEY = '@pakbill_notifications_v1';
 const { BillNotificationModule } = NativeModules;
@@ -86,10 +87,11 @@ export const NotificationService = {
   /**
    * Trigger notification when a new meter is added by the user
    */
-  async notifyMeterAdded(meter: { nickname?: string; company: string; referenceNumber: string }, isUrdu = false): Promise<void> {
+  async notifyMeterAdded(meter: { nickname?: string; company: string; referenceNumber: string; consumerName?: string }, isUrdu = false): Promise<void> {
+    const display = getMeterDisplayName(meter);
     const title = isUrdu
-      ? `⚡ میٹر محفوظ ہو گیا: ${meter.nickname || meter.company}`
-      : `⚡ Meter Added: ${meter.nickname || meter.company}`;
+      ? `⚡ میٹر محفوظ ہو گیا: ${display}`
+      : `⚡ Meter Added: ${display}`;
 
     const message = isUrdu
       ? `${meter.company} کا ریفرنس نمبر ${meter.referenceNumber} محفوظ ہو گیا۔ نئے بل اور آخری تاریخ کے نوٹیفیکیشنز فعال ہیں۔`
@@ -152,13 +154,14 @@ export const NotificationService = {
                 ? (isUrdu ? 'آج آخری دن ہے' : 'Today is the last day')
                 : (isUrdu ? `${diffDays} دن باقی ہیں` : `${diffDays} days left`);
 
+              const display = getMeterDisplayName(meter);
               const title = isUrdu
-                ? `⚠️ بل کی آخری تاریخ قریب ہے: ${meter.nickname || meter.company}`
-                : `⚠️ Bill Due Soon: ${meter.nickname || meter.company}`;
+                ? `⚠️ بل کی آخری تاریخ قریب ہے: ${display}`
+                : `⚠️ Bill Due Soon: ${display}`;
 
               const message = isUrdu
-                ? `${meter.company} بل کی آخری تاریخ ${meter.lastDueDate} ہے (${daysText})۔ لیٹ سرچارج سے بچنے کے لیے وقت پر ادا کریں۔ رقم: Rs. ${(meter.lastBillAmount || 0).toLocaleString()}`
-                : `Due date for ${meter.company} is ${meter.lastDueDate} (${daysText}). Pay on time to avoid surcharge. Amount: Rs. ${(meter.lastBillAmount || 0).toLocaleString()}`;
+                ? `${display} بل کی آخری تاریخ ${meter.lastDueDate} ہے (${daysText})۔ لیٹ سرچارج سے بچنے کے لیے وقت پر ادا کریں۔ رقم: Rs. ${(meter.lastBillAmount || 0).toLocaleString()}`
+                : `Due date for ${display} is ${meter.lastDueDate} (${daysText}). Pay on time to avoid surcharge. Amount: Rs. ${(meter.lastBillAmount || 0).toLocaleString()}`;
 
               const notif = await this.addNotification({
                 title,

@@ -111,9 +111,13 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
       const bill = await ApiService.fetchBill(selectedProvider.code, cleanRef);
       await StorageService.cacheBill(bill);
 
+      const cleanConsumer = bill.consumerName && !bill.consumerName.toUpperCase().includes('CONSUMER')
+        ? bill.consumerName.split(/[\n,]/)[0].trim()
+        : '';
+
       const newMeter: SavedMeter = {
         id: `meter_${selectedProvider.code.toLowerCase()}_${Date.now()}`,
-        nickname: nickname.trim() || `${selectedProvider.name} Meter`,
+        nickname: nickname.trim() || cleanConsumer || `${selectedProvider.name} Meter`,
         company: selectedProvider.code,
         referenceNumber: cleanRef,
         utilityType: selectedProvider.type,

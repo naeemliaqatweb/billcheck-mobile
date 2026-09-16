@@ -15,6 +15,7 @@ import { AdBanner } from '../components/AdBanner';
 import { StorageService } from '../services/storage';
 import { ApiService } from '../services/api';
 import { BillPdfService } from '../services/billPdf';
+import { getMeterDisplayName } from '../utils/meterUtils';
 import { AppIcon } from '../components/AppIcon';
 import { CustomPopup, PopupConfig } from '../components/CustomPopup';
 import { DashboardBillCard } from '../components/home/DashboardBillCard';
@@ -87,11 +88,11 @@ export const SavedBillsScreen: React.FC<SavedBillsScreenProps> = ({
       if (!searchQuery.trim()) return true;
 
       const q = searchQuery.toLowerCase().trim();
-      const nickname = (meter.nickname || '').toLowerCase();
+      const displayName = getMeterDisplayName(meter).toLowerCase();
       const ref = (meter.referenceNumber || '').toLowerCase();
-      const company = (meter.company || '').toLowerCase();
+      const consumer = (meter.consumerName || '').toLowerCase();
 
-      return nickname.includes(q) || ref.includes(q) || company.includes(q);
+      return displayName.includes(q) || ref.includes(q) || consumer.includes(q);
     });
   }, [savedMeters, filterType, searchQuery]);
 
@@ -100,7 +101,7 @@ export const SavedBillsScreen: React.FC<SavedBillsScreenProps> = ({
       visible: true,
       type: 'error',
       title: isUrdu ? 'میٹر ہٹائیں' : 'Remove Saved Meter',
-      message: `${t.deleteConfirm}\n(${meter.nickname} - ${meter.referenceNumber})`,
+      message: `${t.deleteConfirm}\n(${getMeterDisplayName(meter)} - ${meter.referenceNumber})`,
       primaryText: isUrdu ? 'ہٹائیں' : 'Delete',
       secondaryText: isUrdu ? 'منسوخ' : 'Cancel',
       onPrimaryPress: async () => {

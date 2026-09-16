@@ -124,6 +124,16 @@ export const ConsumptionChart: React.FC<ConsumptionChartProps> = ({
             const isLatest = index === 0;
             const isPeakSummer = item.units > 300;
 
+            const parts = item.month.split(' ');
+            const rawMon = parts[0] || '';
+            const rawYr = parts[1] || '26';
+            const urduMonths: Record<string, string> = {
+              JAN: 'جنوری', FEB: 'فروری', MAR: 'مارچ', APR: 'اپریل',
+              MAY: 'مئی', JUN: 'جون', JUL: 'جولائی', AUG: 'اگست',
+              SEP: 'ستمبر', OCT: 'اکتوبر', NOV: 'نومبر', DEC: 'دسمبر',
+            };
+            const monLabel = isUrdu ? (urduMonths[rawMon.toUpperCase()] || rawMon) : rawMon;
+
             return (
               <View key={`${item.month}-${index}`} style={styles.barColumn}>
                 {/* Latest Tag Badge */}
@@ -176,11 +186,12 @@ export const ConsumptionChart: React.FC<ConsumptionChartProps> = ({
                       ? styles.darkMonth
                       : styles.lightMonth,
                   ]}
+                  numberOfLines={1}
                 >
-                  {item.month.split(' ')[0]}
+                  {monLabel}
                 </Text>
                 <Text style={[styles.yearLabel, darkMode ? styles.darkSub : styles.lightSub]}>
-                  &apos;{item.month.split(' ')[1] || '24'}
+                  &apos;{rawYr}
                 </Text>
               </View>
             );

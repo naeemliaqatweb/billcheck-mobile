@@ -13,6 +13,7 @@ import { Language } from '../../i18n/translations';
 import { NotificationService } from '../../services/notification';
 import { StorageService } from '../../services/storage';
 import { parseDueDate } from '../../services/api';
+import { getMeterShortName } from '../../utils/meterUtils';
 
 interface DashboardBillCardProps {
   meter: SavedMeter;
@@ -90,13 +91,11 @@ export const DashboardBillCard: React.FC<DashboardBillCardProps> = ({
 
   // Clean nickname to avoid repeating company name e.g. "MEPCO • MEPCO (liaqat)"
   const getDisplayNickname = () => {
-    const raw = meter.nickname?.trim();
-    if (!raw) return isGas ? (isUrdu ? 'گیس میٹر' : 'Home Gas') : (isUrdu ? 'بجلی میٹر' : 'Home');
-
-    const prefixRegex = new RegExp(`^${meter.company}\\s*[\\(-–:]*\\s*`, 'i');
-    const cleaned = raw.replace(prefixRegex, '').replace(/[\\)]+$/, '').trim();
-    if (!cleaned) return isGas ? (isUrdu ? 'گیس میٹر' : 'Home Gas') : (isUrdu ? 'بجلی میٹر' : 'Home');
-    return cleaned;
+    return getMeterShortName({
+      nickname: meter.nickname,
+      company: meter.company,
+      consumerName: consumerDisplayName,
+    });
   };
 
   // Determine status pill style

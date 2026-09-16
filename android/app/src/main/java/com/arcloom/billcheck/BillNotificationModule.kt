@@ -284,4 +284,26 @@ class BillNotificationModule(private val reactContext: ReactApplicationContext) 
             promise.resolve(false)
         }
     }
+
+    @ReactMethod
+    fun copyToClipboard(text: String, label: String?, promise: Promise) {
+        try {
+            Handler(Looper.getMainLooper()).post {
+                try {
+                    val clipboard = reactContext.getSystemService(Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
+                    if (clipboard != null) {
+                        val clip = android.content.ClipData.newPlainText(label ?: "Bill Reference Number", text)
+                        clipboard.setPrimaryClip(clip)
+                        promise.resolve(true)
+                    } else {
+                        promise.resolve(false)
+                    }
+                } catch (e: Exception) {
+                    promise.resolve(false)
+                }
+            }
+        } catch (e: Exception) {
+            promise.resolve(false)
+        }
+    }
 }

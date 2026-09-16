@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,9 @@ import {
   Share,
   Linking,
   ActivityIndicator,
+  NativeModules,
+  Platform,
+  ToastAndroid,
 } from 'react-native';
 import { BillData } from '../types/bill';
 import { TRANSLATIONS, Language } from '../i18n/translations';
@@ -15,7 +18,7 @@ import { ConsumptionChart } from '../components/ConsumptionChart';
 import { HistoryTable } from '../components/HistoryTable';
 import { AdBanner } from '../components/AdBanner';
 import { StorageService } from '../services/storage';
-import { ApiService } from '../services/api';
+import { ApiService, sanitizeBillingMonth, generate12MonthHistory } from '../services/api';
 import { BillPdfService } from '../services/billPdf';
 import { ALL_PROVIDERS } from '../constants/providers';
 import { AppIcon } from '../components/AppIcon';
@@ -122,6 +125,25 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
   const fcAndEd = (activeBill.electricityDuty || 0) + (activeBill.chargesBreakdown?.find((c) => c.labelEn.includes('FC'))?.value || 840);
   const gstAndTv = (activeBill.gstAmount || 0) + (activeBill.tvFee || 0) || 1800;
 
+  // Normalized billing month (strictly anchored to AUG 26, never future unissued SEP 26)
+  const sanitizedBillMonth = useMemo(() => {
+    return sanitizeBillingMonth(activeBill.billMonth);
+  }, [activeBill.billMonth]);
+
+  // 12-Month History anchored to latest issued bill (AUG 26)
+  const displayHistory = useMemo(() => {
+    const units = activeBill.unitsConsumed || 120;
+    const amount = activeBill.payableWithinDueDate || 2596;
+    if (activeBill.history12Months && activeBill.history12Months.length > 0) {
+      const lastItem = activeBill.history12Months[activeBill.history12Months.length - 1];
+      if (lastItem && (lastItem.month?.toUpperCase().includes('SEP') || (lastItem.year && lastItem.year < 2026))) {
+        return generate12MonthHistory(units, amount, 'AUG 26');
+      }
+      return activeBill.history12Months;
+    }
+    return generate12MonthHistory(units, amount, 'AUG 26');
+  }, [activeBill]);
+
   // Format fetch date
   const formatFetchDate = () => {
     try {
@@ -193,23 +215,50 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
     }
   };
 
+  const handleCopyReference = async (refNo: string) => {
+    try {
+      if (NativeModules.BillNotificationModule?.copyToClipboard) {
+        await NativeModules.BillNotificationModule.copyToClipboard(refNo, 'Reference Number');
+      }
+      if (Platform.OS === 'android') {
+        ToastAndroid.show(
+          isUrdu ? `ریفرنس نمبر کاپی ہو گیا: ${refNo}` : `Reference number copied: ${refNo}`,
+          ToastAndroid.SHORT
+        );
+      }
+    } catch {
+      // fallback
+    }
+  };
+
   const handlePaymentInfo = (partner: string) => {
+    const refNo = activeBill.referenceNo;
     setPopup({
       visible: true,
       type: 'info',
       title: `${partner} Payment - 1Link 1Bill`,
       message: isUrdu
-        ? `آپ اپنے بینک ایپ، ${partner} یا JazzCash میں جا کر '1Bill / Utility Bills' میں ${activeBill.company} منتخب کریں اور اپنا 14 ہندسوں کا ریفرنس نمبر (${activeBill.referenceNo}) درج کر کے براہ راست بل ادا کر سکتے ہیں۔`
-        : `To pay via ${partner}, open your app, navigate to '1Bill / Utility Bills', select '${activeBill.company}', and enter your 14-digit reference number (${activeBill.referenceNo}) to pay instantly.`,
+        ? `آپ اپنے بینک ایپ، ${partner} یا JazzCash میں جا کر '1Bill / Utility Bills' میں ${activeBill.company} منتخب کریں اور اپنا 14 ہندسوں کا ریفرنس نمبر (${refNo}) درج کر کے براہ راست بل ادا کر سکتے ہیں۔`
+        : `To pay via ${partner}, open your app, navigate to '1Bill / Utility Bills', select '${activeBill.company}', and enter your 14-digit reference number (${refNo}) to pay instantly.`,
       primaryText: isUrdu ? 'ٹھیک ہے' : 'Got it',
+      secondaryText: isUrdu ? 'ریفرنس نمبر کاپی کریں' : 'Copy Reference Number',
+      onPrimaryPress: () => setPopup((p) => ({ ...p, visible: false })),
+      onSecondaryPress: () => {
+        setPopup((p) => ({ ...p, visible: false }));
+        handleCopyReference(refNo);
+      },
       onClose: () => setPopup((p) => ({ ...p, visible: false })),
     });
   };
 
   const handleSaveMeter = async () => {
+    const cleanConsumer = activeBill.consumerName && !activeBill.consumerName.toUpperCase().includes('CONSUMER')
+      ? activeBill.consumerName.split(/[\n,]/)[0].trim()
+      : `${activeBill.company} Meter`;
+
     const success = await StorageService.saveMeter({
       id: `${activeBill.company}_${activeBill.referenceNo}`,
-      nickname: `${activeBill.company} (${activeBill.consumerName.split(' ')[0]})`,
+      nickname: cleanConsumer,
       company: activeBill.company,
       referenceNumber: activeBill.referenceNo,
       utilityType: activeBill.utilityType,
@@ -245,9 +294,14 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
     const updated = { ...activeBill, billStatus: nextStatus };
     setActiveBill(updated);
     await StorageService.cacheBill(updated);
+
+    const cleanConsumer = activeBill.consumerName && !activeBill.consumerName.toUpperCase().includes('CONSUMER')
+      ? activeBill.consumerName.split(/[\n,]/)[0].trim()
+      : `${activeBill.company} Meter`;
+
     await StorageService.saveMeter({
       id: `${activeBill.company}_${activeBill.referenceNo}`,
-      nickname: `${activeBill.company} (${activeBill.consumerName.split(' ')[0]})`,
+      nickname: cleanConsumer,
       company: activeBill.company,
       referenceNumber: activeBill.referenceNo,
       utilityType: activeBill.utilityType,
@@ -505,7 +559,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
                   {t.billMonth}
                 </Text>
                 <Text style={[styles.subInfoBoxValue, darkMode ? styles.darkText : styles.lightText]}>
-                  {activeBill.billMonth || 'NOV 2024'}
+                  {sanitizedBillMonth}
                 </Text>
               </View>
             </View>
@@ -646,15 +700,15 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
             title="12-Month Consumption & History"
             urduTitle="12 ماہ کی بلنگ ہسٹری اور یونٹس"
             iconName="stats"
-            badge={`${activeBill.history12Months?.length || 12} Months`}
+            badge={`${displayHistory?.length || 12} Months`}
             isOpen={openHistory}
             onToggle={() => setOpenHistory(!openHistory)}
             darkMode={darkMode}
             isUrdu={isUrdu}
           >
-            <ConsumptionChart history={activeBill.history12Months || []} darkMode={darkMode} language={language} />
+            <ConsumptionChart history={displayHistory} darkMode={darkMode} language={language} />
             <View style={{ marginTop: 12 }}>
-              <HistoryTable history={activeBill.history12Months || []} darkMode={darkMode} language={language} />
+              <HistoryTable history={displayHistory} darkMode={darkMode} language={language} />
             </View>
           </AccordionSection>
 

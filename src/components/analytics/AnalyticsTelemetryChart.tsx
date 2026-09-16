@@ -68,6 +68,8 @@ export const AnalyticsTelemetryChart: React.FC<AnalyticsTelemetryChartProps> = (
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const drawAnim = useRef(new Animated.Value(0)).current;
+  const flowAnim = useRef(new Animated.Value(0)).current;
+  const barGrowAnim = useRef(new Animated.Value(0)).current;
 
   // Chronologically sort and deduplicate history
   const chartData = useMemo(() => {
@@ -179,29 +181,54 @@ export const AnalyticsTelemetryChart: React.FC<AnalyticsTelemetryChartProps> = (
     }
   }, [chartData]);
 
-  // Smooth drawing and glide-in animation when mounted or data updates
+  // Smooth drawing, bar growth and glide-in animation when mounted or data updates
   useEffect(() => {
     drawAnim.setValue(0);
-    Animated.timing(drawAnim, {
-      toValue: 1,
-      duration: 1000,
-      easing: Easing.bezier(0.16, 1, 0.3, 1), // smooth elastic ease-out
-      useNativeDriver: true,
-    }).start();
-  }, [drawAnim, chartData]);
+    barGrowAnim.setValue(0);
+
+    Animated.parallel([
+      Animated.timing(drawAnim, {
+        toValue: 1,
+        duration: 900,
+        easing: Easing.bezier(0.16, 1, 0.3, 1),
+        useNativeDriver: false,
+      }),
+      Animated.timing(barGrowAnim, {
+        toValue: 1,
+        duration: 850,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }),
+    ]).start();
+  }, [drawAnim, barGrowAnim, chartData]);
+
+  // Continuous sweeping electric current flow animation across the trend curve
+  useEffect(() => {
+    flowAnim.setValue(0);
+    const flow = Animated.loop(
+      Animated.timing(flowAnim, {
+        toValue: 1,
+        duration: 3200,
+        easing: Easing.linear,
+        useNativeDriver: false,
+      })
+    );
+    flow.start();
+    return () => flow.stop();
+  }, [flowAnim, chartData]);
 
   // Continuous pulse animation for selected marker
   useEffect(() => {
     const pulse = Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
-          toValue: 1.35,
-          duration: 900,
+          toValue: 1.4,
+          duration: 800,
           useNativeDriver: false,
         }),
         Animated.timing(pulseAnim, {
           toValue: 1.0,
-          duration: 900,
+          duration: 800,
           useNativeDriver: false,
         }),
       ])
@@ -282,6 +309,35 @@ export const AnalyticsTelemetryChart: React.FC<AnalyticsTelemetryChartProps> = (
   }, [points, chartBottomY]);
 
   const activePoint = points[selectedIndex] || points[points.length - 1];
+
+  const tracerInputRange = useMemo(() => {
+    if (points.length < 2) return [0, 1];
+    return points.map((_, i) => i / (points.length - 1));
+  }, [points]);
+
+  const tracerOutputX = useMemo(() => {
+    if (points.length < 2) return [0, 100];
+    return points.map((p) => p.x);
+  }, [points]);
+
+  const tracerOutputY = useMemo(() => {
+    if (points.length < 2) return [0, 100];
+    return points.map((p) => p.y);
+  }, [points]);
+
+  const tracerX = useMemo(() => {
+    return flowAnim.interpolate({
+      inputRange: tracerInputRange,
+      outputRange: tracerOutputX,
+    });
+  }, [flowAnim, tracerInputRange, tracerOutputX]);
+
+  const tracerY = useMemo(() => {
+    return flowAnim.interpolate({
+      inputRange: tracerInputRange,
+      outputRange: tracerOutputY,
+    });
+  }, [flowAnim, tracerInputRange, tracerOutputY]);
 
   return (
     <View style={[styles.card, darkMode ? styles.cardDark : styles.cardLight]}>
@@ -434,6 +490,27 @@ export const AnalyticsTelemetryChart: React.FC<AnalyticsTelemetryChartProps> = (
               </>
             )}
           </Svg>
+
+          {/* Sweeping Neon Tracer Spark / Arrow gliding along the curve */}
+          {points.length > 1 && (
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.tracerContainer,
+                {
+                  transform: [
+                    { translateX: tracerX },
+                    { translateY: tracerY },
+                  ],
+                },
+              ]}
+            >
+              <View style={styles.tracerOuterHalo} />
+              <View style={styles.tracerCoreSpark}>
+                <AppIcon name="zap" size={9} color="#07192C" />
+              </View>
+            </Animated.View>
+          )}
 
           {/* Interactive Tap Zones over the bars */}
           <View style={styles.touchOverlay} pointerEvents="box-none">
@@ -642,6 +719,43 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     bottom: 0,
+  },
+  tracerContainer: {
+    position: 'absolute',
+    left: -10,
+    top: -10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  tracerOuterHalo: {
+    position: 'absolute',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(63, 255, 139, 0.35)',
+    borderWidth: 1,
+    borderColor: '#62FF96',
+    shadowColor: '#3FFF8B',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  tracerCoreSpark: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#62FF96',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#FFFFFF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 5,
   },
   monthLabelRow: {
     flexDirection: 'row',

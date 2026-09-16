@@ -15,6 +15,7 @@ import { AdBanner } from '../components/AdBanner';
 import { AppIcon } from '../components/AppIcon';
 import { StorageService } from '../services/storage';
 import { ApiService, sanitizeBillingMonth, generate12MonthHistory } from '../services/api';
+import { getMeterDisplayName } from '../utils/meterUtils';
 import { AnalyticsTelemetryChart } from '../components/analytics/AnalyticsTelemetryChart';
 import { AnalyticsBentoGrid } from '../components/analytics/AnalyticsBentoGrid';
 import { RegulatoryNoticeCard } from '../components/analytics/RegulatoryNoticeCard';
@@ -46,7 +47,6 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
   const isUrdu = language === 'ur';
 
   const [utilityType, setUtilityType] = useState<'electricity' | 'gas'>('electricity');
-  const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()));
 
   const isGasBill = (bill?: BillData | null): boolean => {
     if (!bill) return false;
@@ -334,7 +334,9 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
   const hasHistory = historyData.length > 0;
 
   const meterDisplayLabel = activeBill
-    ? `${activeBill.company} # ${activeBill.formattedRefNo || activeBill.referenceNo}`
+    ? (activeBill.consumerName && !activeBill.consumerName.toUpperCase().includes('CONSUMER')
+        ? `${activeBill.consumerName.split(/[\n,]/)[0].trim()} (${activeBill.company})`
+        : `${activeBill.company} # ${activeBill.formattedRefNo || activeBill.referenceNo}`)
     : 'LESCO # 08 11254 0938400 U';
 
   return (
@@ -394,7 +396,7 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
         }
       >
         <View style={styles.mainCanvas}>
-          {/* Screen Title & Year Picker Row */}
+          {/* Screen Title Row */}
           <View style={styles.screenTitleRow}>
             <View>
               <Text style={[styles.screenHeadline, darkMode ? styles.darkText : styles.lightText]}>
@@ -404,16 +406,6 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
                 {isUrdu ? 'کثیر فراہم کنندہ کنزمپشن ٹیلی میٹری' : 'Multi-provider consumption telemetry'}
               </Text>
             </View>
-
-            <TouchableOpacity
-              style={[styles.yearPickerBtn, !darkMode && styles.yearPickerBtnLight]}
-              onPress={() => setSelectedYear((y) => (y === '2024' ? '2025' : '2024'))}
-              activeOpacity={0.8}
-            >
-              <AppIcon name="calendar" size={14} color={darkMode ? '#62FF96' : '#006D35'} />
-              <Text style={[styles.yearPickerText, !darkMode && styles.yearPickerTextLight]}>{selectedYear}</Text>
-              <AppIcon name="chevron-down" size={14} color={darkMode ? '#62FF96' : '#006D35'} />
-            </TouchableOpacity>
           </View>
 
           {/* Segmented Pill Switcher (Electricity vs Gas) */}
@@ -504,7 +496,7 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
                             : styles.lightText,
                         ]}
                       >
-                        {m.nickname || m.company} ({m.company})
+                        {getMeterDisplayName(m)}
                       </Text>
                     </TouchableOpacity>
                   );
