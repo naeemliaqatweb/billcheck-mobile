@@ -82,6 +82,16 @@ const formatCurrentBillMonth = (
   return isUrdu ? `${MON_UR[curM]} ${curY}` : `${MON_EN[curM]} ${curY}`;
 };
 
+// Multi-wire electric circuit configuration with staggered current speeds
+const CURRENT_LINES_CONFIG = [
+  { duration: 4200, delay: 0 },
+  { duration: 5000, delay: 1200 },
+  { duration: 3800, delay: 600 },
+  { duration: 4600, delay: 2400 },
+  { duration: 4100, delay: 1600 },
+  { duration: 4900, delay: 3000 },
+];
+
 export const DashboardHeroCard: React.FC<DashboardHeroCardProps> = ({
   location: _location = 'Lahore, PK',
   totalDueAmount = 0,
@@ -97,70 +107,32 @@ export const DashboardHeroCard: React.FC<DashboardHeroCardProps> = ({
   const isUrdu = language === 'ur';
   const [wrapperHeight, setWrapperHeight] = useState(300);
 
-  // Infinite slow top-to-bottom dot travel animation along vertical circuit lines
-  const lineDotAnim1 = useRef(new Animated.Value(0)).current;
-  const lineDotAnim2 = useRef(new Animated.Value(0)).current;
-  const lineDotAnim3 = useRef(new Animated.Value(0)).current;
+  // Animated current pulses traveling along vertical wires
+  const pulseAnims = useRef(
+    CURRENT_LINES_CONFIG.map(() => new Animated.Value(0))
+  ).current;
 
   useEffect(() => {
-    const anim1 = Animated.loop(
-      Animated.timing(lineDotAnim1, {
-        toValue: 1,
-        duration: 5000,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
-    );
-
-    const anim2 = Animated.loop(
-      Animated.sequence([
-        Animated.delay(1600),
-        Animated.timing(lineDotAnim2, {
-          toValue: 1,
-          duration: 5000,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
-    const anim3 = Animated.loop(
-      Animated.sequence([
-        Animated.delay(3200),
-        Animated.timing(lineDotAnim3, {
-          toValue: 1,
-          duration: 5000,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
-    anim1.start();
-    anim2.start();
-    anim3.start();
+    const activeLoops = CURRENT_LINES_CONFIG.map((config, index) => {
+      const loop = Animated.loop(
+        Animated.sequence([
+          ...(config.delay > 0 ? [Animated.delay(config.delay)] : []),
+          Animated.timing(pulseAnims[index], {
+            toValue: 1,
+            duration: config.duration,
+            easing: Easing.linear,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      loop.start();
+      return loop;
+    });
 
     return () => {
-      anim1.stop();
-      anim2.stop();
-      anim3.stop();
+      activeLoops.forEach((loop) => loop.stop());
     };
-  }, [lineDotAnim1, lineDotAnim2, lineDotAnim3]);
-
-  const dotTranslateY1 = lineDotAnim1.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, wrapperHeight || 300],
-  });
-
-  const dotTranslateY2 = lineDotAnim2.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, wrapperHeight || 300],
-  });
-
-  const dotTranslateY3 = lineDotAnim3.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, wrapperHeight || 300],
-  });
+  }, [pulseAnims]);
 
   // Current dynamic bill month text (e.g. "Aug 2026" or "اگست 2026")
   const activeMonthText = useMemo(
@@ -176,32 +148,28 @@ export const DashboardHeroCard: React.FC<DashboardHeroCardProps> = ({
         if (h > 0) setWrapperHeight(h);
       }}
     >
-      {/* Decorative vertical lines with slow traveling dots */}
+      {/* Visible vertical circuit wire lines with realistic flowing electric current */}
       <View style={styles.circuitDecoration} pointerEvents="none">
-        <View style={styles.circuitLine}>
-          <Animated.View
-            style={[
-              styles.verticalLineDot,
-              { transform: [{ translateY: dotTranslateY1 }] },
-            ]}
-          />
-        </View>
-        <View style={styles.circuitLine}>
-          <Animated.View
-            style={[
-              styles.verticalLineDot,
-              { transform: [{ translateY: dotTranslateY2 }] },
-            ]}
-          />
-        </View>
-        <View style={styles.circuitLine}>
-          <Animated.View
-            style={[
-              styles.verticalLineDot,
-              { transform: [{ translateY: dotTranslateY3 }] },
-            ]}
-          />
-        </View>
+        {CURRENT_LINES_CONFIG.map((_, index) => {
+          const translateY = pulseAnims[index].interpolate({
+            inputRange: [0, 1],
+            outputRange: [-60, (wrapperHeight || 300) + 60],
+          });
+
+          return (
+            <View key={index} style={styles.circuitLine}>
+              <Animated.View
+                style={[
+                  styles.currentPulseStream,
+                  { transform: [{ translateY }] },
+                ]}
+              >
+                {/* Leading high-energy electric spark */}
+                <View style={styles.electricSparkHead} />
+              </Animated.View>
+            </View>
+          );
+        })}
       </View>
 
       <View style={styles.heroContent}>
@@ -313,28 +281,44 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    opacity: 0.12,
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    zIndex: 1,
   },
   circuitLine: {
-    width: 1,
+    width: 1.5,
     height: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
     position: 'relative',
+    overflow: 'hidden',
   },
-  verticalLineDot: {
+  currentPulseStream: {
     position: 'absolute',
-    left: -2,
     top: 0,
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
+    left: -1.25,
+    width: 4,
+    height: 44,
+    borderRadius: 2,
+    backgroundColor: '#62FF96',
+    shadowColor: '#62FF96',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 8,
+    elevation: 5,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  electricSparkHead: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: '#FFFFFF',
     shadowColor: '#FFFFFF',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 1,
+    shadowRadius: 6,
+    elevation: 6,
+    marginBottom: -1,
   },
   heroContent: {
     zIndex: 10,
