@@ -53,8 +53,10 @@ export default function App() {
     setDarkMode(savedTheme === 'dark');
     setSavedMeters(meters);
 
-    // Auto sync saved meters in background for newly released monthly bills
+    // Request notification permission and check reminders in background
     try {
+      await NotificationService.requestNotificationPermission();
+      await NotificationService.checkDueDateReminders(savedLang === 'ur');
       const newNotifs = await NotificationService.autoSyncSavedMeters(savedLang === 'ur');
       if (newNotifs.length > 0) {
         const freshMeters = await StorageService.getSavedMeters();
@@ -81,7 +83,7 @@ export default function App() {
         });
       }
     } catch {
-      // background auto-sync fails gracefully
+      // background auto-sync & reminders fail gracefully
     }
   }, []);
 

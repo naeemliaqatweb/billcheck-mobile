@@ -7,8 +7,9 @@ import {
 } from '../constants/providers';
 import { BillData, SavedMeter } from '../types/bill';
 import { TRANSLATIONS, Language } from '../i18n/translations';
-import { ApiService } from '../services/api';
 import { StorageService } from '../services/storage';
+import { ApiService } from '../services/api';
+import { NotificationService } from '../services/notification';
 import { CustomPopup, PopupConfig } from '../components/CustomPopup';
 import { RefGuideModal } from '../components/RefGuideModal';
 import { AddBillTopHeader } from '../components/addbill/AddBillTopHeader';
@@ -126,6 +127,7 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
       };
 
       await StorageService.saveMeter(newMeter);
+      await NotificationService.notifyMeterAdded(newMeter, isUrdu);
       onSaveMeterComplete?.();
       onBillChecked(bill);
     } catch {

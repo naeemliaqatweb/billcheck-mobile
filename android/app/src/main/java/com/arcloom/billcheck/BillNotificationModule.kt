@@ -46,6 +46,8 @@ class BillNotificationModule(private val reactContext: ReactApplicationContext) 
                 description = CHANNEL_DESC
                 enableVibration(true)
                 enableLights(true)
+                setShowBadge(true)
+                lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
             }
             val notificationManager: NotificationManager =
                 reactContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -72,6 +74,37 @@ class BillNotificationModule(private val reactContext: ReactApplicationContext) 
     }
 
     @ReactMethod
+    fun requestNotificationPermission(promise: Promise) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                val currentActivity = reactApplicationContext.currentActivity
+                val isGranted = ContextCompat.checkSelfPermission(
+                    reactContext,
+                    android.Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+                if (isGranted) {
+                    promise.resolve(true)
+                    return
+                }
+                if (currentActivity != null) {
+                    ActivityCompat.requestPermissions(
+                        currentActivity,
+                        arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                        1001
+                    )
+                    promise.resolve(true)
+                } else {
+                    promise.resolve(false)
+                }
+            } else {
+                promise.resolve(true)
+            }
+        } catch (e: Exception) {
+            promise.resolve(false)
+        }
+    }
+
+    @ReactMethod
     fun showLocalNotification(
         title: String,
         message: String,
@@ -85,8 +118,15 @@ class BillNotificationModule(private val reactContext: ReactApplicationContext) 
                     android.Manifest.permission.POST_NOTIFICATIONS
                 ) == PackageManager.PERMISSION_GRANTED
                 if (!hasPermission) {
-                    promise.resolve(false)
-                    return
+                    // Try to request if activity is available
+                    val currentActivity = reactApplicationContext.currentActivity
+                    if (currentActivity != null) {
+                        ActivityCompat.requestPermissions(
+                            currentActivity,
+                            arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                            1001
+                        )
+                    }
                 }
             }
 
@@ -107,14 +147,22 @@ class BillNotificationModule(private val reactContext: ReactApplicationContext) 
                 pendingIntentFlag
             )
 
-            val appIconRes = reactContext.applicationInfo.icon
+            var smallIcon = reactContext.resources.getIdentifier("ic_launcher", "mipmap", reactContext.packageName)
+            if (smallIcon == 0) {
+                smallIcon = reactContext.applicationInfo.icon
+            }
+            if (smallIcon == 0) {
+                smallIcon = android.R.drawable.ic_dialog_info
+            }
 
             val builder = NotificationCompat.Builder(reactContext, CHANNEL_ID)
-                .setSmallIcon(if (appIconRes != 0) appIconRes else android.R.drawable.ic_dialog_info)
+                .setSmallIcon(smallIcon)
                 .setContentTitle(title)
                 .setContentText(message)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(message))
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setCategory(NotificationCompat.CATEGORY_REMINDER)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setDefaults(NotificationCompat.DEFAULT_ALL)
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent)

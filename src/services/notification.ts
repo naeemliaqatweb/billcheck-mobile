@@ -18,7 +18,38 @@ export interface AppNotification {
   billAmount?: number;
 }
 
+import { PermissionsAndroid } from 'react-native';
+
 export const NotificationService = {
+  /**
+   * Requests Android 13+ (API 33+) POST_NOTIFICATIONS permission
+   */
+  async requestNotificationPermission(): Promise<boolean> {
+    if (Platform.OS !== 'android') return true;
+    try {
+      if (BillNotificationModule?.requestNotificationPermission) {
+        await BillNotificationModule.requestNotificationPermission();
+      }
+      if (Platform.Version >= 33) {
+        const check = await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+        if (check) return true;
+        const res = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+          {
+            title: 'Bill Release & Due Date Alerts',
+            message: 'BillCheck PK needs notification access to alert you when your monthly bill is released and before the due date.',
+            buttonPositive: 'Allow',
+            buttonNegative: 'Deny',
+          }
+        );
+        return res === PermissionsAndroid.RESULTS.GRANTED;
+      }
+      return true;
+    } catch {
+      return true;
+    }
+  },
+
   /**
    * Triggers an authentic Android system tray notification (like WhatsApp/SMS).
    */
@@ -27,6 +58,7 @@ export const NotificationService = {
       return false;
     }
     try {
+      await this.requestNotificationPermission();
       const shown = await BillNotificationModule.showLocalNotification(title, message, tag || 'bill_alert');
       return !!shown;
     } catch {
@@ -42,10 +74,115 @@ export const NotificationService = {
       return true;
     }
     try {
+      if (Platform.Version >= 33) {
+        return await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+      }
       return await BillNotificationModule.hasNotificationPermission();
     } catch {
       return true;
     }
+  },
+
+  /**
+   * Trigger notification when a new meter is added by the user
+   */
+  async notifyMeterAdded(meter: { nickname?: string; company: string; referenceNumber: string }, isUrdu = false): Promise<void> {
+    const title = isUrdu
+      ? `⚡ میٹر محفوظ ہو گیا: ${meter.nickname || meter.company}`
+      : `⚡ Meter Added: ${meter.nickname || meter.company}`;
+
+    const message = isUrdu
+      ? `${meter.company} کا ریفرنس نمبر ${meter.referenceNumber} محفوظ ہو گیا۔ نئے بل اور آخری تاریخ کے نوٹیفیکیشنز فعال ہیں۔`
+      : `Reference #${meter.referenceNumber} for ${meter.company} is saved. New bill and due date alerts are now active.`;
+
+    await this.addNotification({
+      title,
+      message,
+      company: meter.company,
+      referenceNumber: meter.referenceNumber,
+    });
+
+    await this.triggerSystemNotification(title, message, `meter_added_${meter.referenceNumber}`);
+  },
+
+  /**
+   * Checks saved meters and triggers reminder notification if due date is within 3 days.
+   */
+  async checkDueDateReminders(isUrdu = false): Promise<AppNotification[]> {
+    const reminders: AppNotification[] = [];
+    try {
+      const savedMeters = await StorageService.getSavedMeters();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      for (const meter of savedMeters) {
+        if (meter.lastBillStatus === 'paid' || !meter.lastDueDate) continue;
+
+        // Parse due date (e.g. "22 Sep 2026", "2026-09-22", "22-09-2026")
+        let dueDateObj: Date | null = null;
+        const parts = meter.lastDueDate.match(/(\d{1,2})[\s\-/]+(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC|[0-9]{1,2})[\s\-/]+(\d{2,4})/i);
+        if (parts) {
+          const d = parseInt(parts[1], 10);
+          const mStr = parts[2].toUpperCase();
+          const y = parseInt(parts[3].length === 2 ? `20${parts[3]}` : parts[3], 10);
+          const monMap: Record<string, number> = {
+            JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5,
+            JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11,
+          };
+          const m = monMap[mStr] !== undefined ? monMap[mStr] : (parseInt(mStr, 10) - 1);
+          dueDateObj = new Date(y, m, d);
+        } else {
+          const parsed = Date.parse(meter.lastDueDate);
+          if (!isNaN(parsed)) dueDateObj = new Date(parsed);
+        }
+
+        if (dueDateObj) {
+          dueDateObj.setHours(0, 0, 0, 0);
+          const diffMs = dueDateObj.getTime() - today.getTime();
+          const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+          // Trigger reminder if due within 3 days (0, 1, 2, 3 days)
+          if (diffDays >= 0 && diffDays <= 3) {
+            const reminderKey = `@pakbill_due_reminded_${meter.id}_${today.toISOString().slice(0, 10)}`;
+            const alreadyReminded = await AsyncStorage.getItem(reminderKey);
+            if (!alreadyReminded) {
+              await AsyncStorage.setItem(reminderKey, 'true');
+
+              const daysText = diffDays === 0
+                ? (isUrdu ? 'آج آخری دن ہے' : 'Today is the last day')
+                : (isUrdu ? `${diffDays} دن باقی ہیں` : `${diffDays} days left`);
+
+              const title = isUrdu
+                ? `⚠️ بل کی آخری تاریخ قریب ہے: ${meter.nickname || meter.company}`
+                : `⚠️ Bill Due Soon: ${meter.nickname || meter.company}`;
+
+              const message = isUrdu
+                ? `${meter.company} بل کی آخری تاریخ ${meter.lastDueDate} ہے (${daysText})۔ لیٹ سرچارج سے بچنے کے لیے وقت پر ادا کریں۔ رقم: Rs. ${(meter.lastBillAmount || 0).toLocaleString()}`
+                : `Due date for ${meter.company} is ${meter.lastDueDate} (${daysText}). Pay on time to avoid surcharge. Amount: Rs. ${(meter.lastBillAmount || 0).toLocaleString()}`;
+
+              const notif = await this.addNotification({
+                title,
+                message,
+                company: meter.company,
+                referenceNumber: meter.referenceNumber,
+                billMonth: meter.lastBillMonth,
+                billAmount: meter.lastBillAmount,
+              });
+              reminders.push(notif);
+
+              await this.triggerSystemNotification(
+                title,
+                message,
+                `due_${meter.company}_${meter.referenceNumber}`
+              );
+            }
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return reminders;
   },
 
   /**
@@ -125,7 +262,7 @@ export const NotificationService = {
   /**
    * Auto-Sync: Checks saved meters for newly released monthly bills.
    * If a meter's latest bill month has changed:
-   * 1. Updates meter record & caches the fresh bill (replaces old cache).
+   * 1. Updates meter record & caches the fresh bill (Meter stays PERMANENTLY saved, only values update).
    * 2. Adds in-app notification.
    * 3. Triggers Android native system tray notification (like WhatsApp).
    */
@@ -144,7 +281,7 @@ export const NotificationService = {
               fresh.payableWithinDueDate > 0;
 
             if (hasNewBill) {
-              // Update saved meter record
+              // Update saved meter record (Preserves meter ID, company, reference, nickname permanently)
               await StorageService.saveMeter({
                 ...meter,
                 consumerName: fresh.consumerName || meter.consumerName,
@@ -186,7 +323,7 @@ export const NotificationService = {
             }
           }
         } catch {
-          // ignore single meter sync failure
+          // ignore single meter sync failure (will retry automatically on next sync)
         }
       }
     } catch {
