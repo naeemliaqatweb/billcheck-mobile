@@ -68,16 +68,16 @@ export const NewMeterFab: React.FC<NewMeterFabProps> = ({
       ]}
     >
       <TouchableOpacity
-        style={styles.fabBtn}
+        style={[styles.fabBtn, isUrdu && styles.fabBtnRtl]}
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         activeOpacity={0.9}
-        accessibilityLabel="Add New Meter"
+        accessibilityLabel={isUrdu ? 'نیا میٹر شامل کریں' : 'Add New Meter'}
         accessibilityRole="button"
       >
         <AppIcon name="plus" size={18} color="#62FF96" />
-        <Text style={styles.fabLabel}>
+        <Text style={styles.fabLabel} numberOfLines={1}>
           {isUrdu ? 'نیا میٹر' : 'New Meter'}
         </Text>
         <Animated.View
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
   },
   fabBtn: {
     height: 48,
-    paddingHorizontal: 18,
+    paddingHorizontal: 16,
     borderRadius: 24,
     backgroundColor: '#0C2B4E',
     flexDirection: 'row',
@@ -117,17 +117,21 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
+  fabBtnRtl: {
+    flexDirection: 'row-reverse',
+  },
   fabLabel: {
     fontSize: 13,
     fontWeight: '800',
     color: '#FFFFFF',
     letterSpacing: 0.3,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   pulseDot: {
     width: 7,
     height: 7,
     borderRadius: 3.5,
     backgroundColor: '#62FF96',
-    marginLeft: 2,
   },
 });
