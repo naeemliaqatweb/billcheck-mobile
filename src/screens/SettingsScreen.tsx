@@ -77,8 +77,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       ? '⚡ نیا بل جاری: LESCO (گھر کا میٹر)'
       : '⚡ New Bill Released: LESCO (Home)';
     const message = isUrdu
-      ? 'ستمبر کا نیا بل Rs. 14,250 جاری ہو گیا ہے۔ آخری تاریخ: 22 ستمبر'
-      : 'Your new bill for SEP 24 (Rs. 14,250) is now ready. Due Date: 22 Sep';
+      ? 'اگست کا نیا بل Rs. 14,250 جاری ہو گیا ہے۔ آخری تاریخ: 22 اگست'
+      : 'Your new bill for AUG 26 (Rs. 14,250) is now ready. Due Date: 22 Aug';
 
     await NotificationService.triggerSystemNotification(
       title,
@@ -92,7 +92,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       message,
       company: 'LESCO',
       referenceNumber: '15115371598719',
-      billMonth: 'SEP 24',
+      billMonth: 'AUG 26',
       billAmount: 14250,
     });
 

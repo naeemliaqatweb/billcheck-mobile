@@ -250,7 +250,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         dueDate: meter.lastDueDate || '2024-09-20',
         payableWithinDueDate: meter.lastBillAmount || 0,
         payableAfterDueDate: Math.round((meter.lastBillAmount || 0) * 1.08),
-        billingMonth: meter.lastBillMonth || 'SEP 24',
+        billingMonth: meter.lastBillMonth || 'AUG 26',
         readingDate: 'N/A',
         issueDate: 'N/A',
         unitsConsumed: 0,

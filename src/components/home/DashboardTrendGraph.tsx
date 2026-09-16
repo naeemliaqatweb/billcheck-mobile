@@ -47,18 +47,46 @@ export const DashboardTrendGraph: React.FC<DashboardTrendGraphProps> = ({
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const drawAnim = useRef(new Animated.Value(0)).current;
 
-  // Extract or build 6 latest months of data
+  // Extract or build 6 latest months of data (ending at latest issued bill, August 2026)
   const data6 = useMemo(() => {
+    const now = new Date();
+    const curM = (now.getMonth() - 1 + 12) % 12; // August (index 7)
+    const curY = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+    const maxTimestamp = curY * 12 + curM;
+
+    const MON_MAP: Record<string, number> = {
+      JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5,
+      JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11,
+    };
+
     if (history && history.length > 0) {
-      // Deduplicate any repeated months from newest (end) to oldest (start)
+      // Deduplicate any repeated months and exclude future unissued months
       const seen = new Set<string>();
       const deduped: BillMonthHistory[] = [];
       for (let i = history.length - 1; i >= 0; i--) {
         const item = history[i];
         const key = (item.month || '').trim().toUpperCase();
         if (key && !seen.has(key)) {
-          seen.add(key);
-          deduped.unshift(item);
+          let year = item.year || curY;
+          let monIndex = 0;
+          const parts = key.split(/[\s\-_]+/);
+          const mStr = parts[0] || '';
+          const yStr = parts[1] || '';
+          for (const [abbr, idx] of Object.entries(MON_MAP)) {
+            if (mStr.startsWith(abbr)) {
+              monIndex = idx;
+              break;
+            }
+          }
+          if (yStr) {
+            const yNum = parseInt(yStr.length === 2 ? `20${yStr}` : yStr, 10);
+            if (!isNaN(yNum) && yNum > 2000) year = yNum;
+          }
+          const timestamp = year * 12 + monIndex;
+          if (timestamp <= maxTimestamp) {
+            seen.add(key);
+            deduped.unshift(item);
+          }
         }
       }
       if (deduped.length >= 6) {
@@ -68,12 +96,9 @@ export const DashboardTrendGraph: React.FC<DashboardTrendGraphProps> = ({
         return deduped;
       }
     }
-    // Fallback dynamic 6 months relative to current date
+    // Fallback dynamic 6 months ending at latest issued bill (August 2026)
     const SEASON_MUL = [0.38, 0.42, 0.55, 0.75, 0.95, 1.15, 1.20, 1.05, 0.85, 0.65, 0.45, 0.40];
     const MON_ABBR = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-    const now = new Date();
-    const curM = now.getMonth();
-    const curY = now.getFullYear();
 
     const slots: BillMonthHistory[] = [];
     for (let offset = 5; offset >= 0; offset--) {

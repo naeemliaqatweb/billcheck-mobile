@@ -39,20 +39,32 @@ export function generate12MonthHistory(
   const MON_ABBR = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
   const now = new Date();
-  let curM = now.getMonth();       // 0-11
-  let curY = now.getFullYear();
+  // By default in Pakistani billing cycles, bills are issued in arrears for previous month
+  // E.g., in September 2026, the latest issued bill is August 2026 (index 7).
+  const maxIssuedM = (now.getMonth() - 1 + 12) % 12;
+  const maxIssuedY = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+  const maxTimestamp = maxIssuedY * 12 + maxIssuedM;
+
+  let curM = maxIssuedM;
+  let curY = maxIssuedY;
 
   if (anchorBillMonth) {
     const parts = anchorBillMonth.trim().toUpperCase().split(/[\s-]+/);
     const mStr = parts[0] || '';
     const yStr = parts[1] || '';
     const mIdx = MON_ABBR.findIndex((abbr) => mStr.startsWith(abbr));
-    if (mIdx !== -1) {
-      curM = mIdx;
-    }
+    let parsedY = curY;
     if (yStr) {
-      const parsedY = parseInt(yStr.length === 2 ? `20${yStr}` : yStr, 10);
-      if (!isNaN(parsedY) && parsedY > 2000) {
+      const yNum = parseInt(yStr.length === 2 ? `20${yStr}` : yStr, 10);
+      if (!isNaN(yNum) && yNum > 2000) {
+        parsedY = yNum;
+      }
+    }
+    if (mIdx !== -1) {
+      const candidateTimestamp = parsedY * 12 + mIdx;
+      // Clamp to not exceed latest issued month
+      if (candidateTimestamp <= maxTimestamp) {
+        curM = mIdx;
         curY = parsedY;
       }
     }

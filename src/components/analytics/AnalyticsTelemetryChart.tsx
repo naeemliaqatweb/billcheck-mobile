@@ -72,12 +72,12 @@ export const AnalyticsTelemetryChart: React.FC<AnalyticsTelemetryChartProps> = (
   // Chronologically sort and deduplicate history
   const chartData = useMemo(() => {
     if (!history || history.length === 0) {
-      // Fallback dynamic 12 months
+      // Fallback dynamic 12 months ending at latest issued bill (August 2026)
       const SEASON_MUL = [0.38, 0.42, 0.55, 0.75, 0.95, 1.15, 1.20, 1.05, 0.85, 0.65, 0.45, 0.40];
       const MON_ABBR = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
       const now = new Date();
-      const curM = now.getMonth();
-      const curY = now.getFullYear();
+      const curM = (now.getMonth() - 1 + 12) % 12; // August (index 7)
+      const curY = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
 
       const slots: BillMonthHistory[] = [];
       for (let offset = 11; offset >= 0; offset--) {
@@ -98,40 +98,73 @@ export const AnalyticsTelemetryChart: React.FC<AnalyticsTelemetryChartProps> = (
       return slots;
     }
 
-    // Sort by timestamp (year * 12 + monthIndex)
-    const parsed = history.map((item) => {
-      let year = item.year || 2026;
-      let monIndex = 0;
-      const clean = (item.month || '').trim().toUpperCase();
-      const parts = clean.split(/[\s\-_]+/);
-      const mStr = parts[0] || '';
-      const yStr = parts[1] || '';
+    // Max allowable month timestamp is latest issued Pakistani bill (curMonth - 1, e.g., August 2026)
+    const now = new Date();
+    const maxM = (now.getMonth() - 1 + 12) % 12;
+    const maxY = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+    const maxTimestamp = maxY * 12 + maxM;
 
-      for (const [abbr, idx] of Object.entries(MON_MAP)) {
-        if (mStr.startsWith(abbr)) {
-          monIndex = idx;
-          break;
+    // Sort by timestamp (year * 12 + monthIndex) and exclude future unissued months
+    const parsed = history
+      .map((item) => {
+        let year = item.year || 2026;
+        let monIndex = 0;
+        const clean = (item.month || '').trim().toUpperCase();
+        const parts = clean.split(/[\s\-_]+/);
+        const mStr = parts[0] || '';
+        const yStr = parts[1] || '';
+
+        for (const [abbr, idx] of Object.entries(MON_MAP)) {
+          if (mStr.startsWith(abbr)) {
+            monIndex = idx;
+            break;
+          }
         }
-      }
 
-      if (yStr) {
-        const yNum = parseInt(yStr.length === 2 ? `20${yStr}` : yStr, 10);
-        if (!isNaN(yNum) && yNum > 2000) year = yNum;
-      }
+        if (yStr) {
+          const yNum = parseInt(yStr.length === 2 ? `20${yStr}` : yStr, 10);
+          if (!isNaN(yNum) && yNum > 2000) year = yNum;
+        }
 
-      const timestamp = year * 12 + monIndex;
-      return { item, timestamp };
-    });
+        const timestamp = year * 12 + monIndex;
+        return { item, timestamp };
+      })
+      .filter(({ timestamp }) => timestamp <= maxTimestamp);
 
     const seen = new Map<number, BillMonthHistory>();
     parsed.forEach(({ item, timestamp }) => {
       seen.set(timestamp, item);
     });
 
-    return Array.from(seen.entries())
+    const dedupedList = Array.from(seen.entries())
       .sort((a, b) => a[0] - b[0])
       .map((entry) => entry[1])
       .slice(-12);
+
+    if (dedupedList.length > 0) {
+      return dedupedList;
+    }
+
+    // Fallback dynamic 12 months ending at latest issued bill (August 2026)
+    const SEASON_MUL = [0.38, 0.42, 0.55, 0.75, 0.95, 1.15, 1.20, 1.05, 0.85, 0.65, 0.45, 0.40];
+    const MON_ABBR = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    const slots: BillMonthHistory[] = [];
+    for (let offset = 11; offset >= 0; offset--) {
+      const d = new Date(maxY, maxM - offset, 1);
+      const m = d.getMonth();
+      const y = d.getFullYear();
+      const isCur = offset === 0;
+      const units = Math.max(50, Math.round(320 * SEASON_MUL[m]));
+      const amount = Math.round(units * 38.5);
+      slots.push({
+        month: `${MON_ABBR[m]} ${String(y).slice(-2)}`,
+        year: y,
+        units,
+        amount,
+        status: isCur ? 'unpaid' : 'paid',
+      });
+    }
+    return slots;
   }, [history]);
 
   // Default to selecting the latest month (end of chart)
@@ -146,14 +179,14 @@ export const AnalyticsTelemetryChart: React.FC<AnalyticsTelemetryChartProps> = (
     }
   }, [chartData]);
 
-  // Smooth drawing animation when mounted or data updates
+  // Smooth drawing and glide-in animation when mounted or data updates
   useEffect(() => {
     drawAnim.setValue(0);
     Animated.timing(drawAnim, {
       toValue: 1,
-      duration: 1200,
-      easing: Easing.bezier(0.22, 1, 0.36, 1),
-      useNativeDriver: false,
+      duration: 1000,
+      easing: Easing.bezier(0.16, 1, 0.3, 1), // smooth elastic ease-out
+      useNativeDriver: true,
     }).start();
   }, [drawAnim, chartData]);
 
@@ -297,149 +330,170 @@ export const AnalyticsTelemetryChart: React.FC<AnalyticsTelemetryChartProps> = (
         </View>
       </View>
 
-      {/* Animated SVG Canvas Chart */}
-      <View style={styles.chartSvgContainer}>
-        <Svg width={svgWidth} height={svgHeight}>
-          <Defs>
-            {/* Radiant Area Gradient under Trend Line */}
-            <LinearGradient id="analyticsGlowGrad" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0%" stopColor="#62FF96" stopOpacity="0.55" />
-              <Stop offset="40%" stopColor="#3FFF8B" stopOpacity="0.25" />
-              <Stop offset="100%" stopColor="#006D35" stopOpacity="0.0" />
-            </LinearGradient>
+      {/* Animated Telemetry Canvas & Months Strip */}
+      <Animated.View
+        style={{
+          opacity: drawAnim,
+          transform: [
+            {
+              translateY: drawAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [14, 0],
+              }),
+            },
+            {
+              scale: drawAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.97, 1],
+              }),
+            },
+          ],
+        }}
+      >
+        {/* Animated SVG Canvas Chart */}
+        <View style={styles.chartSvgContainer}>
+          <Svg width={svgWidth} height={svgHeight}>
+            <Defs>
+              {/* Radiant Area Gradient under Trend Line */}
+              <LinearGradient id="analyticsGlowGrad" x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0%" stopColor="#62FF96" stopOpacity="0.55" />
+                <Stop offset="40%" stopColor="#3FFF8B" stopOpacity="0.25" />
+                <Stop offset="100%" stopColor="#006D35" stopOpacity="0.0" />
+              </LinearGradient>
 
-            {/* Standard Bar Gradient */}
-            <LinearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0%" stopColor="#62FF96" stopOpacity="0.8" />
-              <Stop offset="100%" stopColor="#006D35" stopOpacity="0.3" />
-            </LinearGradient>
+              {/* Standard Bar Gradient */}
+              <LinearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0%" stopColor="#62FF96" stopOpacity="0.8" />
+                <Stop offset="100%" stopColor="#006D35" stopOpacity="0.3" />
+              </LinearGradient>
 
-            {/* Active Selected Bar Gradient */}
-            <LinearGradient id="activeBarGrad" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0%" stopColor="#3FFF8B" stopOpacity="1" />
-              <Stop offset="100%" stopColor="#00E475" stopOpacity="0.6" />
-            </LinearGradient>
-          </Defs>
+              {/* Active Selected Bar Gradient */}
+              <LinearGradient id="activeBarGrad" x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0%" stopColor="#3FFF8B" stopOpacity="1" />
+                <Stop offset="100%" stopColor="#00E475" stopOpacity="0.6" />
+              </LinearGradient>
+            </Defs>
 
-          {/* Grid Guidelines */}
-          <Line x1="0" y1="30" x2={svgWidth} y2="30" stroke="#74777D" strokeDasharray="3,3" strokeOpacity="0.18" />
-          <Line x1="0" y1="70" x2={svgWidth} y2="70" stroke="#74777D" strokeDasharray="3,3" strokeOpacity="0.18" />
-          <Line x1="0" y1="110" x2={svgWidth} y2="110" stroke="#74777D" strokeDasharray="3,3" strokeOpacity="0.18" />
+            {/* Grid Guidelines */}
+            <Line x1="0" y1="30" x2={svgWidth} y2="30" stroke="#74777D" strokeDasharray="3,3" strokeOpacity="0.18" />
+            <Line x1="0" y1="70" x2={svgWidth} y2="70" stroke="#74777D" strokeDasharray="3,3" strokeOpacity="0.18" />
+            <Line x1="0" y1="110" x2={svgWidth} y2="110" stroke="#74777D" strokeDasharray="3,3" strokeOpacity="0.18" />
 
-          {/* Render Bars */}
-          {points.map((p) => {
-            const isSelected = p.index === selectedIndex;
-            return (
-              <Rect
-                key={`bar-${p.index}`}
-                x={p.x - barWidth / 2}
-                y={p.y}
-                width={barWidth}
-                height={p.barH}
-                rx={3}
-                fill={isSelected ? 'url(#activeBarGrad)' : 'url(#barGrad)'}
-                opacity={isSelected ? 1 : 0.75}
-              />
-            );
-          })}
+            {/* Render Bars */}
+            {points.map((p) => {
+              const isSelected = p.index === selectedIndex;
+              return (
+                <Rect
+                  key={`bar-${p.index}`}
+                  x={p.x - barWidth / 2}
+                  y={p.y}
+                  width={barWidth}
+                  height={p.barH}
+                  rx={3}
+                  fill={isSelected ? 'url(#activeBarGrad)' : 'url(#barGrad)'}
+                  opacity={isSelected ? 1 : 0.75}
+                />
+              );
+            })}
 
-          {/* Shaded Glowing Area Under Trend Line */}
-          {areaPath ? <Path d={areaPath} fill="url(#analyticsGlowGrad)" /> : null}
+            {/* Shaded Glowing Area Under Trend Line */}
+            {areaPath ? <Path d={areaPath} fill="url(#analyticsGlowGrad)" /> : null}
 
-          {/* Curved Trend Line with Radiant Glow */}
-          {linePath ? (
-            <Path
-              d={linePath}
-              fill="none"
-              stroke="#62FF96"
-              strokeWidth={2.8}
-            />
-          ) : null}
-
-          {/* Active Highlight Marker Pin */}
-          {activePoint && (
-            <>
-              <Line
-                x1={activePoint.x}
-                y1={chartTopY - 6}
-                x2={activePoint.x}
-                y2={chartBottomY}
-                stroke="#3FFF8B"
-                strokeWidth={1.5}
-                strokeDasharray="2,2"
-                opacity={0.9}
-              />
-              <Circle
-                cx={activePoint.x}
-                cy={activePoint.y}
-                r={6}
-                fill="#FFFFFF"
+            {/* Curved Trend Line with Radiant Glow */}
+            {linePath ? (
+              <Path
+                d={linePath}
+                fill="none"
                 stroke="#62FF96"
                 strokeWidth={2.8}
               />
-            </>
-          )}
-        </Svg>
+            ) : null}
 
-        {/* Interactive Tap Zones over the bars */}
-        <View style={styles.touchOverlay} pointerEvents="box-none">
-          {points.map((p) => (
-            <TouchableOpacity
-              key={`touch-${p.index}`}
-              style={[
-                styles.touchZone,
-                {
-                  left: p.x - stepX / 2,
-                  width: stepX,
-                },
-              ]}
-              onPress={() => setSelectedIndex(p.index)}
-              activeOpacity={0.7}
-            />
-          ))}
-        </View>
-      </View>
+            {/* Active Highlight Marker Pin */}
+            {activePoint && (
+              <>
+                <Line
+                  x1={activePoint.x}
+                  y1={chartTopY - 6}
+                  x2={activePoint.x}
+                  y2={chartBottomY}
+                  stroke="#3FFF8B"
+                  strokeWidth={1.5}
+                  strokeDasharray="2,2"
+                  opacity={0.9}
+                />
+                <Circle
+                  cx={activePoint.x}
+                  cy={activePoint.y}
+                  r={6}
+                  fill="#FFFFFF"
+                  stroke="#62FF96"
+                  strokeWidth={2.8}
+                />
+              </>
+            )}
+          </Svg>
 
-      {/* Month Labels Strip */}
-      <View style={styles.monthLabelRow}>
-        {chartData.map((item, idx) => {
-          const isSelected = idx === selectedIndex;
-          const { mon, yr } = formatMonthLabel(item.month, isUrdu);
-          const isCurrentBill = item.status === 'unpaid';
-
-          return (
-            <TouchableOpacity
-              key={`month-lbl-${idx}`}
-              onPress={() => setSelectedIndex(idx)}
-              activeOpacity={0.7}
-              style={styles.monthCol}
-            >
-              <Text
+          {/* Interactive Tap Zones over the bars */}
+          <View style={styles.touchOverlay} pointerEvents="box-none">
+            {points.map((p) => (
+              <TouchableOpacity
+                key={`touch-${p.index}`}
                 style={[
-                  styles.monthText,
-                  isSelected && (darkMode ? styles.monthTextSelected : styles.monthTextSelectedLight),
-                  !isSelected && isCurrentBill && styles.monthTextCurrent,
-                  !isSelected && !isCurrentBill && (darkMode ? styles.darkSub : styles.lightSub),
+                  styles.touchZone,
+                  {
+                    left: p.x - stepX / 2,
+                    width: stepX,
+                  },
                 ]}
-                numberOfLines={1}
+                onPress={() => setSelectedIndex(p.index)}
+                activeOpacity={0.7}
+              />
+            ))}
+          </View>
+        </View>
+
+        {/* Month Labels Strip */}
+        <View style={styles.monthLabelRow}>
+          {chartData.map((item, idx) => {
+            const isSelected = idx === selectedIndex;
+            const { mon, yr } = formatMonthLabel(item.month, isUrdu);
+            const isCurrentBill = item.status === 'unpaid';
+
+            return (
+              <TouchableOpacity
+                key={`month-lbl-${idx}`}
+                onPress={() => setSelectedIndex(idx)}
+                activeOpacity={0.7}
+                style={styles.monthCol}
               >
-                {mon}
-              </Text>
-              {yr ? (
                 <Text
                   style={[
-                    styles.monthYearText,
+                    styles.monthText,
                     isSelected && (darkMode ? styles.monthTextSelected : styles.monthTextSelectedLight),
+                    !isSelected && isCurrentBill && styles.monthTextCurrent,
+                    !isSelected && !isCurrentBill && (darkMode ? styles.darkSub : styles.lightSub),
                   ]}
                   numberOfLines={1}
                 >
-                  {yr}
+                  {mon}
                 </Text>
-              ) : null}
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+                {yr ? (
+                  <Text
+                    style={[
+                      styles.monthYearText,
+                      isSelected && (darkMode ? styles.monthTextSelected : styles.monthTextSelectedLight),
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {yr}
+                  </Text>
+                ) : null}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </Animated.View>
     </View>
   );
 };

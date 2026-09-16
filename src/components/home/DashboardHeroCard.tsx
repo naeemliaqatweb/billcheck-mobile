@@ -73,12 +73,12 @@ const formatCurrentBillMonth = (
     }
   }
 
-  // Fallback to dynamic system current month & year
+  // Fallback to latest issued Pakistani billing cycle (August 2026)
   const now = new Date();
   const MON_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const MON_UR = ['جنوری', 'فروری', 'مارچ', 'اپریل', 'مئی', 'جون', 'جولائی', 'اگست', 'ستمبر', 'اکتوبر', 'نومبر', 'دسمبر'];
-  const curM = now.getMonth();
-  const curY = now.getFullYear();
+  const curM = (now.getMonth() - 1 + 12) % 12; // Latest completed/issued month (August)
+  const curY = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
   return isUrdu ? `${MON_UR[curM]} ${curY}` : `${MON_EN[curM]} ${curY}`;
 };
 
