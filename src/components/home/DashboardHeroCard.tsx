@@ -1,10 +1,11 @@
-import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   Animated,
+  Easing,
 } from 'react-native';
 import { AppIcon } from '../AppIcon';
 import { DashboardTrendGraph } from './DashboardTrendGraph';
@@ -94,6 +95,72 @@ export const DashboardHeroCard: React.FC<DashboardHeroCardProps> = ({
   onToggleTheme,
 }) => {
   const isUrdu = language === 'ur';
+  const [wrapperHeight, setWrapperHeight] = useState(300);
+
+  // Infinite slow top-to-bottom dot travel animation along vertical circuit lines
+  const lineDotAnim1 = useRef(new Animated.Value(0)).current;
+  const lineDotAnim2 = useRef(new Animated.Value(0)).current;
+  const lineDotAnim3 = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const anim1 = Animated.loop(
+      Animated.timing(lineDotAnim1, {
+        toValue: 1,
+        duration: 5000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+
+    const anim2 = Animated.loop(
+      Animated.sequence([
+        Animated.delay(1600),
+        Animated.timing(lineDotAnim2, {
+          toValue: 1,
+          duration: 5000,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    const anim3 = Animated.loop(
+      Animated.sequence([
+        Animated.delay(3200),
+        Animated.timing(lineDotAnim3, {
+          toValue: 1,
+          duration: 5000,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    anim1.start();
+    anim2.start();
+    anim3.start();
+
+    return () => {
+      anim1.stop();
+      anim2.stop();
+      anim3.stop();
+    };
+  }, [lineDotAnim1, lineDotAnim2, lineDotAnim3]);
+
+  const dotTranslateY1 = lineDotAnim1.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, wrapperHeight || 300],
+  });
+
+  const dotTranslateY2 = lineDotAnim2.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, wrapperHeight || 300],
+  });
+
+  const dotTranslateY3 = lineDotAnim3.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, wrapperHeight || 300],
+  });
 
   // Current dynamic bill month text (e.g. "Aug 2026" or "اگست 2026")
   const activeMonthText = useMemo(
@@ -102,12 +169,39 @@ export const DashboardHeroCard: React.FC<DashboardHeroCardProps> = ({
   );
 
   return (
-    <View style={styles.heroWrapper}>
-      {/* Decorative vertical lines */}
+    <View
+      style={styles.heroWrapper}
+      onLayout={(e) => {
+        const h = e.nativeEvent.layout.height;
+        if (h > 0) setWrapperHeight(h);
+      }}
+    >
+      {/* Decorative vertical lines with slow traveling dots */}
       <View style={styles.circuitDecoration} pointerEvents="none">
-        <View style={styles.circuitLine} />
-        <View style={styles.circuitLine} />
-        <View style={styles.circuitLine} />
+        <View style={styles.circuitLine}>
+          <Animated.View
+            style={[
+              styles.verticalLineDot,
+              { transform: [{ translateY: dotTranslateY1 }] },
+            ]}
+          />
+        </View>
+        <View style={styles.circuitLine}>
+          <Animated.View
+            style={[
+              styles.verticalLineDot,
+              { transform: [{ translateY: dotTranslateY2 }] },
+            ]}
+          />
+        </View>
+        <View style={styles.circuitLine}>
+          <Animated.View
+            style={[
+              styles.verticalLineDot,
+              { transform: [{ translateY: dotTranslateY3 }] },
+            ]}
+          />
+        </View>
       </View>
 
       <View style={styles.heroContent}>
@@ -225,7 +319,22 @@ const styles = StyleSheet.create({
   circuitLine: {
     width: 1,
     height: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    position: 'relative',
+  },
+  verticalLineDot: {
+    position: 'absolute',
+    left: -2,
+    top: 0,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
     backgroundColor: '#FFFFFF',
+    shadowColor: '#FFFFFF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 4,
+    elevation: 3,
   },
   heroContent: {
     zIndex: 10,
