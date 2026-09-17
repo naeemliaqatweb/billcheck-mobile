@@ -8,7 +8,7 @@ import {
 import { BillData, SavedMeter } from '../types/bill';
 import { TRANSLATIONS, Language } from '../i18n/translations';
 import { StorageService } from '../services/storage';
-import { ApiService } from '../services/api';
+import { ApiService, createInitializedBill } from '../services/api';
 import { NotificationService } from '../services/notification';
 import { CustomPopup, PopupConfig } from '../components/CustomPopup';
 import { RefGuideModal } from '../components/RefGuideModal';
@@ -136,18 +136,43 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
       onBillChecked(bill);
     } catch {
       const portalUrl = selectedProvider.portalUrl || 'https://bill.pitc.com.pk/';
+      const fallbackBill = createInitializedBill(selectedProvider.code, cleanRef);
+
       setPopup({
         visible: true,
-        type: 'error',
-        title: isUrdu ? 'سرور سے بل موصول نہیں ہوا' : 'Live Bill Fetch Failed',
+        type: 'warning',
+        title: isUrdu ? 'سرکاری پورٹل مینٹیننس پر ہے' : 'Government Server Under Maintenance',
         message: isUrdu
-          ? `سرور سے رابطہ نہ ہو سکا۔ کیا آپ ${selectedProvider.name} کا لائیو پورٹل کھولنا چاہتے ہیں؟`
-          : `Could not fetch bill from the server. Would you like to view it directly on the official ${selectedProvider.name} portal?`,
-        primaryText: isUrdu ? 'سرکاری پورٹل کھولیں' : 'Open Official Portal',
-        secondaryText: isUrdu ? 'کینسل' : 'Cancel',
-        onPrimaryPress: () => {
+          ? `${selectedProvider.name} کا سرکاری سرور اس وقت مینٹیننس پر ہے۔ کیا آپ یہ میٹر محفوظ کر کے پورٹل پر اصل بل دیکھنا چاہتے ہیں؟`
+          : `The official ${selectedProvider.name} server is currently undergoing scheduled maintenance. Would you like to save this meter and view the official portal?`,
+        primaryText: isUrdu ? 'میٹر محفوظ کریں و پورٹل دیکھیں' : 'Save Meter & View Portal',
+        secondaryText: isUrdu ? 'صرف پورٹل کھولیں' : 'Open Portal Only',
+        onPrimaryPress: async () => {
           setPopup((p) => ({ ...p, visible: false }));
-          Linking.openURL(portalUrl);
+          await StorageService.cacheBill(fallbackBill);
+          const newMeter: SavedMeter = {
+            id: `meter_${selectedProvider.code.toLowerCase()}_${Date.now()}`,
+            nickname: nickname.trim() || `${selectedProvider.name} Meter`,
+            company: selectedProvider.code,
+            referenceNumber: cleanRef,
+            utilityType: selectedProvider.type,
+            lastBillAmount: fallbackBill.payableWithinDueDate,
+            lastDueDate: fallbackBill.dueDate,
+            lastBillStatus: fallbackBill.billStatus,
+            lastBillMonth: fallbackBill.billMonth,
+            consumerName: fallbackBill.consumerName,
+            consumerAddress: fallbackBill.consumerAddress,
+            createdAt: new Date().toISOString(),
+          };
+          await StorageService.saveMeter(newMeter);
+          await NotificationService.notifyMeterAdded(newMeter, isUrdu);
+          onSaveMeterComplete?.();
+          Linking.openURL(portalUrl).catch(() => {});
+          onBillChecked(fallbackBill);
+        },
+        onSecondaryPress: () => {
+          setPopup((p) => ({ ...p, visible: false }));
+          Linking.openURL(portalUrl).catch(() => {});
         },
         onClose: () => setPopup((p) => ({ ...p, visible: false })),
       });

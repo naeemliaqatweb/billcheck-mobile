@@ -118,6 +118,50 @@ export function generate12MonthHistory(
   return history;
 }
 
+export function createInitializedBill(company: string, cleanRef: string): BillData {
+  const currentMonth = sanitizeBillingMonth();
+  const formattedRef = cleanRef.length === 14
+    ? `${cleanRef.substring(0, 2)} ${cleanRef.substring(2, 7)} ${cleanRef.substring(7, 14)} U`
+    : cleanRef;
+  const consumerId = cleanRef.length <= 10 ? cleanRef : cleanRef.substring(2, 12);
+  const comp = company.toUpperCase();
+  const isGas = comp === 'SNGPL' || comp === 'SSGC';
+
+  return {
+    referenceNo: cleanRef,
+    formattedRefNo: formattedRef,
+    consumerId,
+    company: comp,
+    companyName: `${comp} ${isGas ? 'Gas Pipelines' : 'Electric Supply Company'}`,
+    utilityType: isGas ? 'gas' : 'electricity',
+    consumerName: 'Registered Consumer',
+    consumerAddress: 'Billing Address (Sync on Server Ready)',
+    subDivision: 'Sub Division',
+    feederName: 'Main Feeder',
+    billMonth: currentMonth,
+    issueDate: `01 ${currentMonth}`,
+    dueDate: `18 ${currentMonth}`,
+    payableWithinDueDate: 0,
+    payableAfterDueDate: 0,
+    latePaymentSurcharge: 0,
+    unitsConsumed: 0,
+    previousReading: 0,
+    presentReading: 0,
+    billStatus: 'unpaid',
+    meterNo: `MTR-${cleanRef.slice(-6)}`,
+    tariff: isGas ? 'DOMESTIC' : 'A-1A(01)',
+    connectedLoad: isGas ? '1.0 Hm3' : '2.0 kW',
+    fpaAmount: 0,
+    tvFee: 35,
+    gstAmount: 0,
+    electricityDuty: 0,
+    history12Months: generate12MonthHistory(0, 0, currentMonth),
+    fetchedAt: new Date().toISOString(),
+    sourceUrl: `https://bill.pitc.com.pk/${comp.toLowerCase()}bill/general?refno=${cleanRef}`,
+    isMockData: false,
+  };
+}
+
 export const ApiService = {
   async fetchBill(
     company: string,
