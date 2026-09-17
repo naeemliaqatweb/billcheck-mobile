@@ -107,12 +107,15 @@ export const NotificationService = {
 
     const amount = meter.lastBillAmount ?? 0;
     const isPaid = meter.lastBillStatus === 'paid';
-    const amountStr = isPaid ? (isUrdu ? '0 (ادا شدہ)' : 'Rs. 0 (Paid)') : `Rs. ${amount.toLocaleString()}`;
+    const statusTag = isPaid ? (isUrdu ? ' (ادا شدہ)' : ' (Paid)') : (isUrdu ? ' (غیر ادا شدہ)' : ' (Unpaid)');
+    const amountStr = amount > 0
+      ? `Rs. ${amount.toLocaleString()}${statusTag}`
+      : (isPaid ? (isUrdu ? 'ادا شدہ' : 'Paid') : 'Rs. 0');
     const dueStr = meter.lastDueDate ? (isUrdu ? ` • آخری تاریخ: ${meter.lastDueDate}` : ` • Due: ${meter.lastDueDate}`) : '';
 
     const message = isUrdu
       ? `${meter.company} کا ریفرنس نمبر ${meter.referenceNumber} محفوظ ہو گیا۔ بل کی رقم: ${amountStr}${dueStr}۔ نوٹیفیکیشنز فعال ہیں۔`
-      : `Ref #${meter.referenceNumber} for ${meter.company} saved. Bill: ${amountStr}${dueStr}. Alerts active.`;
+      : `Ref #${meter.referenceNumber} for ${meter.company} saved. Bill Amount: ${amountStr}${dueStr}. Alerts active.`;
 
     await this.addNotification({
       title,
