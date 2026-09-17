@@ -140,29 +140,20 @@ export const BillPdfService = {
           // Trigger background notification that PDF is ready
           NotificationService.notifyPdfReady(bill).catch(() => {});
 
-          if (handled) {
-            return {
-              success: true,
-              officialUrl,
-              provider: bill.company,
-              fileName,
-            };
-          }
+          return {
+            success: !!handled,
+            officialUrl,
+            provider: bill.company,
+            fileName,
+          };
         }
       }
     } catch {
       // fallback
     }
 
-    // Fallback only if native engine is unavailable
-    try {
-      await Linking.openURL(officialUrl).catch(() => {});
-    } catch {
-      // ignore
-    }
-
     return {
-      success: true,
+      success: false,
       officialUrl,
       provider: bill.company,
       fileName,

@@ -203,7 +203,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
     try {
       await BillPdfService.requestOfficialBillPdf(activeBill);
     } catch {
-      handleOpenDuplicateOnline();
+      // Keep user in-app safely
     } finally {
       clearTimeout(safetyTimer);
       setIsDownloadingPdf(false);
