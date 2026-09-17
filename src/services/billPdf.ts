@@ -1,5 +1,6 @@
 import { BillData } from '../types/bill';
 import { Linking, Platform, NativeModules } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ApiService } from './api';
 import { StorageService } from './storage';
 import { NotificationService } from './notification';
@@ -57,12 +58,13 @@ export const BillPdfService = {
   /**
    * Silently pre-fetches and caches the official duplicate bill HTML in the background
    * so tapping "Download PDF" opens instantly (<100ms) with zero network lag.
+   * Sends background notification strictly ONE TIME when new background preparation completes.
    */
   async prefetchBillPdf(bill: Partial<BillData> & { company: string; referenceNo: string }): Promise<void> {
     try {
       if (!bill.company || !bill.referenceNo) return;
       const cleanRef = bill.referenceNo.replace(/[^0-9a-zA-Z]/g, '').trim();
-      const month = bill.billMonth || bill.billingMonth;
+      const month = bill.billMonth || bill.billingMonth || 'CURRENT';
 
       // Check if already in cache
       const cached = await StorageService.getCachedPdfHtml(bill.company, cleanRef, month);
@@ -81,6 +83,14 @@ export const BillPdfService = {
       }
 
       await StorageService.cachePdfHtml(bill.company, cleanRef, htmlToCache, month);
+
+      // Trigger notification strictly ONE TIME for background preparation
+      const notifiedKey = `@pakbill_pdf_notified_${bill.company}_${cleanRef}_${month}`;
+      const alreadyNotified = await AsyncStorage.getItem(notifiedKey);
+      if (!alreadyNotified) {
+        await AsyncStorage.setItem(notifiedKey, 'true');
+        await NotificationService.notifyPdfReady(bill);
+      }
     } catch {
       // background silent fail
     }
@@ -90,6 +100,7 @@ export const BillPdfService = {
    * Directly opens and downloads the authentic official duplicate bill inside the app
    * via Android's native Print & PDF engine (rendering the exact HTML with barcode, meter photo & styles).
    * Uses local cache first for instant (<100ms) preparation.
+   * Does NOT send redundant notifications since the user is already viewing the print dialog.
    */
   async requestOfficialBillPdf(bill: Partial<BillData> & { company: string; referenceNo: string }): Promise<DownloadPdfResult> {
     const cleanRef = bill.referenceNo.replace(/[^0-9a-zA-Z]/g, '').trim();
@@ -136,9 +147,6 @@ export const BillPdfService = {
           const printPromise = BillNotificationModule.printOfficialHtml(htmlToPrint, jobName, baseUrl);
           const printTimeout = new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 2000));
           const handled = await Promise.race([printPromise, printTimeout]);
-
-          // Trigger background notification that PDF is ready
-          NotificationService.notifyPdfReady(bill).catch(() => {});
 
           return {
             success: !!handled,
