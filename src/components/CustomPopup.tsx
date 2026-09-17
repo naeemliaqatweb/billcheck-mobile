@@ -223,7 +223,7 @@ export const CustomPopup: React.FC<CustomPopupProps> = ({
               >
                 <Text
                   style={[styles.secondaryButtonText, darkMode ? styles.darkText : styles.lightText]}
-                  numberOfLines={1}
+                  numberOfLines={2}
                 >
                   {finalSecondaryText}
                 </Text>
@@ -233,7 +233,7 @@ export const CustomPopup: React.FC<CustomPopupProps> = ({
             <TouchableOpacity
               style={[
                 styles.primaryButton,
-                { backgroundColor: theme.primaryBg, flex: 1 },
+                { backgroundColor: theme.primaryBg, flex: finalSecondaryText ? 1.35 : 1 },
               ]}
               onPress={() => {
                 handleClose();
@@ -241,7 +241,7 @@ export const CustomPopup: React.FC<CustomPopupProps> = ({
               }}
               activeOpacity={0.8}
             >
-              <Text style={styles.primaryButtonText} numberOfLines={1}>
+              <Text style={styles.primaryButtonText} numberOfLines={2}>
                 {finalPrimaryText || theme.defaultPrimary}
               </Text>
             </TouchableOpacity>

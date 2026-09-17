@@ -79,7 +79,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       message: isUrdu
         ? `${APP_CONFIG.nameUrdu} صارفین کی رازداری کا مکمل احترام کرتا ہے۔ ہم کوئی بھی ذاتی ڈیٹا، شناختی کارڈ نمبر یا پاس ورڈ اکٹھا نہیں کرتے۔ تمام ریفرنس نمبرز اور بلز صرف آپ کے موبائل کی لوکل میموری میں محفوظ رہتے ہیں۔\n\nمکمل سرکاری رازداری کی پالیسی آن لائن پڑھنے کے لیے نیچے دیے گئے بٹن پر کلک کریں۔`
         : `${APP_CONFIG.name} strictly respects consumer privacy. We operate under zero-retention architecture. No personal data, CNICs, or passwords are harvested or stored on external servers. All saved meters remain exclusively in your local device storage.\n\nTap below to read the complete official Privacy Policy online.`,
-      primaryText: isUrdu ? 'آن لائن پالیسی کھولیں' : 'Open Online Policy',
+      primaryText: isUrdu ? 'پالیسی کھولیں ↗' : 'Open Policy ↗',
       secondaryText: isUrdu ? 'بند کریں' : 'Close',
       onPrimary: () => {
         Linking.openURL(APP_CONFIG.privacyPolicyUrl).catch(() => {});
