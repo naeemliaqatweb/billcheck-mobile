@@ -6,20 +6,16 @@ import { styles } from '../../styles/AddBillScreen.styles';
 interface AddBillActionButtonsProps {
   loading: boolean;
   onFetchBill: () => void;
-  onScanDemo: () => void;
   darkMode: boolean;
   getBillCtaText: string;
-  scanBarcodeText: string;
   encryptedNoticeText: string;
 }
 
 export const AddBillActionButtons: React.FC<AddBillActionButtonsProps> = ({
   loading,
   onFetchBill,
-  onScanDemo,
   darkMode,
   getBillCtaText,
-  scanBarcodeText,
   encryptedNoticeText,
 }) => {
   return (
@@ -39,30 +35,6 @@ export const AddBillActionButtons: React.FC<AddBillActionButtonsProps> = ({
             <AppIcon name="arrow-forward" size={18} color="#FFFFFF" />
           </>
         )}
-      </TouchableOpacity>
-
-      {/* Secondary Quick Scan / Demo CTA */}
-      <TouchableOpacity
-        style={[
-          styles.secondaryScanBtn,
-          darkMode ? styles.secondaryScanBtnDark : styles.secondaryScanBtnLight,
-        ]}
-        onPress={onScanDemo}
-        activeOpacity={0.7}
-      >
-        <AppIcon
-          name="qr-scanner"
-          size={18}
-          color={darkMode ? '#62FF96' : '#0C2B4E'}
-        />
-        <Text
-          style={[
-            styles.secondaryScanText,
-            darkMode ? styles.darkText : styles.lightText,
-          ]}
-        >
-          {scanBarcodeText}
-        </Text>
       </TouchableOpacity>
 
       {/* Encryption Note Footer */}

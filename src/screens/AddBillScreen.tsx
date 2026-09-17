@@ -181,33 +181,6 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
     }
   };
 
-  const handleScanQrDemo = () => {
-    const sampleRef =
-      selectedProvider.code === 'LESCO'
-        ? '15115371598719'
-        : selectedProvider.code === 'KELECTRIC' || selectedProvider.code === 'KE'
-        ? '0400012345678'
-        : selectedProvider.code === 'SNGPL'
-        ? '98421055191'
-        : '04112230987600';
-
-    setReferenceNo(sampleRef);
-    setNickname('Home - Ground Floor');
-    setPopup({
-      visible: true,
-      type: 'success',
-      title: isUrdu ? 'بارکوڈ کامیابی سے اسکین ہوا!' : 'QR Barcode Scanned!',
-      message: isUrdu
-        ? `ریفرنس نمبر: ${sampleRef}\nکمپنی: ${selectedProvider.name}`
-        : `Autofilled reference ${sampleRef} for ${selectedProvider.name}.`,
-      primaryText: isUrdu ? 'بل حاصل کریں' : 'Fetch Bill Now',
-      onPrimaryPress: () => {
-        setPopup((p) => ({ ...p, visible: false }));
-      },
-      onClose: () => setPopup((p) => ({ ...p, visible: false })),
-    });
-  };
-
   const showHelpGuide = () => {
     setShowRefGuideModal(true);
   };
@@ -298,10 +271,8 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
         <AddBillActionButtons
           loading={loading}
           onFetchBill={handleFetchBill}
-          onScanDemo={handleScanQrDemo}
           darkMode={darkMode}
           getBillCtaText={t.getBillCta}
-          scanBarcodeText={t.scanBillBarcodeQr}
           encryptedNoticeText={t.encryptedNotice}
         />
       </ScrollView>
