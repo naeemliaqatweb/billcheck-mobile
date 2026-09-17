@@ -274,7 +274,25 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         billStatus: meter.lastBillStatus || 'unpaid',
         utilityType: meter.utilityType,
       };
-      await BillPdfService.requestOfficialBillPdf(billData);
+      const safetyTimer = setTimeout(() => {
+        setDownloadingMeterId(null);
+        setPopup({
+          visible: true,
+          type: 'success',
+          title: isUrdu ? '⏳ پی ڈی ایف بیک گراؤنڈ میں تیار ہو رہی ہے' : '⏳ Preparing PDF in Background',
+          message: isUrdu
+            ? `${meter.company} کا بل پی ڈی ایف بیک گراؤنڈ میں تیار ہو رہا ہے۔ مکمل ہونے پر آپ کو نوٹیفکیشن مل جائے گا، آپ ایپ بند بھی کر سکتے ہیں۔`
+            : `Your ${meter.company} bill PDF is being prepared in the background. You'll receive a notification when ready — you can safely close the app.`,
+          primaryText: isUrdu ? 'ٹھیک ہے' : 'OK',
+          onClose: () => setPopup((p) => ({ ...p, visible: false })),
+        });
+      }, 1500);
+
+      try {
+        await BillPdfService.requestOfficialBillPdf(billData);
+      } finally {
+        clearTimeout(safetyTimer);
+      }
     } catch {
       // ignore
     } finally {

@@ -2,6 +2,7 @@ import { BillData } from '../types/bill';
 import { Linking, Platform, NativeModules } from 'react-native';
 import { ApiService } from './api';
 import { StorageService } from './storage';
+import { NotificationService } from './notification';
 
 const { BillNotificationModule } = NativeModules;
 
@@ -67,9 +68,9 @@ export const BillPdfService = {
       const cached = await StorageService.getCachedPdfHtml(bill.company, cleanRef, month);
       if (cached) return;
 
-      // Attempt fast PITC scrape with 2s timeout
+      // Attempt fast PITC scrape with 1.5s timeout
       const pitcPromise = ApiService.fetchOfficialBillHtml(bill.company, cleanRef);
-      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000));
+      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 1500));
       const officialHtmlResult = await Promise.race([pitcPromise, timeoutPromise]).catch(() => null);
 
       let htmlToCache: string;
@@ -107,10 +108,10 @@ export const BillPdfService = {
         if (cachedHtml) {
           htmlToPrint = cachedHtml;
         } else {
-          // 2. Fast network attempt capped at 1.5s
+          // 2. Fast network attempt capped at 1.2s
           try {
             const pitcPromise = ApiService.fetchOfficialBillHtml(bill.company, cleanRef);
-            const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 1500));
+            const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 1200));
             const officialHtmlResult = await Promise.race([pitcPromise, timeoutPromise]);
 
             if (officialHtmlResult && officialHtmlResult.html) {
@@ -132,7 +133,13 @@ export const BillPdfService = {
         }
 
         if (htmlToPrint && typeof BillNotificationModule.printOfficialHtml === 'function') {
-          const handled = await BillNotificationModule.printOfficialHtml(htmlToPrint, jobName, baseUrl);
+          const printPromise = BillNotificationModule.printOfficialHtml(htmlToPrint, jobName, baseUrl);
+          const printTimeout = new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 2000));
+          const handled = await Promise.race([printPromise, printTimeout]);
+
+          // Trigger background notification that PDF is ready
+          NotificationService.notifyPdfReady(bill).catch(() => {});
+
           if (handled) {
             return {
               success: true,

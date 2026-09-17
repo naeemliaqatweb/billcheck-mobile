@@ -127,6 +127,41 @@ export const NotificationService = {
   },
 
   /**
+   * Trigger notification when bill PDF is ready in background
+   */
+  async notifyPdfReady(
+    bill: {
+      company: string;
+      referenceNo: string;
+      consumerName?: string;
+      payableWithinDueDate?: number;
+      billMonth?: string;
+    },
+    isUrdu = false
+  ): Promise<void> {
+    const cleanRef = bill.referenceNo.replace(/[^0-9a-zA-Z]/g, '').trim();
+    const title = isUrdu
+      ? `📄 بل پی ڈی ایف تیار ہے: ${bill.company}`
+      : `📄 Bill PDF Ready: ${bill.company}`;
+
+    const amountStr = bill.payableWithinDueDate ? ` (Rs. ${bill.payableWithinDueDate.toLocaleString()})` : '';
+    const message = isUrdu
+      ? `${bill.company} ریفرنس #${cleanRef} کا آفیشل بل پی ڈی ایف کامیابی سے تیار ہو گیا ہے${amountStr}۔ ٹیپ کر کے دیکھیں۔`
+      : `Official PDF for ${bill.company} (Ref #${cleanRef}) is ready${amountStr}. Tap to open.`;
+
+    await this.addNotification({
+      title,
+      message,
+      company: bill.company,
+      referenceNumber: cleanRef,
+      billMonth: bill.billMonth,
+      billAmount: bill.payableWithinDueDate,
+    });
+
+    await this.triggerSystemNotification(title, message, `pdf_ready_${cleanRef}`);
+  },
+
+  /**
    * Checks saved meters and triggers reminder notification if due date is within 3 days.
    */
   async checkDueDateReminders(isUrdu = false): Promise<AppNotification[]> {

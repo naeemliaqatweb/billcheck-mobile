@@ -247,18 +247,16 @@ class BillNotificationModule(private val reactContext: ReactApplicationContext) 
                     webView.settings.loadWithOverviewMode = true
                     webView.settings.useWideViewPort = true
 
-                    webView.webViewClient = object : WebViewClient() {
-                        private var hasPrinted = false
+                    val mainHandler = Handler(Looper.getMainLooper())
+                    var hasPrinted = false
 
-                        override fun onPageFinished(view: WebView?, loadedUrl: String?) {
-                            super.onPageFinished(view, loadedUrl)
-                            if (hasPrinted) return
+                    val doPrint = {
+                        if (!hasPrinted) {
                             hasPrinted = true
-
                             try {
                                 val printManager = currentAct.getSystemService(Context.PRINT_SERVICE) as? PrintManager
-                                if (printManager != null && view != null) {
-                                    val printAdapter = view.createPrintDocumentAdapter(jobName)
+                                if (printManager != null) {
+                                    val printAdapter = webView.createPrintDocumentAdapter(jobName)
                                     val printAttributes = PrintAttributes.Builder()
                                         .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
                                         .setColorMode(PrintAttributes.COLOR_MODE_COLOR)
@@ -271,6 +269,18 @@ class BillNotificationModule(private val reactContext: ReactApplicationContext) 
                             } catch (e: Exception) {
                                 promise.resolve(false)
                             }
+                        }
+                    }
+
+                    // Watchdog: trigger print after 600ms max even if external PITC assets are slow/unreachable
+                    val watchdogRunnable = Runnable { doPrint() }
+                    mainHandler.postDelayed(watchdogRunnable, 600)
+
+                    webView.webViewClient = object : WebViewClient() {
+                        override fun onPageFinished(view: WebView?, loadedUrl: String?) {
+                            super.onPageFinished(view, loadedUrl)
+                            mainHandler.removeCallbacks(watchdogRunnable)
+                            doPrint()
                         }
                     }
 

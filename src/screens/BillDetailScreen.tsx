@@ -184,11 +184,28 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
 
   const handleDownloadPdf = async () => {
     setIsDownloadingPdf(true);
+
+    // Loader safety timer: If anything takes more than 1.5s, dismiss spinner and notify user
+    const safetyTimer = setTimeout(() => {
+      setIsDownloadingPdf(false);
+      setPopup({
+        visible: true,
+        type: 'success',
+        title: isUrdu ? '⏳ پی ڈی ایف بیک گراؤنڈ میں تیار ہو رہی ہے' : '⏳ Preparing PDF in Background',
+        message: isUrdu
+          ? `${activeBill.company} کا بل پی ڈی ایف بیک گراؤنڈ میں تیار ہو رہا ہے۔ مکمل ہونے پر آپ کو نوٹیفکیشن مل جائے گا، آپ ایپ بند بھی کر سکتے ہیں۔`
+          : `Your ${activeBill.company} bill PDF is being prepared in the background. You'll receive a notification when ready — you can safely close the app.`,
+        primaryText: isUrdu ? 'ٹھیک ہے' : 'OK',
+        onClose: () => setPopup((p) => ({ ...p, visible: false })),
+      });
+    }, 1500);
+
     try {
       await BillPdfService.requestOfficialBillPdf(activeBill);
     } catch {
       handleOpenDuplicateOnline();
     } finally {
+      clearTimeout(safetyTimer);
       setIsDownloadingPdf(false);
     }
   };
