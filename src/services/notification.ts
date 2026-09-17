@@ -85,23 +85,42 @@ export const NotificationService = {
   },
 
   /**
-   * Trigger notification when a new meter is added by the user
+   * Trigger notification when a new meter is added by the user (with bill amount & due date)
    */
-  async notifyMeterAdded(meter: { nickname?: string; company: string; referenceNumber: string; consumerName?: string }, isUrdu = false): Promise<void> {
+  async notifyMeterAdded(
+    meter: {
+      nickname?: string;
+      company: string;
+      referenceNumber: string;
+      consumerName?: string;
+      lastBillAmount?: number;
+      lastDueDate?: string;
+      lastBillMonth?: string;
+      lastBillStatus?: string;
+    },
+    isUrdu = false
+  ): Promise<void> {
     const display = getMeterDisplayName(meter);
     const title = isUrdu
       ? `⚡ میٹر محفوظ ہو گیا: ${display}`
       : `⚡ Meter Added: ${display}`;
 
+    const amount = meter.lastBillAmount ?? 0;
+    const isPaid = meter.lastBillStatus === 'paid';
+    const amountStr = isPaid ? (isUrdu ? '0 (ادا شدہ)' : 'Rs. 0 (Paid)') : `Rs. ${amount.toLocaleString()}`;
+    const dueStr = meter.lastDueDate ? (isUrdu ? ` • آخری تاریخ: ${meter.lastDueDate}` : ` • Due: ${meter.lastDueDate}`) : '';
+
     const message = isUrdu
-      ? `${meter.company} کا ریفرنس نمبر ${meter.referenceNumber} محفوظ ہو گیا۔ نئے بل اور آخری تاریخ کے نوٹیفیکیشنز فعال ہیں۔`
-      : `Reference #${meter.referenceNumber} for ${meter.company} is saved. New bill and due date alerts are now active.`;
+      ? `${meter.company} کا ریفرنس نمبر ${meter.referenceNumber} محفوظ ہو گیا۔ بل کی رقم: ${amountStr}${dueStr}۔ نوٹیفیکیشنز فعال ہیں۔`
+      : `Ref #${meter.referenceNumber} for ${meter.company} saved. Bill: ${amountStr}${dueStr}. Alerts active.`;
 
     await this.addNotification({
       title,
       message,
       company: meter.company,
       referenceNumber: meter.referenceNumber,
+      billMonth: meter.lastBillMonth,
+      billAmount: meter.lastBillAmount,
     });
 
     await this.triggerSystemNotification(title, message, `meter_added_${meter.referenceNumber}`);

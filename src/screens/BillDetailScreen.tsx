@@ -19,6 +19,7 @@ import { ConsumptionChart } from '../components/ConsumptionChart';
 import { HistoryTable } from '../components/HistoryTable';
 import { AdBanner } from '../components/AdBanner';
 import { StorageService } from '../services/storage';
+import { NotificationService } from '../services/notification';
 import { ApiService, sanitizeBillingMonth, generate12MonthHistory } from '../services/api';
 import { BillPdfService } from '../services/billPdf';
 import { ALL_PROVIDERS } from '../constants/providers';
@@ -264,7 +265,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
       ? activeBill.consumerName.split(/[\n,]/)[0].trim()
       : `${activeBill.company} Meter`;
 
-    const success = await StorageService.saveMeter({
+    const savedMeterObj = {
       id: `${activeBill.company}_${activeBill.referenceNo}`,
       nickname: cleanConsumer,
       company: activeBill.company,
@@ -277,9 +278,12 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
       lastDueDate: activeBill.dueDate,
       lastBillStatus: activeBill.billStatus,
       lastBillMonth: activeBill.billMonth,
-    });
+    };
+
+    const success = await StorageService.saveMeter(savedMeterObj);
 
     if (success) {
+      await NotificationService.notifyMeterAdded(savedMeterObj, isUrdu).catch(() => {});
       setIsSaved(true);
       setPopup({
         visible: true,
