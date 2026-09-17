@@ -586,20 +586,10 @@ const styles = StyleSheet.create({
   cardDark: {
     backgroundColor: '#0C2B4E',
     borderColor: 'rgba(0, 109, 53, 0.4)',
-    shadowColor: '#00E676',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 4,
   },
   cardLight: {
     backgroundColor: '#FFFFFF',
     borderColor: '#D3E4FE',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
   },
   cardHeader: {
     flexDirection: 'row',

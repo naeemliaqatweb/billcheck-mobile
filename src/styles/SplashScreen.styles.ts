@@ -126,11 +126,6 @@ export const styles = StyleSheet.create({
     borderWidth: 1.5,
     overflow: 'hidden',
     justifyContent: 'space-between',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
-    elevation: 10,
   },
   invoiceHeader: {
     backgroundColor: '#0C2B4E',

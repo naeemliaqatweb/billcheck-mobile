@@ -70,11 +70,6 @@ export const styles = StyleSheet.create({
   sectionFilterCardLight: {
     backgroundColor: '#FFFFFF',
     borderColor: '#D5E2EE',
-    shadowColor: '#0A1C30',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
   },
   sectionTitleCol: {
     flex: 1,
@@ -108,11 +103,6 @@ export const styles = StyleSheet.create({
   },
   filterTabActive: {
     backgroundColor: '#FFFFFF',
-    shadowColor: '#0A1C30',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
   },
   filterTabActiveDark: {
     backgroundColor: '#059669',

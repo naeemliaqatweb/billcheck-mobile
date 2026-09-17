@@ -155,11 +155,6 @@ export const styles = StyleSheet.create({
     borderColor: 'rgba(98, 255, 150, 0.40)',
     position: 'relative',
     overflow: 'hidden',
-    shadowColor: '#62FF96',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.20,
-    shadowRadius: 14,
-    elevation: 6,
   },
   bentoTopRow: {
     flexDirection: 'row',

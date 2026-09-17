@@ -29,11 +29,6 @@ export const styles = StyleSheet.create({
   lightBottomBar: {
     backgroundColor: '#FFFFFF',
     borderTopColor: '#D5E2EE',
-    shadowColor: '#0A1C30',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 8,
   },
   tabItem: {
     alignItems: 'center',

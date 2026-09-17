@@ -389,11 +389,6 @@ const styles = StyleSheet.create({
   lightCard: {
     backgroundColor: '#FFFFFF',
     borderColor: '#D5E2EE',
-    shadowColor: '#0A1C30',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
   },
   topZone: {
     backgroundColor: '#0C2B4E',
@@ -622,26 +617,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 6,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 3,
   },
   viewBillBtnDark: {
     backgroundColor: '#059669',
-    shadowColor: '#059669',
   },
   viewBillBtnLight: {
     backgroundColor: '#059669',
-    shadowColor: '#059669',
   },
   gasViewBtnDark: {
     backgroundColor: '#284E77',
-    shadowOpacity: 0,
   },
   gasViewBtnLight: {
     backgroundColor: '#0C2B4E',
-    shadowOpacity: 0,
   },
   viewBillText: {
     fontSize: 12.5,

@@ -200,11 +200,6 @@ export const styles = StyleSheet.create({
   searchBarLight: {
     backgroundColor: '#FFFFFF',
     borderColor: '#C4C6CC',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
   },
   searchBarDark: {
     backgroundColor: '#0C2B4E',

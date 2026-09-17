@@ -35,11 +35,6 @@ export const styles = StyleSheet.create({
   lightCard: {
     backgroundColor: COLORS.lightCard,
     borderColor: COLORS.lightBorder,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
   },
   providerIconCircle: {
     width: 42,

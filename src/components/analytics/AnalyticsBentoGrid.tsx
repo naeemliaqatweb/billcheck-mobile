@@ -152,11 +152,6 @@ const styles = StyleSheet.create({
   cardLight: {
     backgroundColor: '#FFFFFF',
     borderColor: '#D3E4FE',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2,
   },
   neonGlowCard: {
     borderWidth: 1.2,
@@ -164,20 +159,10 @@ const styles = StyleSheet.create({
   neonCardDark: {
     backgroundColor: '#001B3C',
     borderColor: 'rgba(0, 109, 53, 0.5)',
-    shadowColor: '#00E676',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 14,
-    elevation: 4,
   },
   neonCardLight: {
     backgroundColor: '#F8F9FF',
     borderColor: 'rgba(0, 109, 53, 0.35)',
-    shadowColor: '#006D35',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
   },
   cardLeft: {
     flexDirection: 'row',

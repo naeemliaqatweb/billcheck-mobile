@@ -90,11 +90,6 @@ export const styles = StyleSheet.create({
     paddingVertical: 7,
     paddingHorizontal: 12,
     borderRadius: 8,
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
   },
   compactInstallBtnText: {
     color: '#FFFFFF',
@@ -108,11 +103,6 @@ export const styles = StyleSheet.create({
   lightContainer: {
     backgroundColor: '#FFFFFF',
     borderColor: '#D5E2EE',
-    shadowColor: '#0A1C30',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 3,
   },
   topRow: {
     flexDirection: 'row',

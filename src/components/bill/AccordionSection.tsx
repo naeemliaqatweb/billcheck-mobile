@@ -84,11 +84,6 @@ const styles = StyleSheet.create({
   lightCard: {
     backgroundColor: '#FFFFFF',
     borderColor: '#C4C6CC',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 1,
   },
   darkCard: {
     backgroundColor: '#0F1C2C',

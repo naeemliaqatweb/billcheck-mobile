@@ -57,11 +57,6 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
   },
   btnRow: {
     flexDirection: 'row',
@@ -106,11 +101,6 @@ export const styles = StyleSheet.create({
   lightCard: {
     backgroundColor: COLORS.lightCard,
     borderColor: COLORS.lightBorder,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
   },
   darkText: {
     color: COLORS.darkText,

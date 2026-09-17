@@ -170,11 +170,6 @@ export const styles = StyleSheet.create({
   summaryLightCard: {
     backgroundColor: '#FFFFFF',
     borderColor: '#C4C6CC',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2,
   },
   summaryDarkCard: {
     backgroundColor: '#0C2B4E',
@@ -328,11 +323,6 @@ export const styles = StyleSheet.create({
   sectionLightCard: {
     backgroundColor: '#FFFFFF',
     borderColor: '#C4C6CC',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 1,
   },
   sectionDarkCard: {
     backgroundColor: '#0F1C2C',
@@ -648,11 +638,6 @@ export const styles = StyleSheet.create({
   saveMeterCardLight: {
     backgroundColor: '#FFFFFF',
     borderColor: '#C4C6CC',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 1,
   },
   saveMeterCardDark: {
     backgroundColor: '#0C2B4E',
@@ -723,11 +708,6 @@ export const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 16,
     borderTopWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 8,
   },
   fixedBottomLight: {
     backgroundColor: '#FFFFFF',

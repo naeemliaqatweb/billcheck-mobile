@@ -18,11 +18,6 @@ export const styles = StyleSheet.create({
     gap: 8,
     borderWidth: 1.2,
     borderColor: 'rgba(98, 255, 150, 0.35)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
   },
   fabBtnRtl: {
     flexDirection: 'row-reverse',

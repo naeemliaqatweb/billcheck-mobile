@@ -256,11 +256,6 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
-    shadowColor: '#059669',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 3,
   },
   demoMeterBtnText: {
     color: '#FFFFFF',
@@ -308,11 +303,6 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 7,
-    shadowColor: '#059669',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 4,
   },
   actionBtnPrimaryText: {
     color: '#FFFFFF',
@@ -347,11 +337,6 @@ export const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderColor: '#D3E4FE',
     borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2,
   },
 
   // Light-mode segmented switcher
