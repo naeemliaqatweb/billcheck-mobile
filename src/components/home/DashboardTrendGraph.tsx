@@ -10,6 +10,8 @@ interface DashboardTrendGraphProps {
   isUrdu?: boolean;
   trendLabel?: string;
   history?: BillMonthHistory[];
+  totalDueAmount?: number;
+  unpaidBillsCount?: number;
 }
 
 const URDU_MONTHS: Record<string, string> = {
@@ -43,6 +45,8 @@ export const DashboardTrendGraph: React.FC<DashboardTrendGraphProps> = ({
   isUrdu = false,
   trendLabel,
   history,
+  totalDueAmount,
+  unpaidBillsCount,
 }) => {
   const [containerWidth, setContainerWidth] = useState<number>(310);
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -59,6 +63,25 @@ export const DashboardTrendGraph: React.FC<DashboardTrendGraphProps> = ({
       JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5,
       JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11,
     };
+
+    // If totalDueAmount is explicitly 0 and no unpaid bills, show all 0 amounts
+    if (totalDueAmount === 0 && (unpaidBillsCount === 0 || unpaidBillsCount === undefined)) {
+      const MON_ABBR = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+      const slots: BillMonthHistory[] = [];
+      for (let offset = 5; offset >= 0; offset--) {
+        const d = new Date(curY, curM - offset, 1);
+        const m = d.getMonth();
+        const y = d.getFullYear();
+        slots.push({
+          month: `${MON_ABBR[m]} ${String(y).slice(-2)}`,
+          year: y,
+          units: 0,
+          amount: 0,
+          status: 'paid',
+        });
+      }
+      return slots;
+    }
 
     if (history && history.length > 0) {
       // Deduplicate any repeated months and exclude future unissued months
@@ -114,7 +137,7 @@ export const DashboardTrendGraph: React.FC<DashboardTrendGraphProps> = ({
       });
     }
     return slots;
-  }, [history]);
+  }, [history, totalDueAmount, unpaidBillsCount]);
 
   // Smooth drawing animation when mounted or data updates
   useEffect(() => {
@@ -161,7 +184,7 @@ export const DashboardTrendGraph: React.FC<DashboardTrendGraphProps> = ({
     const amounts = data6.map((d) => d.amount);
     const minAmount = Math.min(...amounts);
     const maxAmount = Math.max(...amounts);
-    const allZero = maxAmount === 0;
+    const allZero = maxAmount === 0 || totalDueAmount === 0;
 
     if (allZero) {
       const pStart = { x: paddingX, y: 40 };
@@ -219,9 +242,15 @@ export const DashboardTrendGraph: React.FC<DashboardTrendGraphProps> = ({
     if (propTrendPercentage) {
       return { trendText: propTrendPercentage, isUp: !propTrendPercentage.includes('-') };
     }
+    if (totalDueAmount === 0) {
+      return {
+        trendText: isUrdu ? 'تمام بل ادا شدہ (0 روپے)' : 'All Bills Paid (Rs. 0)',
+        isUp: true,
+      };
+    }
     if (isAllZero || data6.every((d) => d.amount === 0)) {
       return {
-        trendText: isUrdu ? '0 روپے • کوئی میٹر نہیں' : 'Rs. 0 • No Data',
+        trendText: isUrdu ? '0 روپے • کوئی بقایا نہیں' : 'Rs. 0 • No Dues',
         isUp: true,
       };
     }
@@ -240,7 +269,7 @@ export const DashboardTrendGraph: React.FC<DashboardTrendGraphProps> = ({
       trendText: isUrdu ? 'مستحکم' : 'Stable',
       isUp: true,
     };
-  }, [propTrendPercentage, data6, isUrdu, isAllZero]);
+  }, [propTrendPercentage, totalDueAmount, isAllZero, data6, isUrdu]);
 
   const displayLabel = trendLabel || (isUrdu ? '6 ماہ کا رجحان (روپے)' : '6-Month Trend (Rs.)');
 

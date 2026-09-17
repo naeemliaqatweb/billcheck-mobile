@@ -245,6 +245,8 @@ export const DashboardHeroCard: React.FC<DashboardHeroCardProps> = ({
           <DashboardTrendGraph
             isUrdu={isUrdu}
             history={history}
+            totalDueAmount={totalDueAmount}
+            unpaidBillsCount={unpaidBillsCount}
             trendLabel={isUrdu ? `6 ماہ کا رجحان (${activeMonthText})` : `6-Month Trend (${activeMonthText})`}
           />
         </View>

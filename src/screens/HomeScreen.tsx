@@ -138,15 +138,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
   // Load trend history dynamically for the hero graph
   const loadTrendHistory = useCallback(async () => {
-    // If no saved meters at all, do not load any previous cached bills or fake data
-    if (!savedMeters || savedMeters.length === 0) {
+    // If no saved meters at all or all bills are paid (total due is 0)
+    if (!savedMeters || savedMeters.length === 0 || (totalDueAmount === 0 && unpaidBillsCount === 0)) {
       setHeroHistory([]);
       return;
     }
 
     // 1. Try finding cached bill for first filtered meter or any saved meter
     const primaryMeter = filteredMeters[0] || savedMeters[0];
-    if (primaryMeter) {
+    if (primaryMeter && primaryMeter.lastBillStatus !== 'paid') {
       const cached = await StorageService.getCachedBill(primaryMeter.company, primaryMeter.referenceNumber);
       if (cached?.history12Months && cached.history12Months.length > 0) {
         setHeroHistory(enrichWithCurrentBill(cached));
@@ -154,8 +154,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       }
     }
 
-    // 2. If primary meter has lastBillAmount, generate dynamic history
-    if (primaryMeter && primaryMeter.lastBillAmount && primaryMeter.lastBillAmount > 0) {
+    // 2. If primary meter has lastBillAmount and is unpaid, generate dynamic history
+    if (primaryMeter && primaryMeter.lastBillStatus !== 'paid' && primaryMeter.lastBillAmount && primaryMeter.lastBillAmount > 0) {
       const estimatedUnits = Math.max(50, Math.round(primaryMeter.lastBillAmount / 38));
       const dyn = generate12MonthHistory(estimatedUnits, primaryMeter.lastBillAmount, primaryMeter.lastBillMonth);
       setHeroHistory(dyn);
@@ -172,7 +172,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     }
 
     setHeroHistory([]);
-  }, [filteredMeters, savedMeters, totalDueAmount]);
+  }, [filteredMeters, savedMeters, totalDueAmount, unpaidBillsCount]);
 
   useEffect(() => {
     loadTrendHistory();
