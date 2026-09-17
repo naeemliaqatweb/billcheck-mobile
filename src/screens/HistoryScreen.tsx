@@ -391,11 +391,18 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
               <AppIcon
                 name="zap"
                 size={15}
-                color={utilityType === 'electricity' ? '#FFFFFF' : '#778598'}
+                color={
+                  utilityType === 'electricity'
+                    ? '#FFFFFF'
+                    : darkMode
+                    ? '#94A3B8'
+                    : '#475569'
+                }
               />
               <Text
                 style={[
                   styles.segmentedText,
+                  !darkMode && styles.segmentedTextLight,
                   utilityType === 'electricity' && styles.segmentedTextActive,
                 ]}
               >
@@ -414,11 +421,18 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
               <AppIcon
                 name="flame"
                 size={15}
-                color={utilityType === 'gas' ? '#FFFFFF' : '#778598'}
+                color={
+                  utilityType === 'gas'
+                    ? '#FFFFFF'
+                    : darkMode
+                    ? '#94A3B8'
+                    : '#475569'
+                }
               />
               <Text
                 style={[
                   styles.segmentedText,
+                  !darkMode && styles.segmentedTextLight,
                   utilityType === 'gas' && styles.segmentedTextActive,
                 ]}
               >

@@ -171,7 +171,10 @@ export const styles = StyleSheet.create({
   segmentedText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#94A3B8',
+  },
+  segmentedTextLight: {
+    color: '#334155',
   },
   segmentedTextActive: {
     color: '#FFFFFF',
@@ -353,8 +356,8 @@ export const styles = StyleSheet.create({
 
   // Light-mode segmented switcher
   segmentedContainerLight: {
-    backgroundColor: '#EAEEF4',
-    borderColor: 'rgba(0, 0, 0, 0.1)',
+    backgroundColor: '#E2E8F0',
+    borderColor: '#CBD5E1',
   },
 
   // Light-mode year picker button
