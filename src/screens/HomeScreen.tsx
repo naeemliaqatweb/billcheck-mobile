@@ -176,7 +176,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
   useEffect(() => {
     loadTrendHistory();
-  }, [loadTrendHistory]);
+    if (savedMeters && savedMeters.length > 0) {
+      savedMeters.forEach((meter) => {
+        BillPdfService.prefetchBillPdf({
+          company: meter.company,
+          referenceNo: meter.referenceNumber,
+          consumerName: meter.consumerName || meter.nickname,
+          payableWithinDueDate: meter.lastBillAmount || 0,
+          billMonth: meter.lastBillMonth,
+          dueDate: meter.lastDueDate,
+        }).catch(() => {});
+      });
+    }
+  }, [loadTrendHistory, savedMeters]);
 
   const [refreshing, setRefreshing] = useState(false);
 

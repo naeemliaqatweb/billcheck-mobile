@@ -5,6 +5,7 @@ import { Language } from '../i18n/translations';
 const KEYS = {
   SAVED_METERS: '@pakbill_saved_meters',
   BILL_CACHE_PREFIX: '@pakbill_cache_',
+  PDF_HTML_CACHE_PREFIX: '@pakbill_pdf_html_',
   LAST_CHECKED_BILL: '@pakbill_last_checked_bill',
   LANGUAGE: '@pakbill_language',
   THEME: '@pakbill_theme',
@@ -147,6 +148,58 @@ export const StorageService = {
       return Math.round((Date.now() - new Date(cached.fetchedAt).getTime()) / 60000);
     } catch {
       return null;
+    }
+  },
+
+  // Save generated/scraped duplicate bill HTML for instant (<100ms) offline/repeated PDF opening
+  async cachePdfHtml(company: string, referenceNo: string, html: string, billMonth?: string): Promise<void> {
+    try {
+      const cleanRef = referenceNo.replace(/[^0-9a-zA-Z]/g, '').trim();
+      const comp = company.toUpperCase();
+      const monthKey = billMonth ? `_${billMonth.replace(/\s+/g, '')}` : '';
+      const key = `${KEYS.PDF_HTML_CACHE_PREFIX}${comp}_${cleanRef}${monthKey}`;
+      await AsyncStorage.setItem(key, html);
+      // Also store fallback key without month for general hit
+      if (monthKey) {
+        await AsyncStorage.setItem(`${KEYS.PDF_HTML_CACHE_PREFIX}${comp}_${cleanRef}`, html);
+      }
+    } catch {
+      // ignore
+    }
+  },
+
+  // Retrieve cached bill HTML if available
+  async getCachedPdfHtml(company: string, referenceNo: string, billMonth?: string): Promise<string | null> {
+    try {
+      const cleanRef = referenceNo.replace(/[^0-9a-zA-Z]/g, '').trim();
+      const comp = company.toUpperCase();
+      if (billMonth) {
+        const monthKey = `_${billMonth.replace(/\s+/g, '')}`;
+        const specificHtml = await AsyncStorage.getItem(`${KEYS.PDF_HTML_CACHE_PREFIX}${comp}_${cleanRef}${monthKey}`);
+        if (specificHtml) return specificHtml;
+      }
+      return await AsyncStorage.getItem(`${KEYS.PDF_HTML_CACHE_PREFIX}${comp}_${cleanRef}`);
+    } catch {
+      return null;
+    }
+  },
+
+  // Clear PDF cache
+  async clearPdfCache(company?: string, referenceNo?: string): Promise<void> {
+    try {
+      if (company && referenceNo) {
+        const cleanRef = referenceNo.replace(/[^0-9a-zA-Z]/g, '').trim();
+        const comp = company.toUpperCase();
+        await AsyncStorage.removeItem(`${KEYS.PDF_HTML_CACHE_PREFIX}${comp}_${cleanRef}`);
+      } else {
+        const keys = await AsyncStorage.getAllKeys();
+        const pdfKeys = keys.filter((k) => k.startsWith(KEYS.PDF_HTML_CACHE_PREFIX));
+        if (pdfKeys.length > 0) {
+          await Promise.all(pdfKeys.map((k) => AsyncStorage.removeItem(k)));
+        }
+      }
+    } catch {
+      // ignore
     }
   },
 

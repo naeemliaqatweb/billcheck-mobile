@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -52,6 +52,22 @@ export const SavedBillsScreen: React.FC<SavedBillsScreenProps> = ({
     title: '',
     message: '',
   });
+
+  // Background PDF prefetch for saved meters
+  useEffect(() => {
+    if (savedMeters && savedMeters.length > 0) {
+      savedMeters.forEach((meter) => {
+        BillPdfService.prefetchBillPdf({
+          company: meter.company,
+          referenceNo: meter.referenceNumber,
+          consumerName: meter.consumerName || meter.nickname,
+          payableWithinDueDate: meter.lastBillAmount || 0,
+          billMonth: meter.lastBillMonth,
+          dueDate: meter.lastDueDate,
+        }).catch(() => {});
+      });
+    }
+  }, [savedMeters]);
 
   // Calculate bento stats
   const totalOutstanding = useMemo(() => {

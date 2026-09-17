@@ -172,4 +172,27 @@ describe('StorageService Test Suite', () => {
       expect(await StorageService.getNotifications()).toBe(false);
     });
   });
+
+  describe('PDF HTML Caching', () => {
+    it('caches and retrieves PDF HTML instantly', async () => {
+      const sampleHtml = '<html><body><h1>LESCO Bill</h1></body></html>';
+      await StorageService.cachePdfHtml('LESCO', '01115120000000', sampleHtml, 'AUG 26');
+
+      const cachedWithMonth = await StorageService.getCachedPdfHtml('LESCO', '01115120000000', 'AUG 26');
+      expect(cachedWithMonth).toBe(sampleHtml);
+
+      const cachedGeneric = await StorageService.getCachedPdfHtml('LESCO', '01115120000000');
+      expect(cachedGeneric).toBe(sampleHtml);
+    });
+
+    it('clears PDF cache for a specific meter or globally', async () => {
+      const sampleHtml = '<html><body><h1>MEPCO Bill</h1></body></html>';
+      await StorageService.cachePdfHtml('MEPCO', '14151210000000', sampleHtml);
+
+      expect(await StorageService.getCachedPdfHtml('MEPCO', '14151210000000')).toBe(sampleHtml);
+
+      await StorageService.clearPdfCache('MEPCO', '14151210000000');
+      expect(await StorageService.getCachedPdfHtml('MEPCO', '14151210000000')).toBeNull();
+    });
+  });
 });

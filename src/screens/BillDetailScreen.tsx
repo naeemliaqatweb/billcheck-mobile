@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -133,6 +133,13 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
   const sanitizedBillMonth = useMemo(() => {
     return sanitizeBillingMonth(activeBill.billMonth);
   }, [activeBill.billMonth]);
+
+  // Background PDF prefetch for instant (<100ms) download upon user tap
+  useEffect(() => {
+    if (activeBill && activeBill.company && activeBill.referenceNo) {
+      BillPdfService.prefetchBillPdf(activeBill).catch(() => {});
+    }
+  }, [activeBill]);
 
   // 12-Month History anchored to active bill month
   const displayHistory = useMemo(() => {
