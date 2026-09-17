@@ -160,12 +160,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       return;
     }
 
-    // 4. Default dynamic history based on current total due or fallback
-    const targetMonth = filteredMeters[0]?.lastBillMonth || savedMeters[0]?.lastBillMonth;
-    const baseAmount = totalDueAmount > 0 ? totalDueAmount : 14500;
-    const baseUnits = Math.max(80, Math.round(baseAmount / 38));
-    const dyn = generate12MonthHistory(baseUnits, baseAmount, targetMonth);
-    setHeroHistory(dyn);
+    // 4. Default dynamic history based on current total due if meters exist
+    if (savedMeters.length > 0 && totalDueAmount > 0) {
+      const targetMonth = filteredMeters[0]?.lastBillMonth || savedMeters[0]?.lastBillMonth;
+      const baseUnits = Math.max(80, Math.round(totalDueAmount / 38));
+      const dyn = generate12MonthHistory(baseUnits, totalDueAmount, targetMonth);
+      setHeroHistory(dyn);
+      return;
+    }
+
+    setHeroHistory([]);
   }, [filteredMeters, savedMeters, totalDueAmount]);
 
   useEffect(() => {

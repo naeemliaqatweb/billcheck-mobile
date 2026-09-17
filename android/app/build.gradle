@@ -82,8 +82,8 @@ android {
         applicationId "com.arcloom.billcheck"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2
-        versionName "1.0.0"
+        versionCode 3
+        versionName "1.0.1"
         ndk {
             // x86 causes CMake configure failure with RN 0.87.x + NDK 27
             // arm64-v8a = physical devices, x86_64 = emulators

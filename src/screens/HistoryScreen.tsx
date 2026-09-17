@@ -125,18 +125,7 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
       return;
     }
 
-    // Check last cached bill ONLY if it strictly matches this tab
-    const lastChecked = await StorageService.getLastCheckedBill();
-    if (lastChecked && lastChecked.history12Months && lastChecked.history12Months.length > 0) {
-      const isLastMatching = type === 'gas' ? isGasBill(lastChecked) : !isGasBill(lastChecked);
-      if (isLastMatching) {
-        setActiveBill(lastChecked);
-        setSelectedMeterId(`${lastChecked.company}_${lastChecked.referenceNo}`);
-        return;
-      }
-    }
-
-    // No matching meter for this tab -> show not found / add meter state!
+    // No matching meter for this tab -> show empty / add meter state!
     setActiveBill(null);
     setSelectedMeterId(null);
   };
@@ -162,22 +151,12 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
         return;
       }
 
-      const lastChecked = await StorageService.getLastCheckedBill();
-      if (lastChecked && lastChecked.history12Months && lastChecked.history12Months.length > 0) {
-        const isLastMatching = utilityType === 'gas' ? isGasBill(lastChecked) : !isGasBill(lastChecked);
-        if (isLastMatching) {
-          setActiveBill(lastChecked);
-          setSelectedMeterId(`${lastChecked.company}_${lastChecked.referenceNo}`);
-          return;
-        }
-      }
-
       setActiveBill(null);
       setSelectedMeterId(null);
     };
 
     initHistory();
-  }, [currentBill, savedMeters]);
+  }, [currentBill, savedMeters, utilityType]);
 
   const handleRefreshActiveMeter = async () => {
     if (!activeBill) return;
@@ -192,23 +171,6 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
       // fallback
     } finally {
       setRefreshing(false);
-    }
-  };
-
-  const handleLoadDemoMeter = async () => {
-    setLoading(true);
-    try {
-      const demoBill = await ApiService.fetchBill('LESCO', '15115371598719', false);
-      if (demoBill) {
-        await StorageService.cacheBill(demoBill);
-        setActiveBill(demoBill);
-        setSelectedMeterId('LESCO_15115371598719');
-        setUtilityType('electricity');
-      }
-    } catch {
-      // fallback
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -256,6 +218,10 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
 
   // Build enriched history with strict chronological ordering & deduplication anchored at AUG 26
   const historyData: BillMonthHistory[] = useMemo(() => {
+    if (!activeBill) {
+      return [];
+    }
+
     const MON_ABBR = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
     const now = new Date();
     const maxM = (now.getMonth() - 1 + 12) % 12; // 7 = August (in Sep 2026)
@@ -264,7 +230,7 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
 
     let list: BillMonthHistory[] = [];
 
-    if (activeBill?.history12Months && activeBill.history12Months.length > 0) {
+    if (activeBill.history12Months && activeBill.history12Months.length > 0) {
       list = activeBill.history12Months.map((item) => {
         const clean = (item.month || '').trim().toUpperCase();
         const parts = clean.split(/[\s\-_]+/);
@@ -289,26 +255,24 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
     }
 
     // Bind current active bill data (amount e.g. 2596, units) to latest billing month (AUG 26)
-    if (activeBill) {
-      const activeMonthLabel = sanitizeBillingMonth(activeBill.billMonth);
-      const existsIdx = list.findIndex((h) => (h.month || '').trim().toUpperCase() === activeMonthLabel);
+    const activeMonthLabel = sanitizeBillingMonth(activeBill.billMonth);
+    const existsIdx = list.findIndex((h) => (h.month || '').trim().toUpperCase() === activeMonthLabel);
 
-      if (existsIdx !== -1) {
-        list[existsIdx] = {
-          ...list[existsIdx],
-          units: activeBill.unitsConsumed || list[existsIdx].units,
-          amount: activeBill.payableWithinDueDate || list[existsIdx].amount,
-          status: activeBill.billStatus === 'paid' ? 'paid' : 'unpaid',
-        };
-      } else {
-        list.push({
-          month: activeMonthLabel,
-          year: maxY,
-          units: activeBill.unitsConsumed || 120,
-          amount: activeBill.payableWithinDueDate || 2596,
-          status: activeBill.billStatus === 'paid' ? 'paid' : 'unpaid',
-        });
-      }
+    if (existsIdx !== -1) {
+      list[existsIdx] = {
+        ...list[existsIdx],
+        units: activeBill.unitsConsumed || list[existsIdx].units,
+        amount: activeBill.payableWithinDueDate || list[existsIdx].amount,
+        status: activeBill.billStatus === 'paid' ? 'paid' : 'unpaid',
+      };
+    } else if (activeBill.unitsConsumed || activeBill.payableWithinDueDate) {
+      list.push({
+        month: activeMonthLabel,
+        year: maxY,
+        units: activeBill.unitsConsumed || 0,
+        amount: activeBill.payableWithinDueDate || 0,
+        status: activeBill.billStatus === 'paid' ? 'paid' : 'unpaid',
+      });
     }
 
     // Filter out unissued future months (> August 2026)
@@ -326,18 +290,24 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
       return valid.slice(-12);
     }
 
-    const units = activeBill?.unitsConsumed || 120;
-    const amount = activeBill?.payableWithinDueDate || 2596;
-    return generate12MonthHistory(units, amount, 'AUG 26');
+    if (activeBill.unitsConsumed || activeBill.payableWithinDueDate) {
+      return generate12MonthHistory(
+        activeBill.unitsConsumed || 0,
+        activeBill.payableWithinDueDate || 0,
+        activeBill.billMonth || 'AUG 26'
+      );
+    }
+
+    return [];
   }, [activeBill]);
 
-  const hasHistory = historyData.length > 0;
+  const hasHistory = historyData.length > 0 && activeBill !== null;
 
   const meterDisplayLabel = activeBill
     ? (activeBill.consumerName && !activeBill.consumerName.toUpperCase().includes('CONSUMER')
         ? `${activeBill.consumerName.split(/[\n,]/)[0].trim()} (${activeBill.company})`
         : `${activeBill.company} # ${activeBill.formattedRefNo || activeBill.referenceNo}`)
-    : 'LESCO # 08 11254 0938400 U';
+    : '';
 
   return (
     <View style={[styles.outerContainer, darkMode ? styles.darkBg : styles.lightBg]}>
