@@ -274,7 +274,7 @@ export const SavedBillsScreen: React.FC<SavedBillsScreenProps> = ({
               <View style={styles.pulseDot} />
               <Text style={styles.gridSyncText}>PAKISTAN NATIONAL GRID SYNC</Text>
             </View>
-            <Text style={styles.liveTagText}>v2.4 Live</Text>
+            <Text style={styles.liveTagText}>{isUrdu ? 'لائیو' : 'Live'}</Text>
           </View>
 
           <Text style={styles.bannerHeadline}>
