@@ -154,42 +154,71 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
         <View style={styles.emblemWrapper}>
           <View style={styles.emblemGlow} />
 
-          {/* Primary Card Slate */}
-          <View style={styles.cardSlate}>
-            {/* Top Notches & LED */}
-            <View style={styles.cardTopRow}>
-              <View style={styles.cardNotches}>
-                <View style={styles.notch1} />
-                <View style={styles.notch2} />
+          {/* Realistic Digital Utility Bill Invoice */}
+          <View style={styles.billInvoiceSlate}>
+            {/* Top Navy Header Strip with Company & Utility Label */}
+            <View style={styles.invoiceHeader}>
+              <View style={styles.invoiceHeaderLeft}>
+                <AppIcon name="receipt" size={11} color="#62FF96" />
+                <Text style={styles.invoiceHeaderTitle}>UTILITY BILL</Text>
               </View>
-              <View style={styles.cardLed}>
-                <View style={styles.cardLedDot} />
-              </View>
-            </View>
-
-            {/* Central Utility Intersection (Electricity Bolt + Gas Flame) */}
-            <View style={styles.cardCenterIcons}>
-              {/* Electricity */}
-              <View style={styles.iconBoxBolt}>
-                <AppIcon name="bolt" size={22} color="#62FF96" />
-              </View>
-              {/* Gas Flame */}
-              <View style={styles.iconBoxFlame}>
-                <AppIcon name="flame" size={22} color="#006D35" />
+              <View style={styles.invoiceHeaderBadge}>
+                <Text style={styles.invoiceHeaderBadgeText}>LIVE</Text>
               </View>
             </View>
 
-            {/* Receipt Lines */}
-            <View style={styles.cardReceiptLines}>
-              <View style={styles.receiptLineFull} />
-              <View style={styles.receiptLineShort} />
+            {/* Sub-header with Provider indicators */}
+            <View style={styles.invoiceSubHeader}>
+              <Text style={styles.invoiceCompanyText}>LESCO • MEPCO • SNGPL</Text>
+            </View>
+
+            {/* Reference & Barcode Line */}
+            <View style={styles.invoiceBarcodeSection}>
+              <View style={styles.barcodeVisual}>
+                <View style={[styles.barLine, { width: 2, height: 11 }]} />
+                <View style={[styles.barLine, { width: 3, height: 11 }]} />
+                <View style={[styles.barLine, { width: 1, height: 11 }]} />
+                <View style={[styles.barLine, { width: 4, height: 11 }]} />
+                <View style={[styles.barLine, { width: 2, height: 11 }]} />
+                <View style={[styles.barLine, { width: 1, height: 11 }]} />
+                <View style={[styles.barLine, { width: 3, height: 11 }]} />
+                <View style={[styles.barLine, { width: 4, height: 11 }]} />
+                <View style={[styles.barLine, { width: 2, height: 11 }]} />
+                <View style={[styles.barLine, { width: 3, height: 11 }]} />
+              </View>
+              <Text style={styles.invoiceRefText}>REF: 15115-371598719</Text>
+            </View>
+
+            {/* Bill Key Stats Strip */}
+            <View style={styles.invoiceStatsRow}>
+              <View style={styles.invoiceStatCol}>
+                <Text style={styles.statLabel}>DUE DATE</Text>
+                <Text style={styles.statVal}>AUG 26</Text>
+              </View>
+              <View style={styles.invoiceDividerVertical} />
+              <View style={styles.invoiceStatCol}>
+                <Text style={styles.statLabel}>PAYABLE</Text>
+                <Text style={styles.statAmount}>Rs. 2,596</Text>
+              </View>
+            </View>
+
+            {/* Bottom Utility Chips */}
+            <View style={styles.invoiceBottomRow}>
+              <View style={styles.miniUtilityChipZap}>
+                <AppIcon name="zap" size={9} color="#006D35" />
+                <Text style={styles.miniChipZapText}>11 DISCOs</Text>
+              </View>
+              <View style={styles.miniUtilityChipFlame}>
+                <AppIcon name="flame" size={9} color="#EA580C" />
+                <Text style={styles.miniChipFlameText}>2 Gas</Text>
+              </View>
             </View>
           </View>
 
           {/* Tech Badge Pin */}
           <View style={styles.techBadgePin}>
-            <AppIcon name="bolt" size={10} color="#62FF96" />
-            <Text style={styles.techBadgeText}>OFFICIAL REPO</Text>
+            <AppIcon name="shield-check" size={10} color="#62FF96" />
+            <Text style={styles.techBadgeText}>100% SECURE & FAST</Text>
           </View>
         </View>
 
