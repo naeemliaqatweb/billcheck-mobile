@@ -100,7 +100,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const enrichWithCurrentBill = (bill: BillData): BillMonthHistory[] => {
     const base = bill.history12Months || [];
     const currentLabel = sanitizeBillingMonth(bill.billMonth);
-    if (base.length === 0) return generate12MonthHistory(bill.unitsConsumed || 120, bill.payableWithinDueDate || 2596, currentLabel);
+    if (base.length === 0) {
+      if (!bill.unitsConsumed && !bill.payableWithinDueDate) return [];
+      return generate12MonthHistory(bill.unitsConsumed || 0, bill.payableWithinDueDate || 0, currentLabel);
+    }
 
     // Check if currentLabel already exists in base
     const existingIndex = base.findIndex((b) => (b.month || '').trim().toUpperCase() === currentLabel);
@@ -135,6 +138,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
   // Load trend history dynamically for the hero graph
   const loadTrendHistory = useCallback(async () => {
+    // If no saved meters at all, do not load any previous cached bills or fake data
+    if (!savedMeters || savedMeters.length === 0) {
+      setHeroHistory([]);
+      return;
+    }
+
     // 1. Try finding cached bill for first filtered meter or any saved meter
     const primaryMeter = filteredMeters[0] || savedMeters[0];
     if (primaryMeter) {
@@ -145,14 +154,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       }
     }
 
-    // 2. Try last checked bill in storage
-    const lastChecked = await StorageService.getLastCheckedBill();
-    if (lastChecked?.history12Months && lastChecked.history12Months.length > 0) {
-      setHeroHistory(enrichWithCurrentBill(lastChecked));
-      return;
-    }
-
-    // 3. If primary meter has lastBillAmount, generate dynamic history
+    // 2. If primary meter has lastBillAmount, generate dynamic history
     if (primaryMeter && primaryMeter.lastBillAmount && primaryMeter.lastBillAmount > 0) {
       const estimatedUnits = Math.max(50, Math.round(primaryMeter.lastBillAmount / 38));
       const dyn = generate12MonthHistory(estimatedUnits, primaryMeter.lastBillAmount, primaryMeter.lastBillMonth);
@@ -160,8 +162,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       return;
     }
 
-    // 4. Default dynamic history based on current total due if meters exist
-    if (savedMeters.length > 0 && totalDueAmount > 0) {
+    // 3. Default dynamic history based on current total due if meters exist
+    if (totalDueAmount > 0) {
       const targetMonth = filteredMeters[0]?.lastBillMonth || savedMeters[0]?.lastBillMonth;
       const baseUnits = Math.max(80, Math.round(totalDueAmount / 38));
       const dyn = generate12MonthHistory(baseUnits, totalDueAmount, targetMonth);

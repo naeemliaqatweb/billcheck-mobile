@@ -97,8 +97,7 @@ export const DashboardTrendGraph: React.FC<DashboardTrendGraphProps> = ({
         return deduped;
       }
     }
-    // Fallback dynamic 6 months ending at latest issued bill (August 2026)
-    const SEASON_MUL = [0.38, 0.42, 0.55, 0.75, 0.95, 1.15, 1.20, 1.05, 0.85, 0.65, 0.45, 0.40];
+    // Default 6 months ending at latest issued bill (August 2026) with zero amounts
     const MON_ABBR = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
     const slots: BillMonthHistory[] = [];
@@ -106,15 +105,12 @@ export const DashboardTrendGraph: React.FC<DashboardTrendGraphProps> = ({
       const d = new Date(curY, curM - offset, 1);
       const m = d.getMonth();
       const y = d.getFullYear();
-      const isCur = offset === 0;
-      const units = Math.max(50, Math.round(300 * SEASON_MUL[m]));
-      const amount = Math.round(units * 40);
       slots.push({
         month: `${MON_ABBR[m]} ${String(y).slice(-2)}`,
         year: y,
-        units,
-        amount,
-        status: isCur ? 'unpaid' : 'paid',
+        units: 0,
+        amount: 0,
+        status: 'paid',
       });
     }
     return slots;
@@ -152,9 +148,9 @@ export const DashboardTrendGraph: React.FC<DashboardTrendGraphProps> = ({
   }, [pulseAnim]);
 
   // Calculate dynamic SVG coordinates
-  const { linePath, areaPath, lastPoint } = useMemo(() => {
+  const { linePath, areaPath, lastPoint, isAllZero } = useMemo(() => {
     if (!data6 || data6.length === 0) {
-      return { linePath: '', areaPath: '', lastPoint: null };
+      return { linePath: '', areaPath: '', lastPoint: null, isAllZero: true };
     }
 
     const svgW = 310;
@@ -165,8 +161,20 @@ export const DashboardTrendGraph: React.FC<DashboardTrendGraphProps> = ({
     const amounts = data6.map((d) => d.amount);
     const minAmount = Math.min(...amounts);
     const maxAmount = Math.max(...amounts);
-    const range = maxAmount - minAmount || 1;
+    const allZero = maxAmount === 0;
 
+    if (allZero) {
+      const pStart = { x: paddingX, y: 40 };
+      const pEnd = { x: svgW - paddingX, y: 40 };
+      return {
+        linePath: `M ${pStart.x} ${pStart.y} L ${pEnd.x} ${pEnd.y}`,
+        areaPath: '',
+        lastPoint: null,
+        isAllZero: true,
+      };
+    }
+
+    const range = maxAmount - minAmount || 1;
     const topY = 10;
     const bottomY = 40;
     const usableH = bottomY - topY;
@@ -187,6 +195,7 @@ export const DashboardTrendGraph: React.FC<DashboardTrendGraphProps> = ({
         linePath: `M ${p.x - 20} ${p.y} L ${p.x + 20} ${p.y}`,
         areaPath: `M ${p.x - 20} ${p.y} L ${p.x + 20} ${p.y} L ${p.x + 20} 50 L ${p.x - 20} 50 Z`,
         lastPoint: p,
+        isAllZero: false,
       };
     }
 
@@ -202,13 +211,19 @@ export const DashboardTrendGraph: React.FC<DashboardTrendGraphProps> = ({
     const last = pts[pts.length - 1];
     const dArea = `${dLine} L ${last.x} 50 L ${first.x} 50 Z`;
 
-    return { linePath: dLine, areaPath: dArea, lastPoint: last };
+    return { linePath: dLine, areaPath: dArea, lastPoint: last, isAllZero: false };
   }, [data6, isUrdu]);
 
   // Calculate dynamic trend percentage vs previous month
   const { trendText, isUp } = useMemo(() => {
     if (propTrendPercentage) {
       return { trendText: propTrendPercentage, isUp: !propTrendPercentage.includes('-') };
+    }
+    if (isAllZero || data6.every((d) => d.amount === 0)) {
+      return {
+        trendText: isUrdu ? '0 روپے • کوئی میٹر نہیں' : 'Rs. 0 • No Data',
+        isUp: true,
+      };
     }
     if (data6.length >= 2) {
       const curr = data6[data6.length - 1];
@@ -225,7 +240,7 @@ export const DashboardTrendGraph: React.FC<DashboardTrendGraphProps> = ({
       trendText: isUrdu ? 'مستحکم' : 'Stable',
       isUp: true,
     };
-  }, [propTrendPercentage, data6, isUrdu]);
+  }, [propTrendPercentage, data6, isUrdu, isAllZero]);
 
   const displayLabel = trendLabel || (isUrdu ? '6 ماہ کا رجحان (روپے)' : '6-Month Trend (Rs.)');
 
@@ -299,10 +314,10 @@ export const DashboardTrendGraph: React.FC<DashboardTrendGraphProps> = ({
               </Defs>
 
               {/* Area fill under curve with rich radiant green glow */}
-              {areaPath ? <Path d={areaPath} fill="url(#dashboardGlowGrad)" /> : null}
+              {!isAllZero && areaPath ? <Path d={areaPath} fill="url(#dashboardGlowGrad)" /> : null}
 
               {/* Outer glow stroke */}
-              {linePath ? (
+              {!isAllZero && linePath ? (
                 <Path
                   d={linePath}
                   fill="none"
@@ -316,8 +331,9 @@ export const DashboardTrendGraph: React.FC<DashboardTrendGraphProps> = ({
                 <Path
                   d={linePath}
                   fill="none"
-                  stroke="#62FF96"
-                  strokeWidth={3}
+                  stroke={isAllZero ? 'rgba(98, 255, 150, 0.35)' : '#62FF96'}
+                  strokeWidth={isAllZero ? 1.5 : 3}
+                  strokeDasharray={isAllZero ? '5 5' : undefined}
                 />
               ) : null}
 

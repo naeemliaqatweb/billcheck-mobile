@@ -123,29 +123,26 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
   // Tariff charges breakdown
   const electricityCost =
     activeBill.totalElectricityCharges ||
-    Math.max(0, activeBill.payableWithinDueDate - (activeBill.fpaAmount || 1420) - (activeBill.electricityDuty || 840) - (activeBill.gstAmount || 1765) - (activeBill.tvFee || 35)) ||
-    10260;
-  const fpaAmount = activeBill.fpaAmount || 1420;
-  const fcAndEd = (activeBill.electricityDuty || 0) + (activeBill.chargesBreakdown?.find((c) => c.labelEn.includes('FC'))?.value || 840);
-  const gstAndTv = (activeBill.gstAmount || 0) + (activeBill.tvFee || 0) || 1800;
+    Math.max(0, activeBill.payableWithinDueDate - (activeBill.fpaAmount || 0) - (activeBill.electricityDuty || 0) - (activeBill.gstAmount || 0) - (activeBill.tvFee || 0)) ||
+    activeBill.payableWithinDueDate || 0;
+  const fpaAmount = activeBill.fpaAmount || 0;
+  const fcAndEd = (activeBill.electricityDuty || 0) + (activeBill.chargesBreakdown?.find((c) => c.labelEn.includes('FC'))?.value || 0);
+  const gstAndTv = (activeBill.gstAmount || 0) + (activeBill.tvFee || 0);
 
   // Normalized billing month (strictly anchored to AUG 26, never future unissued SEP 26)
   const sanitizedBillMonth = useMemo(() => {
     return sanitizeBillingMonth(activeBill.billMonth);
   }, [activeBill.billMonth]);
 
-  // 12-Month History anchored to latest issued bill (AUG 26)
+  // 12-Month History anchored to active bill month
   const displayHistory = useMemo(() => {
-    const units = activeBill.unitsConsumed || 120;
-    const amount = activeBill.payableWithinDueDate || 2596;
     if (activeBill.history12Months && activeBill.history12Months.length > 0) {
-      const lastItem = activeBill.history12Months[activeBill.history12Months.length - 1];
-      if (lastItem && (lastItem.month?.toUpperCase().includes('SEP') || (lastItem.year && lastItem.year < 2026))) {
-        return generate12MonthHistory(units, amount, 'AUG 26');
-      }
       return activeBill.history12Months;
     }
-    return generate12MonthHistory(units, amount, 'AUG 26');
+    const units = activeBill.unitsConsumed || 0;
+    const amount = activeBill.payableWithinDueDate || 0;
+    if (units === 0 && amount === 0) return [];
+    return generate12MonthHistory(units, amount, activeBill.billMonth || 'AUG 26');
   }, [activeBill]);
 
   // Format fetch date
