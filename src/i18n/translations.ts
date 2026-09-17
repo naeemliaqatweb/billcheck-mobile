@@ -121,7 +121,7 @@ export const TRANSLATIONS = {
     clearCacheSuccessMsg: 'All cached bills and saved meters have been cleared from local storage.',
     confirmResetBtn: 'Yes, Reset App',
     cancelBtn: 'Cancel',
-    appFooterVersion: 'Version 1.0.0 • BillCheck PK',
+    appFooterVersion: 'Version 1.0.1 • BillCheck PK',
     appFooterLicense: 'Arcloom Tech • All Rights Reserved',
 
     trackedDiscos: 'Tracked DISCOs',
@@ -355,7 +355,7 @@ export const TRANSLATIONS = {
     clearCacheSuccessMsg: 'تمام کیش شدہ بل اور محفوظ میٹرز موبائل کی میموری سے صاف کر دیے گئے ہیں۔',
     confirmResetBtn: 'ہاں، ری سیٹ کریں',
     cancelBtn: 'منسوخ کریں',
-    appFooterVersion: 'ورژن 1.0.0 • بل چیک پی کے',
+    appFooterVersion: 'ورژن 1.0.1 • بل چیک پی کے',
     appFooterLicense: 'ارکلوم ٹیک • تمام جملہ حقوق محفوظ ہیں',
 
     trackedDiscos: 'بجلی کی کمپنیاں',

@@ -269,7 +269,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
 
           <View style={styles.versionCapsule}>
             <AppIcon name="terminal" size={11} color="#62FF96" />
-            <Text style={styles.versionText}>v1.0.0</Text>
+            <Text style={styles.versionText}>v{APP_CONFIG.version}</Text>
           </View>
         </View>
       </View>

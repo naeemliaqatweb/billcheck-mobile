@@ -223,7 +223,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               </View>
             </View>
             <View style={styles.heroVersionBadge}>
-              <Text style={styles.heroVersionText}>v1.0.0</Text>
+              <Text style={styles.heroVersionText}>v{APP_CONFIG.version}</Text>
             </View>
           </View>
 
