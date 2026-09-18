@@ -134,7 +134,7 @@ export const TRANSLATIONS = {
     privacyPolicy: 'Privacy Policy',
     termsOfService: 'Terms of Service',
     appVersion: 'App Version',
-    playStoreCompliantBadge: '100% Google Play Policy Compliant',
+    playStoreCompliantBadge: 'Privacy & Data Security Standards',
 
     // Stitch Dashboard UI
     welcomeBack: 'Welcome Back!',
@@ -388,7 +388,7 @@ export const TRANSLATIONS = {
     privacyPolicy: 'پرائیویسی پالیسی',
     termsOfService: 'شرائط و ضوابط',
     appVersion: 'ایپ ورژن',
-    playStoreCompliantBadge: 'گوگل پلے پالیسی کے 100% مطابق',
+    playStoreCompliantBadge: 'پرائیویسی اور ڈیٹا سیکیورٹی معیارات',
 
     // Select Provider Screen (Stitch 100% Match)
     chooseCompanyTitle: 'کمپنی منتخب کریں',
