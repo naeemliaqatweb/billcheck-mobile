@@ -23,12 +23,12 @@ export const DisclaimerBanner: React.FC<DisclaimerBannerProps> = ({ language, da
       <View style={styles.headerRow}>
         <Text style={styles.icon}>⚠️</Text>
         <Text style={[styles.title, darkMode ? styles.darkTitle : styles.lightTitle, isUrdu && styles.rtlText]}>
-          {isUrdu ? 'قانونی وضاحت اور ڈسکلیمر' : 'Official Legal Notice'}
+          {isUrdu ? 'لاتعلقی اور قانونی وضاحت' : 'Legal Notice & Non-Affiliation'}
         </Text>
       </View>
       <Text style={[styles.description, darkMode ? styles.darkDesc : styles.lightDesc, isUrdu && styles.rtlText]}>
         {isUrdu
-          ? 'بل چیک پی کے (BillCheck PK) ارکلوم ٹیک کی جانب سے تیار کردہ ایک غیر سرکاری آزاد ایپ ہے۔ اس کا حکومتِ پاکستان، واپڈا یا کسی بھی ڈسکو سے کوئی سرکاری تعلق نہیں ہے۔'
+          ? 'بل چیک پی کے (BillCheck PK) ارکلوم ٹیک کی جانب سے تیار کردہ ایک آزاد یوٹیلیٹی ٹول ہے۔ اس کا حکومتِ پاکستان، وزارتِ توانائی، واپڈا یا کسی بھی بجلی یا گیس کمپنی سے کوئی سرکاری تعلق نہیں ہے۔'
           : 'BillCheck PK is an independent utility tracking tool by Arcloom Tech. NOT affiliated with or endorsed by any government entity or utility provider.'}
       </Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 6 }}>
@@ -48,7 +48,7 @@ export const DisclaimerBanner: React.FC<DisclaimerBannerProps> = ({ language, da
           activeOpacity={0.7}
         >
           <Text style={[styles.policyLinkText, darkMode ? styles.darkLink : styles.lightLink]}>
-            {isUrdu ? 'سرکاری معلومات کے ذرائع (PITC) ↗' : 'Official Sources (PITC) ↗'}
+            {isUrdu ? 'بل معلومات کے ذرائع (PITC) ↗' : 'Sources of Bill Information ↗'}
           </Text>
         </TouchableOpacity>
       </View>
