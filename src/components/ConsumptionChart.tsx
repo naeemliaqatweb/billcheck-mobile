@@ -13,12 +13,14 @@ interface ConsumptionChartProps {
   history: BillMonthHistory[];
   darkMode?: boolean;
   language?: 'en' | 'ur';
+  isGas?: boolean;
 }
 
 export const ConsumptionChart: React.FC<ConsumptionChartProps> = ({
   history,
   darkMode = true,
   language = 'en',
+  isGas = false,
 }) => {
   const isUrdu = language === 'ur';
   const scrollRef = useRef<any>(null);
@@ -151,7 +153,10 @@ export const ConsumptionChart: React.FC<ConsumptionChartProps> = ({
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: '#EF4444' }]} />
           <Text style={[styles.legendText, darkMode ? styles.darkSub : styles.lightSub]}>
-            {isUrdu ? 'پیک (300+)' : 'Peak (>300)'}
+            {isGas
+              ? (isUrdu ? 'زیادہ (>50)' : 'High (>50)')
+              : (isUrdu ? 'پیک (300+)' : 'Peak (>300)')
+            }
           </Text>
         </View>
         <View style={styles.legendItem}>

@@ -155,7 +155,7 @@ export const ELECTRICITY_PROVIDERS: ProviderInfo[] = [
     refPlaceholder: '0400012345678',
     badgeColor: '#16A34A',
     iconName: 'flash',
-    portalUrl: 'https://www.ke.com.pk/customer-services/bill-and-e-services/',
+    portalUrl: 'https://www.ke.com.pk/',
     officialSite: 'https://www.ke.com.pk/',
   },
 ];
@@ -184,8 +184,8 @@ export const GAS_PROVIDERS: ProviderInfo[] = [
     refPlaceholder: '1234567890',
     badgeColor: '#E11D48',
     iconName: 'flame',
-    portalUrl: 'https://www.ssgc.com.pk/web/',
-    officialSite: 'https://www.ssgc.com.pk/',
+    portalUrl: 'https://viewbill.ssgc.com.pk/',
+    officialSite: 'https://viewbill.ssgc.com.pk/',
   },
 ];
 

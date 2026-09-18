@@ -1,4 +1,9 @@
-import { SavedMeter } from '../types/bill';
+export interface MeterDisplayInput {
+  nickname?: string | null;
+  company: string;
+  consumerName?: string | null;
+  referenceNumber?: string;
+}
 
 /**
  * Resolves the clean display name for a meter across chips, lists, and selectors:
@@ -8,12 +13,7 @@ import { SavedMeter } from '../types/bill';
  *    returns `${consumerName} (${company})`.
  * 3. Fallback: `${company} Meter`.
  */
-export function getMeterDisplayName(meter: {
-  nickname?: string | null;
-  company: string;
-  consumerName?: string | null;
-  referenceNumber?: string;
-}): string {
+export function getMeterDisplayName(meter: MeterDisplayInput): string {
   const comp = (meter.company || '').toUpperCase().trim();
   const rawNick = (meter.nickname || '').trim();
   const rawConsumer = (meter.consumerName || '').trim();

@@ -135,7 +135,10 @@ export default function App() {
           bill={currentBill}
           language={language}
           darkMode={darkMode}
-          onBack={() => setCurrentBill(null)}
+          onBack={() => {
+            setCurrentBill(null);
+            handleRefreshSaved();
+          }}
           onSaveMeterComplete={handleRefreshSaved}
         />
       );

@@ -3,6 +3,7 @@ import {
   generate12MonthHistory,
   parseDueDate,
   ApiService,
+  parseSngplHtml,
 } from '../src/services/api';
 import { StorageService } from '../src/services/storage';
 
@@ -163,6 +164,122 @@ describe('ApiService & Helper Functions Test Suite', () => {
       const pdf = await ApiService.fetchOfficialBillPdfDocument('LESCO', '01115120000000');
       expect(pdf.success).toBe(true);
       expect(pdf.fileName).toContain('LESCO');
+    });
+
+    it('fetches authentic SNGPL baseline parameters', async () => {
+      (globalThis as any).fetch = jest.fn().mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          acctId: '39008111096',
+          category: 'DOM',
+          protectedStatus: 'Protected',
+          previousRead: '09125000',
+          previousReadDt: '14-09-2026',
+          gcv: '942',
+          pressureFactor: 0.36,
+          consumerSts: 'Active Consumer',
+        }),
+      });
+
+      const params = await ApiService.fetchSngplParams('39008111096');
+      expect(params.acctId).toBe('39008111096');
+      expect(params.category).toBe('DOM');
+      expect(params.protectedStatus).toBe('Protected');
+      expect(params.previousRead).toBe('09125000');
+      expect(params.previousReadDt).toBe('14-09-2026');
+    });
+
+    it('estimates SNGPL gas bill correctly with official response or fallback', async () => {
+      (globalThis as any).fetch = jest.fn().mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          hm3: 0.307,
+          mmbtu: 1.028,
+          totalAmount: '915.0',
+          gasCharges: '220.71',
+          fixedCharges: '520.0',
+          meterRent: '34.67',
+          gst: '139.57',
+          slab1Disp: 'Slab 1 Upto 0.25',
+          tariff1Disp: '200.0',
+        }),
+      });
+
+      const bill = await ApiService.estimateSngplBill({
+        accountId: '39008111096',
+        category: 'DOM',
+        protectedStatus: 'Protected',
+        previousRead: '09125000',
+        previousReadDt: '14-09-2026',
+        currentRead: '09155000',
+        currentReadDt: '18-09-2026',
+        gcv: '942',
+        pressureFactor: 0.36,
+      });
+
+      expect(bill.company).toBe('SNGPL');
+      expect(bill.utilityType).toBe('gas');
+      expect(bill.payableWithinDueDate).toBe(915);
+      expect(bill.referenceNo).toBe('39008111096');
+      expect(bill.unitsConsumed).toBe(1.03);
+    });
+
+    it('parses authentic SNGPL duplicate bill HTML into complete BillData', () => {
+      const sampleHtml = `
+        <table>
+          <tr><td>Name</td><td>SHAHEENA BEGUM</td></tr>
+          <tr><td>Address</td><td>H NO 117 BLOCK B/B VITAL HOMES, LAHORE</td></tr>
+          <tr><td>Billing Month</td><td>Aug 2026</td></tr>
+          <tr class="txt-bld"><td>990</td><td>1,090</td><td>01-10-2026</td></tr>
+          <tr><td>Issue Date: 11-09-2026</td></tr>
+          <tr><td>Meter No:</td><td>BK-111096</td></tr>
+          <tr><td>Tariff: DOMP-G</td></tr>
+          <tr class="bdr-bt"><td>09125000</td><td>09087000</td></tr>
+          <tr><td>Gas Charges</td><td class="txt-rt">188.01</td></tr>
+          <tr><td>Meter Rent</td><td class="txt-rt">40.0</td></tr>
+          <tr><td>Fixed Charges</td><td class="txt-rt">600.0</td></tr>
+          <tr><td>GST</td><td class="txt-rt">158.84</td></tr>
+          <tr>
+            <td class="history">Jul 2026</td>
+            <td class="history">0.038</td>
+            <td class="history">188.0</td>
+            <td class="history">990</td>
+            <td class="history">01-09-2026</td>
+          </tr>
+        </table>
+      `;
+
+      const parsed = parseSngplHtml(sampleHtml, '39008111096');
+      expect(parsed.consumerName).toBe('SHAHEENA BEGUM');
+      expect(parsed.consumerAddress).toContain('VITAL HOMES');
+      expect(parsed.payableWithinDueDate).toBe(990);
+      expect(parsed.payableAfterDueDate).toBe(1090);
+      expect(parsed.dueDate).toBe('01-10-2026');
+      expect(parsed.presentReading).toBe(9125000);
+      expect(parsed.previousReading).toBe(9087000);
+      expect(parsed.company).toBe('SNGPL');
+      expect(parsed.utilityType).toBe('gas');
+    });
+
+    it('fetches official SNGPL duplicate bill and parses properly', async () => {
+      const mockHtml = `
+        <table>
+          <tr><td>Name</td><td>SHAHEENA BEGUM</td></tr>
+          <tr><td>Billing Month</td><td>Aug 2026</td></tr>
+          <tr class="txt-bld"><td>990</td><td>1,090</td><td>01-10-2026</td></tr>
+          <tr><td>Gas Charges</td><td class="txt-rt">188.01</td></tr>
+        </table>
+      ` + ' '.repeat(500);
+
+      (globalThis as any).fetch = jest.fn().mockResolvedValueOnce({
+        ok: true,
+        text: async () => mockHtml,
+      });
+
+      const res = await ApiService.fetchOfficialSngplBill('39008111096');
+      expect(res.bill.consumerName).toBe('SHAHEENA BEGUM');
+      expect(res.bill.payableWithinDueDate).toBe(990);
+      expect(res.html).toBe(mockHtml);
     });
   });
 });

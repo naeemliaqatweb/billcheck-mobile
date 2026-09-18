@@ -14,14 +14,15 @@ import { TRANSLATIONS, Language } from '../i18n/translations';
 import { APP_CONFIG } from '../constants/appConfig';
 import { DisclaimerBanner } from '../components/DisclaimerBanner';
 import { AdBanner } from '../components/AdBanner';
-import { ApiService, generate12MonthHistory, sanitizeBillingMonth } from '../services/api';
+import { ApiService, generate12MonthHistory, sanitizeBillingMonth, createInitializedBill } from '../services/api';
 import { StorageService } from '../services/storage';
 import { NotificationService } from '../services/notification';
-import { BillPdfService } from '../services/billPdf';
+import { getMeterDisplayName } from '../utils/meterUtils';
 import { AppIcon } from '../components/AppIcon';
 import { CustomPopup, PopupConfig } from '../components/CustomPopup';
 import { DashboardHeroCard } from '../components/home/DashboardHeroCard';
 import { DashboardBillCard } from '../components/home/DashboardBillCard';
+import { OfficialBillModal } from '../components/bill/OfficialBillModal';
 import { NewMeterFab } from '../components/NewMeterFab';
 import { styles } from '../styles/HomeScreen.styles';
 
@@ -55,7 +56,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   // State
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [loadingMeterId, setLoadingMeterId] = useState<string | null>(null);
-  const [downloadingMeterId, setDownloadingMeterId] = useState<string | null>(null);
+  const [loadingOfficialMeterId, setLoadingOfficialMeterId] = useState<string | null>(null);
+  const [officialModalBill, setOfficialModalBill] = useState<BillData | null>(null);
+  const [showOfficialModal, setShowOfficialModal] = useState<boolean>(false);
   const [heroHistory, setHeroHistory] = useState<BillMonthHistory[]>([]);
   const [popup, setPopup] = useState<PopupConfig>({
     visible: false,
@@ -96,34 +99,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     return { totalDueAmount: sum, unpaidBillsCount: unpaidCount };
   }, [filteredMeters]);
 
-  // Helper to ensure current bill month is always the last entry in history
+  // Helper to ensure current bill month is included and history is in strict chronological ascending order
   const enrichWithCurrentBill = (bill: BillData): BillMonthHistory[] => {
     const base = bill.history12Months || [];
     const currentLabel = sanitizeBillingMonth(bill.billMonth);
-    if (base.length === 0) {
-      if (!bill.unitsConsumed && !bill.payableWithinDueDate) return [];
-      return generate12MonthHistory(bill.unitsConsumed || 0, bill.payableWithinDueDate || 0, currentLabel);
-    }
-
-    // Check if currentLabel already exists in base
-    const existingIndex = base.findIndex((b) => (b.month || '').trim().toUpperCase() === currentLabel);
-    if (existingIndex !== -1) {
-      const updated = [...base];
-      updated[existingIndex] = {
-        ...updated[existingIndex],
-        units: bill.unitsConsumed || updated[existingIndex].units,
-        amount: bill.payableWithinDueDate || updated[existingIndex].amount,
-        status: bill.billStatus === 'paid' ? 'paid' : 'unpaid',
-      };
-      // Slice up to the current bill month so no future months exist after it
-      return updated.slice(0, existingIndex + 1);
-    }
-
-    const lastLabel = (base[base.length - 1].month || '').trim().toUpperCase();
-    if (lastLabel === currentLabel) return base;
-
     const yrStr = currentLabel.split(/[\s-]+/)[1] || '26';
     const fullYear = 2000 + (parseInt(yrStr, 10) || 26);
+
+    const MON_MAP_ORDER: Record<string, number> = {
+      JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5,
+      JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11,
+    };
+
+    if (base.length === 0) {
+      if (!bill.unitsConsumed && !bill.payableWithinDueDate) return [];
+      return generate12MonthHistory(bill.unitsConsumed || 0, bill.payableWithinDueDate || 0, currentLabel, bill.utilityType);
+    }
 
     const currentEntry: BillMonthHistory = {
       month: currentLabel,
@@ -133,7 +124,42 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       status: bill.billStatus === 'paid' ? 'paid' : 'unpaid',
     };
 
-    return [...base, currentEntry];
+    const combined = [...base];
+    const existingIdx = combined.findIndex((b) => (b.month || '').trim().toUpperCase() === currentLabel);
+    if (existingIdx !== -1) {
+      combined[existingIdx] = currentEntry;
+    } else {
+      combined.push(currentEntry);
+    }
+
+    // Deduplicate by timestamp and sort ascending (oldest -> newest)
+    const seen = new Set<string>();
+    const result: BillMonthHistory[] = [];
+    combined.forEach((item) => {
+      const mStr = (item.month || '').trim().toUpperCase();
+      const parts = mStr.split(/[\s\-_]+/);
+      const abbr = parts[0]?.slice(0, 3) || 'AUG';
+      const y = item.year || (parts[1] ? 2000 + parseInt(parts[1], 10) : 2026);
+      const key = `${abbr}_${y}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        result.push({
+          ...item,
+          month: `${abbr} ${String(y).slice(-2)}`,
+          year: y,
+        });
+      }
+    });
+
+    result.sort((a, b) => {
+      const aAbbr = a.month.slice(0, 3).toUpperCase();
+      const bAbbr = b.month.slice(0, 3).toUpperCase();
+      const aTs = (a.year || 2026) * 12 + (MON_MAP_ORDER[aAbbr] ?? 0);
+      const bTs = (b.year || 2026) * 12 + (MON_MAP_ORDER[bAbbr] ?? 0);
+      return aTs - bTs;
+    });
+
+    return result;
   };
 
   // Load trend history dynamically for the hero graph
@@ -176,19 +202,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
   useEffect(() => {
     loadTrendHistory();
-    if (savedMeters && savedMeters.length > 0) {
-      savedMeters.forEach((meter) => {
-        BillPdfService.prefetchBillPdf({
-          company: meter.company,
-          referenceNo: meter.referenceNumber,
-          consumerName: meter.consumerName || meter.nickname,
-          payableWithinDueDate: meter.lastBillAmount || 0,
-          billMonth: meter.lastBillMonth,
-          dueDate: meter.lastDueDate,
-        }).catch(() => {});
-      });
-    }
-  }, [loadTrendHistory, savedMeters]);
+  }, [loadTrendHistory]);
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -205,80 +219,125 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     }
   };
 
-  const handleFetchFailure = (provider: ProviderInfo, refNo: string) => {
-    const portalUrl = provider.portalUrl || 'https://bill.pitc.com.pk/';
-    setPopup({
-      visible: true,
-      type: 'error',
-      title: isUrdu ? 'سرور سے بل موصول نہیں ہوا' : 'Live Bill Fetch Failed',
-      message: isUrdu
-        ? `سرور سے بل موصول نہیں ہو سکا۔ کیا آپ ${provider.name} کے لائیو سرکاری پورٹل پر چیک کرنا چاہتے ہیں؟\n\nحوالہ نمبر: ${refNo}`
-        : `Could not fetch bill from the server. Would you like to view it directly on the official ${provider.name} portal?\n\nReference No: ${refNo}`,
-      primaryText: isUrdu ? 'سرکاری پورٹل کھولیں' : 'Open Official Portal',
-      secondaryText: isUrdu ? 'کینسل' : 'Cancel',
-      onPrimaryPress: () => {
-        setPopup((p) => ({ ...p, visible: false }));
-        Linking.openURL(portalUrl);
-      },
-      onClose: () => setPopup((p) => ({ ...p, visible: false })),
-    });
-  };
-
   // Check saved bill
   const handleCheckSavedBill = async (meter: SavedMeter) => {
+    // 1. Instant cache check first (<5ms open time)
+    const cachedBill = await StorageService.getCachedBill(meter.company, meter.referenceNumber);
+    if (cachedBill && !cachedBill.isMockData) {
+      onBillChecked(cachedBill);
+      // Background sync fresh data if needed
+      ApiService.fetchBill(meter.company, meter.referenceNumber, true)
+        .then(async (fresh) => {
+          if (fresh) {
+            await StorageService.cacheBill(fresh);
+            onRefreshSaved();
+          }
+        })
+        .catch(() => {});
+      return;
+    }
+
     setLoadingMeterId(meter.id);
-    const prov =
-      [...ELECTRICITY_PROVIDERS, ...GAS_PROVIDERS].find((p) => p.code === meter.company) ||
-      ELECTRICITY_PROVIDERS[0];
 
     try {
-      const bill = await ApiService.fetchBill(meter.company, meter.referenceNumber);
+      const bill = await ApiService.fetchBill(meter.company, meter.referenceNumber, true);
       await StorageService.cacheBill(bill);
-      if (bill.consumerName && (!meter.consumerName || meter.consumerName !== bill.consumerName)) {
-        await StorageService.saveMeter({
-          ...meter,
-          consumerName: bill.consumerName,
-          consumerAddress: bill.consumerAddress || meter.consumerAddress,
-          lastBillAmount: bill.payableWithinDueDate,
-          lastDueDate: bill.dueDate,
-          lastBillStatus: bill.billStatus,
-          lastBillMonth: bill.billMonth,
-        });
-      }
+      await StorageService.saveMeter({
+        ...meter,
+        consumerName: bill.consumerName || meter.consumerName,
+        consumerAddress: bill.consumerAddress || meter.consumerAddress,
+        lastBillAmount: bill.payableWithinDueDate,
+        lastDueDate: bill.dueDate,
+        lastBillStatus: bill.billStatus,
+        lastBillMonth: bill.billMonth,
+      });
+      onRefreshSaved();
       onBillChecked(bill);
     } catch {
-      handleFetchFailure(prov, meter.referenceNumber);
+      // Direct in-app fallback: open cached or initialized bill
+      let bill: BillData | null = await StorageService.getCachedBill(meter.company, meter.referenceNumber);
+      if (!bill) {
+        const initBill = createInitializedBill(meter.company, meter.referenceNumber);
+        initBill.consumerName = meter.consumerName || meter.nickname || `${meter.company} Consumer`;
+        initBill.consumerAddress = meter.consumerAddress || initBill.consumerAddress;
+        initBill.payableWithinDueDate = meter.lastBillAmount || 0;
+        initBill.dueDate = meter.lastDueDate || initBill.dueDate;
+        initBill.billMonth = meter.lastBillMonth || initBill.billMonth;
+        initBill.billStatus = meter.lastBillStatus || 'unpaid';
+        bill = initBill;
+      }
+      onBillChecked(bill);
     } finally {
       setLoadingMeterId(null);
     }
   };
 
-  // Download PDF / open official bill portal
-  const handleDownloadPdf = async (meter: SavedMeter) => {
-    setDownloadingMeterId(meter.id);
+  // Delete saved meter directly from home card
+  const handleDeleteMeter = (meter: SavedMeter) => {
+    setPopup({
+      visible: true,
+      type: 'warning',
+      title: isUrdu ? 'میٹر حذف کریں؟' : 'Delete Saved Meter?',
+      message: `${t.deleteConfirm}\n(${getMeterDisplayName(meter)} - ${meter.referenceNumber})`,
+      primaryText: isUrdu ? 'ہاں، ڈیلیٹ کریں' : 'Yes, Delete',
+      secondaryText: isUrdu ? 'کینسل' : 'Cancel',
+      onPrimaryPress: async () => {
+        setPopup((p) => ({ ...p, visible: false }));
+        await StorageService.deleteMeter(meter.id);
+        onRefreshSaved();
+      },
+      onClose: () => setPopup((p) => ({ ...p, visible: false })),
+    });
+  };
+
+  // Open official duplicate bill live view modal
+  const handleOpenOfficialView = async (meter: SavedMeter) => {
+    setLoadingOfficialMeterId(meter.id);
     try {
-      const billData: Partial<BillData> & { company: string; referenceNo: string } = {
-        company: meter.company,
-        referenceNo: meter.referenceNumber,
-        consumerName: meter.consumerName || meter.nickname || `${meter.company} Consumer`,
-        consumerId: meter.referenceNumber,
-        tariff: 'General',
-        load: '1 kW',
-        dueDate: meter.lastDueDate || '2024-09-20',
-        payableWithinDueDate: meter.lastBillAmount || 0,
-        payableAfterDueDate: Math.round((meter.lastBillAmount || 0) * 1.08),
-        billingMonth: meter.lastBillMonth || 'AUG 26',
-        readingDate: 'N/A',
-        issueDate: 'N/A',
-        unitsConsumed: 0,
-        billStatus: meter.lastBillStatus || 'unpaid',
-        utilityType: meter.utilityType,
-      };
-      await BillPdfService.requestOfficialBillPdf(billData);
-    } catch {
-      // ignore
+      // 1. Check local cache first for full BillData
+      let bill = await StorageService.getCachedBill(meter.company, meter.referenceNumber);
+      if (!bill) {
+        try {
+          bill = await ApiService.fetchBill(meter.company, meter.referenceNumber, false);
+          if (bill) {
+            await StorageService.cacheBill(bill);
+          }
+        } catch {
+          // Construct minimal valid BillData from SavedMeter
+          bill = {
+            company: meter.company,
+            companyName: `${meter.company} Utility`,
+            referenceNo: meter.referenceNumber,
+            consumerName: meter.consumerName || meter.nickname || `${meter.company} Consumer`,
+            consumerAddress: meter.consumerAddress || 'N/A',
+            consumerId: meter.referenceNumber,
+            tariff: 'General',
+            load: '1 kW',
+            dueDate: meter.lastDueDate || '2026-09-20',
+            payableWithinDueDate: meter.lastBillAmount || 0,
+            payableAfterDueDate: Math.round((meter.lastBillAmount || 0) * 1.08),
+            latePaymentSurcharge: Math.round((meter.lastBillAmount || 0) * 0.08),
+            billMonth: meter.lastBillMonth || 'AUG 26',
+            billingMonth: meter.lastBillMonth || 'AUG 26',
+            issueDate: 'N/A',
+            readingDate: 'N/A',
+            unitsConsumed: Math.max(0, Math.round((meter.lastBillAmount || 0) / 38)),
+            billStatus: meter.lastBillStatus || 'unpaid',
+            meterNo: 'N/A',
+            fpaAmount: 0,
+            tvFee: 0,
+            gstAmount: 0,
+            electricityDuty: 0,
+            history12Months: [],
+            utilityType: meter.utilityType,
+            fetchedAt: new Date().toISOString(),
+          };
+        }
+      }
+      setOfficialModalBill(bill);
+      setShowOfficialModal(true);
     } finally {
-      setDownloadingMeterId(null);
+      setLoadingOfficialMeterId(null);
     }
   };
 
@@ -445,9 +504,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   language={language}
                   darkMode={darkMode}
                   isLoading={loadingMeterId === meter.id}
-                  isDownloadingPdf={downloadingMeterId === meter.id}
+                  isLoadingOfficial={loadingOfficialMeterId === meter.id}
                   onCheckBill={handleCheckSavedBill}
-                  onDownloadPdf={handleDownloadPdf}
+                  onOfficialView={handleOpenOfficialView}
+                  onDeleteMeter={handleDeleteMeter}
                   onStatusChange={onRefreshSaved}
                 />
               ))
@@ -485,6 +545,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         <NewMeterFab
           onPress={onOpenSelectProvider}
           language={language}
+        />
+      )}
+
+      {/* Official Duplicate Bill Modal */}
+      {officialModalBill && (
+        <OfficialBillModal
+          visible={showOfficialModal}
+          bill={officialModalBill}
+          language={language}
+          darkMode={darkMode}
+          onClose={() => setShowOfficialModal(false)}
         />
       )}
 

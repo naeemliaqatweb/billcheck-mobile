@@ -235,11 +235,12 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
         const clean = (item.month || '').trim().toUpperCase();
         const parts = clean.split(/[\s\-_]+/);
         const mStr = parts[0] || '';
-        let yNum = item.year || maxY;
         const mIdx = MON_ABBR.findIndex((abbr) => mStr.startsWith(abbr));
-
-        // Normalize older 2024 dates or unaligned sample years to 2026 timeline
-        if (yNum < maxY - 1) {
+        let yNum = item.year;
+        if (!yNum && parts[1]) {
+          yNum = parts[1].length === 2 ? 2000 + parseInt(parts[1], 10) : parseInt(parts[1], 10);
+        }
+        if (!yNum || isNaN(yNum)) {
           yNum = maxY;
         }
 
@@ -294,7 +295,8 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
       return generate12MonthHistory(
         activeBill.unitsConsumed || 0,
         activeBill.payableWithinDueDate || 0,
-        activeBill.billMonth || 'AUG 26'
+        activeBill.billMonth || 'AUG 26',
+        activeBill.utilityType || 'electricity'
       );
     }
 
@@ -592,6 +594,7 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
                 history={historyData}
                 darkMode={darkMode}
                 language={language}
+                isGas={utilityType === 'gas' || activeBill?.utilityType === 'gas'}
               />
             </>
           )}

@@ -834,4 +834,73 @@ export const styles = StyleSheet.create({
   rtlText: {
     textAlign: 'right',
   },
+
+  // Official Bill Duplicate Banner
+  officialBillBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 14,
+    borderRadius: 14,
+    marginBottom: 14,
+    borderWidth: 1.5,
+  },
+  officialBillBannerDark: {
+    backgroundColor: '#0D231A',
+    borderColor: '#059669',
+  },
+  officialBillBannerLight: {
+    backgroundColor: '#F0FDF4',
+    borderColor: '#86EFAC',
+  },
+  officialBillLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  officialBillIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#DCFCE7',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  officialBillTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  officialBadge: {
+    backgroundColor: '#006D35',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginLeft: 6,
+  },
+  officialBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  officialBillSub: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  officialBillAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(0, 109, 53, 0.1)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  officialBillActionText: {
+    color: '#006D35',
+    fontWeight: '700',
+    fontSize: 12,
+  },
 });

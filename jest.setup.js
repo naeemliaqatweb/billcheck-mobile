@@ -83,3 +83,11 @@ jest.mock('lucide-react-native', () => {
     get: () => DummyIcon,
   });
 });
+
+jest.mock('react-native-webview', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    WebView: (props) => React.createElement(View, { testID: 'mock-webview', ...props }),
+  };
+});

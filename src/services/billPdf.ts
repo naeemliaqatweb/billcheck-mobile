@@ -1,5 +1,5 @@
 import { BillData } from '../types/bill';
-import { Linking, Platform, NativeModules } from 'react-native';
+import { Platform, NativeModules } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ApiService } from './api';
 import { StorageService } from './storage';
@@ -37,7 +37,8 @@ export const BillPdfService = {
     };
 
     if (pitcCompanies[upperCompany]) {
-      return `${pitcCompanies[upperCompany]}`;
+      const isShortRef = cleanRef.length <= 10;
+      return `${pitcCompanies[upperCompany]}/general?${isShortRef ? 'custid' : 'refno'}=${cleanRef}`;
     }
 
     if (upperCompany === 'KE' || upperCompany === 'K-ELECTRIC') {
@@ -97,10 +98,126 @@ export const BillPdfService = {
   },
 
   /**
-   * Directly opens and downloads the authentic official duplicate bill inside the app
-   * via Android's native Print & PDF engine (rendering the exact HTML with barcode, meter photo & styles).
-   * Uses local cache first for instant (<100ms) preparation.
-   * Does NOT send redundant notifications since the user is already viewing the print dialog.
+   * Directly saves the authentic official duplicate bill as a .pdf file into device Downloads.
+   * Completely bypasses the Android system Print Dialog.
+   */
+  async saveOfficialBillDirectPdf(
+    bill: Partial<BillData> & { company: string; referenceNo: string },
+    htmlContent?: string | null,
+    customBaseUrl?: string
+  ): Promise<{ success: boolean; filePath?: string }> {
+    const cleanRef = bill.referenceNo.replace(/[^0-9a-zA-Z]/g, '').trim();
+    const fileName = `Official_Bill_${bill.company}_${cleanRef}`;
+    const month = bill.billMonth || bill.billingMonth;
+
+    try {
+      if (Platform.OS === 'android' && BillNotificationModule) {
+        let htmlToSave = htmlContent;
+        let baseUrl = customBaseUrl || (bill.company === 'SNGPL' ? 'https://www.sngpl.com.pk' : 'https://bill.pitc.com.pk');
+
+        if (!htmlToSave) {
+          const cachedHtml = await StorageService.getCachedPdfHtml(bill.company, cleanRef, month);
+          if (cachedHtml) {
+            htmlToSave = cachedHtml;
+          } else {
+            try {
+              const res = await ApiService.fetchOfficialBillHtml(bill.company, cleanRef);
+              if (res && res.html) {
+                htmlToSave = res.html;
+                baseUrl = res.baseUrl;
+                await StorageService.cachePdfHtml(bill.company, cleanRef, htmlToSave, month);
+              }
+            } catch {
+              // fallback
+            }
+          }
+        }
+
+        if (!htmlToSave) {
+          htmlToSave = generateOfficialBillTemplateHtml(bill);
+        }
+
+        if (typeof BillNotificationModule.saveOfficialHtmlToPdf === 'function') {
+          const filePath = await BillNotificationModule.saveOfficialHtmlToPdf(htmlToSave, fileName, baseUrl);
+          return { success: !!filePath, filePath: typeof filePath === 'string' ? filePath : undefined };
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    return { success: false };
+  },
+
+  /**
+   * Directly shares the authentic official duplicate bill as a .pdf document attachment
+   * via Android native Share Sheet (WhatsApp, Gmail, etc.) using FileProvider.
+   */
+  async shareOfficialBillDirectPdf(
+    bill: Partial<BillData> & { company: string; referenceNo: string },
+    htmlContent?: string | null,
+    customBaseUrl?: string
+  ): Promise<{ success: boolean }> {
+    const cleanRef = bill.referenceNo.replace(/[^0-9a-zA-Z]/g, '').trim();
+    const fileName = `Official_Bill_${bill.company}_${cleanRef}`;
+    const month = bill.billMonth || bill.billingMonth;
+
+    try {
+      if (Platform.OS === 'android' && BillNotificationModule) {
+        let htmlToShare = htmlContent;
+        let baseUrl = customBaseUrl || (bill.company === 'SNGPL' ? 'https://www.sngpl.com.pk' : 'https://bill.pitc.com.pk');
+
+        if (!htmlToShare) {
+          const cachedHtml = await StorageService.getCachedPdfHtml(bill.company, cleanRef, month);
+          if (cachedHtml) {
+            htmlToShare = cachedHtml;
+          } else {
+            try {
+              const res = await ApiService.fetchOfficialBillHtml(bill.company, cleanRef);
+              if (res && res.html) {
+                htmlToShare = res.html;
+                baseUrl = res.baseUrl;
+                await StorageService.cachePdfHtml(bill.company, cleanRef, htmlToShare, month);
+              }
+            } catch {
+              // fallback
+            }
+          }
+        }
+
+        if (!htmlToShare) {
+          htmlToShare = generateOfficialBillTemplateHtml(bill);
+        }
+
+        if (typeof BillNotificationModule.shareOfficialHtmlAsPdf === 'function') {
+          const shared = await BillNotificationModule.shareOfficialHtmlAsPdf(htmlToShare, fileName, baseUrl);
+          return { success: !!shared };
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    return { success: false };
+  },
+
+  /**
+   * Opens the downloaded PDF directly in the device's default viewer / gallery.
+   */
+  async openPdf(filePath: string): Promise<boolean> {
+    try {
+      if (Platform.OS === 'android' && BillNotificationModule && typeof BillNotificationModule.openPdfFile === 'function') {
+        const res = await BillNotificationModule.openPdfFile(filePath);
+        return !!res;
+      }
+    } catch {
+      // ignore
+    }
+    return false;
+  },
+
+  /**
+   * Legacy print dialog opener (kept as fallback)
    */
   async requestOfficialBillPdf(bill: Partial<BillData> & { company: string; referenceNo: string }): Promise<DownloadPdfResult> {
     const cleanRef = bill.referenceNo.replace(/[^0-9a-zA-Z]/g, '').trim();
@@ -114,12 +231,10 @@ export const BillPdfService = {
         let htmlToPrint: string | null = null;
         let baseUrl: string = 'https://bill.pitc.com.pk';
 
-        // 1. Instant Cache Check (Sub-millisecond retrieval)
         const cachedHtml = await StorageService.getCachedPdfHtml(bill.company, cleanRef, month);
         if (cachedHtml) {
           htmlToPrint = cachedHtml;
         } else {
-          // 2. Fast network attempt capped at 1.2s
           try {
             const pitcPromise = ApiService.fetchOfficialBillHtml(bill.company, cleanRef);
             const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 1200));
@@ -128,17 +243,14 @@ export const BillPdfService = {
             if (officialHtmlResult && officialHtmlResult.html) {
               htmlToPrint = officialHtmlResult.html;
               baseUrl = officialHtmlResult.baseUrl;
-              // Cache for subsequent instant opens
               await StorageService.cachePdfHtml(bill.company, cleanRef, htmlToPrint, month);
             }
           } catch {
-            // network fail / timeout
+            // network fail
           }
 
-          // 3. High-fidelity official template fallback if network timed out or unavailable
           if (!htmlToPrint) {
             htmlToPrint = generateOfficialBillTemplateHtml(bill);
-            // Cache generated template so it opens instantly next time
             await StorageService.cachePdfHtml(bill.company, cleanRef, htmlToPrint, month);
           }
         }
@@ -172,7 +284,7 @@ export const BillPdfService = {
 /**
  * Generates an authentic, print-ready official duplicate bill HTML document.
  */
-function generateOfficialBillTemplateHtml(bill: Partial<BillData> & { company: string; referenceNo: string }): string {
+export function generateOfficialBillTemplateHtml(bill: Partial<BillData> & { company: string; referenceNo: string }): string {
   const isPaid = bill.billStatus === 'paid';
   const cleanRef = bill.formattedRefNo || bill.referenceNo;
   const latePayable = bill.payableAfterDueDate || Math.round((bill.payableWithinDueDate || 0) * 1.08);
@@ -184,13 +296,15 @@ function generateOfficialBillTemplateHtml(bill: Partial<BillData> & { company: s
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${bill.company} Official Duplicate Bill</title>
   <style>
-    @page { size: A4; margin: 8mm; }
-    body {
+    @page { size: A4 portrait; margin: 4mm 6mm; }
+    html, body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
       color: #0F172A;
       background: #FFFFFF;
       margin: 0;
-      padding: 12px;
+      padding: 4px;
+      width: 100%;
+      box-sizing: border-box;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
@@ -198,8 +312,10 @@ function generateOfficialBillTemplateHtml(bill: Partial<BillData> & { company: s
       border: 2px solid #005226;
       border-radius: 8px;
       overflow: hidden;
-      max-width: 800px;
-      margin: 0 auto;
+      width: 100%;
+      max-width: 100%;
+      margin: 0;
+      box-sizing: border-box;
     }
     .header {
       background: #005226;

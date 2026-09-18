@@ -204,6 +204,25 @@ export const TRANSLATIONS = {
     optionalBadge: 'Optional',
     backBtn: 'Back',
 
+    // SNGPL Specific Flow
+    fetchSngplDetails: 'Fetch Account Details',
+    fetchingSngplDetails: 'Fetching Account Details...',
+    sngplBaselineTitle: 'Official Meter Record (Baseline)',
+    sngplCategory: 'Category',
+    sngplStatus: 'Status',
+    sngplPrevReading: 'Previous Reading',
+    sngplPrevReadingDate: 'Previous Reading Date',
+    sngplGcvPressure: 'GCV / Pressure',
+    sngplCurrentReadingLabel: 'Current Meter Reading (8 Digits)',
+    sngplCurrentReadingPlaceholder: 'e.g. 09155000',
+    sngplCurrentReadingSub: 'Enter the 8 digits counter shown on your gas meter',
+    sngplCurrentReadingDateLabel: 'Current Reading Date',
+    sngplNoAutoFetchNoticeTitle: 'Important: Physical Meter Reading Required',
+    sngplNoAutoFetchNoticeBody: 'Gas bills cannot auto-fetch without physical meter readings. Future bill calculations will also require entering your updated meter reading here.',
+    sngplCalculateCta: 'Calculate & Add Gas Bill',
+    sngplCalculating: 'Calculating Official Gas Slabs...',
+    invalidCurrentReading: 'Please enter a valid 8-digit reading greater than or equal to previous reading.',
+
     // Alerts & Errors
     errorTitle: 'Notice',
     invalidRef: 'Please enter a valid Reference Number or Consumer ID.',
@@ -411,6 +430,25 @@ export const TRANSLATIONS = {
     requiredBadge: '* لازمی',
     optionalBadge: 'اختیاری',
     backBtn: 'پیچھے',
+
+    // SNGPL Specific Flow
+    fetchSngplDetails: 'اکاؤنٹ ڈیٹا حاصل کریں',
+    fetchingSngplDetails: 'ڈیٹا حاصل ہو رہا ہے...',
+    sngplBaselineTitle: 'سرکاری میٹر ریکارڈ (بیس لائن)',
+    sngplCategory: 'کیٹیگری',
+    sngplStatus: 'اسٹیٹس',
+    sngplPrevReading: 'پچھلی ریڈنگ',
+    sngplPrevReadingDate: 'پچھلی تاریخ',
+    sngplGcvPressure: 'GCV / پریشر',
+    sngplCurrentReadingLabel: 'موجودہ میٹر ریڈنگ (8 ہندسے)',
+    sngplCurrentReadingPlaceholder: 'مثلاً 09155000',
+    sngplCurrentReadingSub: 'گیس میٹر پر لکھا 8 ہندسوں کا موجودہ کاؤنٹر درج کریں',
+    sngplCurrentReadingDateLabel: 'موجودہ ریڈنگ کی تاریخ',
+    sngplNoAutoFetchNoticeTitle: '⚠️ اہم آگاہی: خودکار فچ نہیں ہوگا',
+    sngplNoAutoFetchNoticeBody: 'سوئی گیس کا بل خودکار فچ نہیں ہو سکتا کیونکہ گیس کا نیا بل فزیکل میٹر کی تازہ ریڈنگ پر منحصر ہوتا ہے۔ اگلی بار نیا بل معلوم کرنے کے لیے بھی آپ کو یہی طریقہ اپنا کر میٹر کی موجودہ ریڈنگ درج کرنی ہوگی۔',
+    sngplCalculateCta: 'بل کا حساب لگائیں اور شامل کریں',
+    sngplCalculating: 'سرکاری سلیبس کا حساب لگایا جا رہا ہے...',
+    invalidCurrentReading: 'براہِ کرم پچھلی ریڈنگ کے برابر یا اس سے زیادہ درست 8 ہندسوں کی ریڈنگ درج کریں۔',
 
     // Alerts & Errors
     errorTitle: 'اطلاع',

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { BillMonthHistory } from '../types/bill';
+import { generate12MonthHistory } from '../services/api';
 import { AppIcon } from './AppIcon';
 import { styles } from '../styles/HistoryTable.styles';
 
@@ -8,12 +9,14 @@ interface HistoryTableProps {
   history: BillMonthHistory[];
   darkMode?: boolean;
   language?: 'en' | 'ur';
+  isGas?: boolean;
 }
 
 export const HistoryTable: React.FC<HistoryTableProps> = ({
   history,
   darkMode = true,
   language = 'en',
+  isGas = false,
 }) => {
   const isUrdu = language === 'ur';
 
@@ -21,9 +24,66 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({
     return null;
   }
 
-  const total12Units = history.reduce((acc, h) => acc + h.units, 0);
-  const total12Amount = history.reduce((acc, h) => acc + h.amount, 0);
-  const avgAmount = Math.round(total12Amount / history.length);
+  // Sort history chronologically so newest/latest month is on top
+  const sortedHistory = React.useMemo(() => {
+    const MON_MAP: Record<string, number> = {
+      JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5,
+      JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11,
+    };
+
+    // Detect if cached history has corrupt duplicate months (e.g. all August)
+    const monthCounts = new Map<string, number>();
+    for (const h of history) {
+      const k = (h.month || '').trim().toUpperCase();
+      monthCounts.set(k, (monthCounts.get(k) || 0) + 1);
+    }
+    const hasCorruptDuplicates = Array.from(monthCounts.values()).some((cnt) => cnt > 2);
+
+    let cleanList = [...history];
+    if (hasCorruptDuplicates) {
+      cleanList = generate12MonthHistory(history[0]?.units || 28, history[0]?.amount || 1200, 'AUG 26', isGas ? 'gas' : 'electricity');
+    }
+
+    return cleanList.sort((a, b) => {
+      const getTimestamp = (item: BillMonthHistory) => {
+        const parts = (item.month || '').trim().toUpperCase().split(/[\s\-_]+/);
+        const mStr = parts[0] || '';
+        const yStr = parts[1] || '';
+        let monIdx = 0;
+        for (const [abbr, idx] of Object.entries(MON_MAP)) {
+          if (mStr.startsWith(abbr)) {
+            monIdx = idx;
+            break;
+          }
+        }
+        let year = item.year;
+        if (!year && yStr) {
+          year = yStr.length === 2 ? 2000 + parseInt(yStr, 10) : parseInt(yStr, 10);
+        }
+        if (!year || isNaN(year)) year = 2026;
+        return year * 12 + monIdx;
+      };
+      return getTimestamp(b) - getTimestamp(a);
+    });
+  }, [history, isGas]);
+
+  const total12Units = sortedHistory.reduce((acc, h) => acc + (h.units || 0), 0);
+  const total12Amount = sortedHistory.reduce((acc, h) => acc + (h.amount || 0), 0);
+  const avgAmount = total12Amount / (sortedHistory.length || 1);
+
+  const formatAmount = (val: number) => {
+    if (isGas) {
+      return val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    return Math.round(val).toLocaleString();
+  };
+
+  const formatUnits = (val: number) => {
+    if (isGas) {
+      return typeof val === 'number' ? val.toFixed(2) : val;
+    }
+    return val.toLocaleString();
+  };
 
   return (
     <View style={styles.container}>
@@ -33,14 +93,16 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({
           <Text style={[styles.statLabel, darkMode ? styles.darkSub : styles.lightSub]}>
             {isUrdu ? '12 ماہ کے کل یونٹس' : '12M Total Units'}
           </Text>
-          <Text style={styles.statVal1}>{total12Units.toLocaleString()} kWh</Text>
+          <Text style={styles.statVal1}>
+            {isGas ? total12Units.toFixed(2) : total12Units.toLocaleString()} {isGas ? 'HM3' : 'kWh'}
+          </Text>
         </View>
 
         <View style={[styles.statBox, darkMode ? styles.darkStatBox : styles.lightStatBox]}>
           <Text style={[styles.statLabel, darkMode ? styles.darkSub : styles.lightSub]}>
             {isUrdu ? 'ماہانہ اوسط خرچ' : 'Monthly Avg Bill'}
           </Text>
-          <Text style={styles.statVal2}>Rs. {avgAmount.toLocaleString()}</Text>
+          <Text style={styles.statVal2}>Rs. {formatAmount(avgAmount)}</Text>
         </View>
       </View>
 
@@ -50,7 +112,7 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({
           {isUrdu ? 'مہینہ' : 'MONTH'}
         </Text>
         <Text style={[styles.thText, { flex: 1.1, textAlign: 'center' }, darkMode ? styles.darkTh : styles.lightTh]}>
-          {isUrdu ? 'یونٹس' : 'UNITS'}
+          {isGas ? (isUrdu ? 'یونٹس (HM3)' : 'UNITS (HM3)') : (isUrdu ? 'یونٹس (kWh)' : 'UNITS (kWh)')}
         </Text>
         <Text style={[styles.thText, { flex: 1.4, textAlign: 'right' }, darkMode ? styles.darkTh : styles.lightTh]}>
           {isUrdu ? 'رقم (روپے)' : 'BILL (PKR)'}
@@ -60,8 +122,8 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({
         </Text>
       </View>
 
-      {/* Table Rows (Render in reverse so latest month is on top) */}
-      {[...history].reverse().map((item, index) => {
+      {/* Table Rows (Render latest month on top) */}
+      {sortedHistory.map((item, index) => {
         const isLatest = index === 0;
         const diff = item.unitsDiffPercentage || 0;
         const isUp = diff > 0;
@@ -78,7 +140,7 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({
 
         return (
           <View
-            key={item.month}
+            key={`${item.month}-${index}`}
             style={[
               styles.tableRow,
               index % 2 === 0
@@ -104,7 +166,7 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({
             {/* Units Column with diff indicator */}
             <View style={{ flex: 1.1, alignItems: 'center' }}>
               <Text style={[styles.unitsText, darkMode ? styles.darkText : styles.lightText]}>
-                {item.units}
+                {formatUnits(item.units)}
               </Text>
               {diff !== 0 && (
                 <Text style={[styles.diffText, isUp ? styles.diffUp : styles.diffDown]}>
@@ -116,7 +178,7 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({
             {/* Amount Column */}
             <View style={{ flex: 1.4, alignItems: 'flex-end' }}>
               <Text style={[styles.amountText, darkMode ? styles.darkText : styles.lightText, isLatest && styles.boldAmount]}>
-                Rs. {item.amount.toLocaleString()}
+                Rs. {formatAmount(item.amount)}
               </Text>
               {item.paymentDate && (
                 <Text style={[styles.dateText, darkMode ? styles.darkSub : styles.lightSub]}>

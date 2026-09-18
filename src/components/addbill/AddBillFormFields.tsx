@@ -88,7 +88,7 @@ export const AddBillFormFields: React.FC<AddBillFormFieldsProps> = ({
           style={[
             styles.providerSelectedBox,
             darkMode ? styles.darkInput : styles.lightInput,
-            { borderColor: darkMode ? '#284163' : '#D5E2EE' },
+            { borderColor: darkMode ? '#FFFFFF' : '#D5E2EE' },
           ]}
           onPress={onChangeProvider}
           activeOpacity={0.7}
@@ -186,7 +186,7 @@ export const AddBillFormFields: React.FC<AddBillFormFieldsProps> = ({
             value={referenceNo}
             onChangeText={onChangeReferenceNo}
             keyboardType="numeric"
-            maxLength={18}
+            maxLength={selectedProvider.refLength || (selectedProvider.type === 'gas' ? 10 : 14)}
           />
           {referenceNo.length > 0 && (
             <TouchableOpacity onPress={onClearReferenceNo} activeOpacity={0.7}>

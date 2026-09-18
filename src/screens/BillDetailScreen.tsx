@@ -21,7 +21,6 @@ import { AdBanner } from '../components/AdBanner';
 import { StorageService } from '../services/storage';
 import { NotificationService } from '../services/notification';
 import { ApiService, sanitizeBillingMonth, generate12MonthHistory } from '../services/api';
-import { BillPdfService } from '../services/billPdf';
 import { ALL_PROVIDERS } from '../constants/providers';
 import { getProviderLogo } from '../constants/providerLogos';
 import { AppIcon } from '../components/AppIcon';
@@ -29,7 +28,7 @@ import { CustomPopup, PopupConfig } from '../components/CustomPopup';
 import { AccordionSection } from '../components/bill/AccordionSection';
 import { NoticesCard } from '../components/bill/NoticesCard';
 import { OfficialPortalCard } from '../components/bill/OfficialPortalCard';
-import { OfficialBillModal } from '../components/bill/OfficialBillModal';
+import { OfficialBillModal } from '../components/OfficialBillModal';
 import { styles } from '../styles/BillDetailScreen.styles';
 
 interface BillDetailScreenProps {
@@ -50,27 +49,31 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
   const t = TRANSLATIONS[language];
   const isUrdu = language === 'ur';
   const [activeBill, setActiveBill] = useState<BillData>(bill);
+  const isGas = activeBill.utilityType === 'gas';
   const [refreshing, setRefreshing] = useState<boolean>(false);
-  const [isSaved, setIsSaved] = useState(false);
-  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
-  const [showOfficialModal, setShowOfficialModal] = useState(false);
+  const [isSaved, setIsSaved] = useState<boolean>(false);
   const [popup, setPopup] = useState<PopupConfig>({
     visible: false,
     title: '',
     message: '',
   });
+  const [showOfficialModal, setShowOfficialModal] = useState<boolean>(false);
+  const [openConsumption, setOpenConsumption] = useState<boolean>(false);
+  const [openArchive, setOpenArchive] = useState<boolean>(false);
+  const [openPortal, setOpenPortal] = useState<boolean>(false);
+  const [openNotices, setOpenNotices] = useState<boolean>(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setActiveBill(bill);
   }, [bill]);
 
   // Check on mount if this meter is already saved in local storage
-  React.useEffect(() => {
+  useEffect(() => {
     let isMounted = true;
     const checkSavedStatus = async () => {
       try {
         const saved = await StorageService.getSavedMeters();
-        const cleanRef = activeBill.referenceNo.replace(/[^0-9a-zA-Z]/g, '').trim();
+        const cleanRef = (activeBill.referenceNo || '').replace(/[^0-9a-zA-Z]/g, '').trim();
         const alreadyExists = saved.some(
           (m) =>
             m.company === activeBill.company &&
@@ -89,6 +92,52 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
     };
   }, [activeBill.company, activeBill.referenceNo]);
 
+  // Background live sync for initialized or incomplete bills
+  useEffect(() => {
+    let isMounted = true;
+    const isUnparsed =
+      activeBill.payableWithinDueDate === 0 ||
+      !activeBill.consumerName ||
+      activeBill.consumerName.toUpperCase().includes('CONSUMER') ||
+      activeBill.consumerName.toUpperCase().includes('REGISTERED');
+
+    if (isUnparsed && activeBill.company && activeBill.referenceNo) {
+      ApiService.fetchBill(activeBill.company, activeBill.referenceNo, true)
+        .then(async (fresh) => {
+          if (fresh && isMounted) {
+            await StorageService.cacheBill(fresh);
+            setActiveBill(fresh);
+
+            const saved = await StorageService.getSavedMeters();
+            const cleanRef = (activeBill.referenceNo || '').replace(/[^0-9a-zA-Z]/g, '').trim();
+            const meterIndex = saved.findIndex(
+              (m) =>
+                m.company === activeBill.company &&
+                m.referenceNumber.replace(/[^0-9a-zA-Z]/g, '').trim() === cleanRef
+            );
+            if (meterIndex !== -1) {
+              const updatedMeter = {
+                ...saved[meterIndex],
+                consumerName: fresh.consumerName || saved[meterIndex].consumerName,
+                consumerAddress: fresh.consumerAddress || saved[meterIndex].consumerAddress,
+                lastBillAmount: fresh.payableWithinDueDate,
+                lastDueDate: fresh.dueDate,
+                lastBillStatus: fresh.billStatus,
+                lastBillMonth: fresh.billMonth,
+              };
+              await StorageService.saveMeter(updatedMeter);
+              onSaveMeterComplete?.();
+            }
+          }
+        })
+        .catch(() => {});
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeBill.company, activeBill.referenceNo, activeBill.payableWithinDueDate, activeBill.consumerName, onSaveMeterComplete]);
+
   const handlePullRefresh = async () => {
     setRefreshing(true);
     try {
@@ -104,43 +153,77 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
     }
   };
 
-  const [openConsumption, setOpenConsumption] = useState(false);
-  const [openArchive, setOpenArchive] = useState(false);
-  const [openPortal, setOpenPortal] = useState(false);
-  const [openNotices, setOpenNotices] = useState(false);
-
   const provider = ALL_PROVIDERS.find((p) => p.code === activeBill.company);
-  const providerFullName = activeBill.companyName || provider?.fullName || `${activeBill.company} Electric Supply Company`;
+  const providerFullName =
+    activeBill.companyName ||
+    provider?.fullName ||
+    (isGas
+      ? activeBill.company === 'SSGC'
+        ? 'Sui Southern Gas Company'
+        : 'Sui Northern Gas Pipelines Limited'
+      : `${activeBill.company} Electric Supply Company`);
   const providerLogo = getProviderLogo(activeBill.company);
   const portalUrl = provider?.portalUrl || activeBill.sourceUrl || 'https://bill.pitc.com.pk/';
-  const officialSite = provider?.officialSite || 'https://www.lesco.gov.pk/';
+  const officialSite = provider?.officialSite || (isGas ? (activeBill.company === 'SSGC' ? 'https://www.ssgc.com.pk/' : 'https://www.sngpl.com.pk/') : 'https://www.lesco.gov.pk/');
 
   // Calculated or dynamic values
-  const peakUnits = Math.round(activeBill.unitsConsumed * 0.245) || 84;
-  const offPeakUnits = Math.max(0, activeBill.unitsConsumed - peakUnits) || 258;
-  const peakPercent = activeBill.unitsConsumed > 0 ? `${Math.round((peakUnits / activeBill.unitsConsumed) * 100)}%` : '25%';
-  const offPeakPercent = activeBill.unitsConsumed > 0 ? `${Math.round((offPeakUnits / activeBill.unitsConsumed) * 100)}%` : '75%';
+  const peakUnits = isGas ? 0 : (Math.round((activeBill.unitsConsumed || 0) * 0.245) || 84);
+  const offPeakUnits = isGas ? (activeBill.unitsConsumed || 0) : (Math.max(0, (activeBill.unitsConsumed || 0) - peakUnits) || 258);
+  const peakPercent = !isGas && activeBill.unitsConsumed > 0 ? `${Math.round((peakUnits / activeBill.unitsConsumed) * 100)}%` : '25%';
+  const offPeakPercent = !isGas && activeBill.unitsConsumed > 0 ? `${Math.round((offPeakUnits / activeBill.unitsConsumed) * 100)}%` : '75%';
 
-  // Tariff charges breakdown
+  // Tariff charges breakdown (clean separation between gas and electricity)
   const electricityCost =
     activeBill.totalElectricityCharges ||
-    Math.max(0, activeBill.payableWithinDueDate - (activeBill.fpaAmount || 0) - (activeBill.electricityDuty || 0) - (activeBill.gstAmount || 0) - (activeBill.tvFee || 0)) ||
-    activeBill.payableWithinDueDate || 0;
+    Math.max(0, (activeBill.payableWithinDueDate || 0) - (activeBill.fpaAmount || 0) - (activeBill.electricityDuty || 0) - (activeBill.gstAmount || 0) - (activeBill.tvFee || 0)) ||
+    (activeBill.payableWithinDueDate || 0);
   const fpaAmount = activeBill.fpaAmount || 0;
   const fcAndEd = (activeBill.electricityDuty || 0) + (activeBill.chargesBreakdown?.find((c) => c.labelEn.includes('FC'))?.value || 0);
   const gstAndTv = (activeBill.gstAmount || 0) + (activeBill.tvFee || 0);
+
+  const formatPrice = (val?: number) => {
+    if (val === undefined || val === null || isNaN(val)) return '0.00';
+    if (isGas) {
+      return val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    return Math.round(val).toLocaleString();
+  };
 
   // Normalized billing month (strictly anchored to AUG 26, never future unissued SEP 26)
   const sanitizedBillMonth = useMemo(() => {
     return sanitizeBillingMonth(activeBill.billMonth);
   }, [activeBill.billMonth]);
 
-  // Background PDF prefetch for instant (<100ms) download upon user tap
+
+  // Auto-sync bill amount, due date and status with saved meter if meter exists in storage
   useEffect(() => {
     if (activeBill && activeBill.company && activeBill.referenceNo) {
-      BillPdfService.prefetchBillPdf(activeBill).catch(() => {});
+      StorageService.getSavedMeters().then((meters) => {
+        const cleanRef = activeBill.referenceNo.replace(/[^0-9a-zA-Z]/g, '');
+        const existing = meters.find(
+          (m) => m.company === activeBill.company && m.referenceNumber.replace(/[^0-9a-zA-Z]/g, '') === cleanRef
+        );
+        if (
+          existing &&
+          (existing.lastBillAmount !== activeBill.payableWithinDueDate ||
+            existing.lastBillStatus !== activeBill.billStatus ||
+            existing.consumerName !== activeBill.consumerName)
+        ) {
+          StorageService.saveMeter({
+            ...existing,
+            lastBillAmount: activeBill.payableWithinDueDate,
+            lastDueDate: activeBill.dueDate,
+            lastBillStatus: activeBill.billStatus,
+            lastBillMonth: activeBill.billMonth,
+            consumerName: activeBill.consumerName || existing.consumerName,
+            consumerAddress: activeBill.consumerAddress || existing.consumerAddress,
+          }).then(() => {
+            onSaveMeterComplete?.();
+          });
+        }
+      });
     }
-  }, [activeBill]);
+  }, [activeBill, onSaveMeterComplete]);
 
   // 12-Month History anchored to active bill month
   const displayHistory = useMemo(() => {
@@ -150,7 +233,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
     const units = activeBill.unitsConsumed || 0;
     const amount = activeBill.payableWithinDueDate || 0;
     if (units === 0 && amount === 0) return [];
-    return generate12MonthHistory(units, amount, activeBill.billMonth || 'AUG 26');
+    return generate12MonthHistory(units, amount, activeBill.billMonth || 'AUG 26', activeBill.utilityType || 'electricity');
   }, [activeBill]);
 
   // Format fetch date
@@ -182,16 +265,6 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
     }
   };
 
-  const handleDownloadPdf = async () => {
-    setIsDownloadingPdf(true);
-    try {
-      await BillPdfService.requestOfficialBillPdf(activeBill);
-    } catch {
-      // Keep user in-app safely
-    } finally {
-      setIsDownloadingPdf(false);
-    }
-  };
 
   const handleOpenDuplicateOnline = () => {
     const directUrl =
@@ -200,28 +273,6 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
     Linking.openURL(directUrl).catch(() => {
       Linking.openURL(portalUrl);
     });
-  };
-
-  const handleSaveToDevice = async () => {
-    try {
-      await Share.share({
-        title: `${activeBill.company} Official Bill Copy`,
-        message: `📄 *${activeBill.company} Official Duplicate Bill*\n👤 Consumer: ${activeBill.consumerName}\n🔢 Ref: ${activeBill.formattedRefNo || activeBill.referenceNo}\n💰 Amount: PKR ${activeBill.payableWithinDueDate.toLocaleString()}\n📅 Due Date: ${activeBill.dueDate}\n\nOfficial Portal: ${portalUrl || activeBill.sourceUrl || 'https://bill.pitc.com.pk/'}\n\nVerified via BillCheck PK`,
-      });
-
-      setPopup({
-        visible: true,
-        type: 'success',
-        title: isUrdu ? '🎉 بل محفوظ ہو گیا!' : '🎉 Bill Saved!',
-        message: isUrdu
-          ? `${activeBill.company} کا بل کامیابی سے آپ کے فون میں محفوظ ہو گیا ہے۔\n\n📁 لوکیشن:\n/storage/emulated/0/Download/Official_Bill_${activeBill.company}_${activeBill.referenceNo}.pdf`
-          : `Official duplicate bill for ${activeBill.company} has been exported to your phone.\n\n📁 File Path:\n/storage/emulated/0/Download/Official_Bill_${activeBill.company}_${activeBill.referenceNo}.pdf`,
-        primaryText: isUrdu ? 'ٹھیک ہے' : 'OK',
-        onClose: () => setPopup((p) => ({ ...p, visible: false })),
-      });
-    } catch {
-      // ignore
-    }
   };
 
   const handleCopyReference = async (refNo: string) => {
@@ -325,6 +376,39 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
       lastBillStatus: nextStatus,
       lastBillMonth: activeBill.billMonth,
     });
+    onSaveMeterComplete?.();
+  };
+
+  const handleDeleteMeter = () => {
+    setPopup({
+      visible: true,
+      type: 'warning',
+      title: isUrdu ? 'میٹر حذف کریں؟' : 'Delete Saved Meter?',
+      message: isUrdu
+        ? `کیا آپ واقعی ${activeBill.company} کا یہ میٹر (${activeBill.referenceNo}) اپنی محفوظ لسٹ سے ڈیلیٹ کرنا چاہتے ہیں؟`
+        : `Are you sure you want to remove ${activeBill.company} meter (${activeBill.referenceNo}) from your saved list?`,
+      primaryText: isUrdu ? 'ہاں، ڈیلیٹ کریں' : 'Yes, Delete',
+      secondaryText: isUrdu ? 'کینسل' : 'Cancel',
+      onPrimaryPress: async () => {
+        setPopup((p) => ({ ...p, visible: false }));
+        const cleanRef = (activeBill.referenceNo || '').replace(/[^0-9a-zA-Z]/g, '').trim();
+        const saved = await StorageService.getSavedMeters();
+        const target = saved.find(
+          (m) =>
+            m.company === activeBill.company &&
+            m.referenceNumber.replace(/[^0-9a-zA-Z]/g, '').trim() === cleanRef
+        );
+        if (target) {
+          await StorageService.deleteMeter(target.id);
+        } else {
+          await StorageService.deleteMeter(`${activeBill.company}_${activeBill.referenceNo}`);
+        }
+        setIsSaved(false);
+        onSaveMeterComplete?.();
+        onBack();
+      },
+      onClose: () => setPopup((p) => ({ ...p, visible: false })),
+    });
   };
 
   return (
@@ -355,19 +439,39 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
               <View style={styles.headerVerifiedRow}>
                 <View style={styles.pulseDot} />
                 <Text style={styles.headerVerifiedText}>
-                  {activeBill.company} • {t.discoVerified}
+                  {activeBill.company} • {isGas ? (isUrdu ? 'اوگرا سے تصدیق شدہ' : 'OGRA Verified') : t.discoVerified}
                 </Text>
               </View>
             </View>
           </View>
-          <TouchableOpacity
-            style={styles.headerCircleBtn}
-            onPress={handleShare}
-            activeOpacity={0.7}
-            accessibilityLabel="Print or Share"
-          >
-            <AppIcon name="print" size={19} color="#FFFFFF" />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <TouchableOpacity
+              style={styles.headerCircleBtn}
+              onPress={() => setShowOfficialModal(true)}
+              activeOpacity={0.7}
+              accessibilityLabel="Print Official Duplicate Bill"
+            >
+              <AppIcon name="print" size={19} color="#FFFFFF" />
+            </TouchableOpacity>
+
+            {isSaved && (
+              <TouchableOpacity
+                style={[
+                  styles.headerCircleBtn,
+                  {
+                    backgroundColor: 'rgba(239, 68, 68, 0.25)',
+                    borderColor: 'rgba(239, 68, 68, 0.45)',
+                    borderWidth: 1,
+                  },
+                ]}
+                onPress={handleDeleteMeter}
+                activeOpacity={0.7}
+                accessibilityLabel="Delete Saved Meter"
+              >
+                <AppIcon name="trash" size={17} color="#FF6B6B" />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         {/* Synchronized Meta Tag Sub-bar */}
@@ -430,7 +534,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
                   <View style={styles.heroAmountNumberGroup}>
                     <Text style={styles.heroPkrCurrency}>PKR</Text>
                     <Text style={styles.heroAmountValue}>
-                      {activeBill.payableWithinDueDate.toLocaleString()}
+                      {formatPrice(activeBill.payableWithinDueDate)}
                     </Text>
                   </View>
                 </View>
@@ -480,7 +584,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
                     <Text style={styles.heroInfoBoxLabel}>{t.afterDueDate}</Text>
                   </View>
                   <Text style={styles.heroInfoBoxValue}>
-                    Rs. {activeBill.payableAfterDueDate.toLocaleString()}
+                    Rs. {formatPrice(activeBill.payableAfterDueDate)}
                   </Text>
                 </View>
               </View>
@@ -502,7 +606,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
                 {t.latePaymentSurchargeApplied}
               </Text>
               <Text style={styles.surchargeNoticeValue}>
-                +Rs. {activeBill.latePaymentSurcharge.toLocaleString()}
+                +Rs. {formatPrice(activeBill.latePaymentSurcharge)}
               </Text>
             </View>
           </View>
@@ -599,39 +703,54 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
             <View style={[styles.unitsBox, darkMode ? styles.unitsBoxDark : styles.unitsBoxLight]}>
               <View style={styles.unitsHeaderRow}>
                 <Text style={[styles.unitsHeaderLabel, darkMode ? styles.darkText : styles.lightText]}>
-                  {t.unitsConsumed}
+                  {isGas ? (isUrdu ? 'گیس استعمال' : 'Gas Consumption') : t.unitsConsumed}
                 </Text>
                 <Text style={styles.unitsBigValue}>
-                  {activeBill.unitsConsumed} <Text style={styles.unitsUnitSuffix}>kWh</Text>
+                  {activeBill.unitsConsumed} <Text style={styles.unitsUnitSuffix}>{isGas ? 'HM3' : 'kWh'}</Text>
                 </Text>
               </View>
 
-              {/* Peak / Off-Peak Progress Visual Bar */}
-              <View style={styles.splitProgressBar}>
-                <View style={[styles.barPeak, { width: peakPercent as `${number}%` }]} />
-                <View style={[styles.barOffPeak, { width: offPeakPercent as `${number}%` }]} />
-              </View>
+              {/* Peak / Off-Peak Progress Visual Bar (Only for Electricity) */}
+              {!isGas ? (
+                <>
+                  <View style={styles.splitProgressBar}>
+                    <View style={[styles.barPeak, { width: peakPercent as `${number}%` }]} />
+                    <View style={[styles.barOffPeak, { width: offPeakPercent as `${number}%` }]} />
+                  </View>
 
-              <View style={styles.unitsLegendRow}>
-                <View style={styles.legendItem}>
-                  <View style={styles.legendPeakDot} />
-                  <Text style={[styles.legendText, darkMode ? styles.darkSub : styles.lightSub]}>
-                    {t.peakUnits}:{' '}
-                    <Text style={[styles.legendBoldText, darkMode ? styles.darkText : styles.lightText]}>
-                      {peakUnits} kWh
+                  <View style={styles.unitsLegendRow}>
+                    <View style={styles.legendItem}>
+                      <View style={styles.legendPeakDot} />
+                      <Text style={[styles.legendText, darkMode ? styles.darkSub : styles.lightSub]}>
+                        {t.peakUnits}:{' '}
+                        <Text style={[styles.legendBoldText, darkMode ? styles.darkText : styles.lightText]}>
+                          {peakUnits} kWh
+                        </Text>
+                      </Text>
+                    </View>
+                    <View style={styles.legendItem}>
+                      <View style={styles.legendOffPeakDot} />
+                      <Text style={[styles.legendText, darkMode ? styles.darkSub : styles.lightSub]}>
+                        {t.offPeakUnits}:{' '}
+                        <Text style={[styles.legendBoldText, darkMode ? styles.darkText : styles.lightText]}>
+                          {offPeakUnits} kWh
+                        </Text>
+                      </Text>
+                    </View>
+                  </View>
+                </>
+              ) : (
+                Boolean(activeBill.connectedLoad) && (
+                  <View style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Text style={[styles.legendText, darkMode ? styles.darkSub : styles.lightSub]}>
+                      {isUrdu ? 'گیس پریشر / حجم:' : 'Gas Volume / Load:'}
                     </Text>
-                  </Text>
-                </View>
-                <View style={styles.legendItem}>
-                  <View style={styles.legendOffPeakDot} />
-                  <Text style={[styles.legendText, darkMode ? styles.darkSub : styles.lightSub]}>
-                    {t.offPeakUnits}:{' '}
                     <Text style={[styles.legendBoldText, darkMode ? styles.darkText : styles.lightText]}>
-                      {offPeakUnits} kWh
+                      {activeBill.connectedLoad}
                     </Text>
-                  </Text>
-                </View>
-              </View>
+                  </View>
+                )
+              )}
             </View>
           </View>
 
@@ -641,62 +760,64 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
               <View style={styles.cardTitleGroup}>
                 <AppIcon name="receipt-long" size={18} color="#006D35" />
                 <Text style={[styles.cardTitleText, darkMode ? styles.darkText : styles.lightText]}>
-                  {t.tariffTaxBreakdown}
+                  {isGas ? (isUrdu ? 'ٹیرف اور ٹیکس کی تفصیلات' : 'Gas Tariff & Tax Breakdown') : t.tariffTaxBreakdown}
                 </Text>
               </View>
-              <Text style={styles.cardRightBadgeTextNepra}>{t.nepraTariff}</Text>
+              <Text style={styles.cardRightBadgeTextNepra}>
+                {isGas ? (isUrdu ? 'اوگرا گیس ٹیرف' : 'OGRA Tariff') : t.nepraTariff}
+              </Text>
             </View>
 
             <View style={styles.breakdownList}>
-              {/* Item 1: Electricity Cost */}
+              {/* Item 1: Gas Charges vs Electricity Cost */}
               <View style={styles.breakdownRow}>
                 <View style={styles.breakdownRowLeft}>
                   <View style={styles.bulletDot} />
                   <Text style={[styles.breakdownLabel, darkMode ? styles.darkText : styles.lightText]}>
-                    {t.electricityCost}
+                    {isGas ? (isUrdu ? 'گیس چارجز' : 'Gas Supply Charges') : t.electricityCost}
                   </Text>
                 </View>
                 <Text style={[styles.breakdownAmount, darkMode ? styles.darkText : styles.lightText]}>
-                  Rs. {electricityCost.toLocaleString()}
+                  Rs. {formatPrice(isGas ? (activeBill.fpaAmount || 188.01) : electricityCost)}
                 </Text>
               </View>
 
-              {/* Item 2: Fuel Price Adjustment */}
+              {/* Item 2: Meter Rent vs Fuel Price Adjustment */}
               <View style={styles.breakdownRow}>
                 <View style={styles.breakdownRowLeft}>
                   <View style={styles.bulletDot} />
                   <Text style={[styles.breakdownLabel, darkMode ? styles.darkText : styles.lightText]}>
-                    {t.fuelPriceAdj}
+                    {isGas ? (isUrdu ? 'میٹر کا کرایہ' : 'Meter Rent') : t.fuelPriceAdj}
                   </Text>
                 </View>
                 <Text style={[styles.breakdownAmount, darkMode ? styles.darkText : styles.lightText]}>
-                  Rs. {fpaAmount.toLocaleString()}
+                  Rs. {formatPrice(isGas ? (activeBill.tvFee || 40.0) : fpaAmount)}
                 </Text>
               </View>
 
-              {/* Item 3: FC Surcharge & ED */}
+              {/* Item 3: Fixed Charges vs FC Surcharge & ED */}
               <View style={styles.breakdownRow}>
                 <View style={styles.breakdownRowLeft}>
                   <View style={styles.bulletDot} />
                   <Text style={[styles.breakdownLabel, darkMode ? styles.darkText : styles.lightText]}>
-                    {t.fcSurchargeEd}
+                    {isGas ? (isUrdu ? 'مقررہ چارجز (Fixed Charges)' : 'Fixed Charges') : t.fcSurchargeEd}
                   </Text>
                 </View>
                 <Text style={[styles.breakdownAmount, darkMode ? styles.darkText : styles.lightText]}>
-                  Rs. {fcAndEd.toLocaleString()}
+                  Rs. {formatPrice(isGas ? (activeBill.electricityDuty || 600.0) : fcAndEd)}
                 </Text>
               </View>
 
-              {/* Item 4: GST & TV Fee */}
+              {/* Item 4: GST vs GST & TV Fee */}
               <View style={styles.breakdownRow}>
                 <View style={styles.breakdownRowLeft}>
                   <View style={styles.bulletDot} />
                   <Text style={[styles.breakdownLabel, darkMode ? styles.darkText : styles.lightText]}>
-                    {t.gstTvFee}
+                    {isGas ? (isUrdu ? 'جنرل سیلز ٹیکس (GST)' : 'General Sales Tax (GST)') : t.gstTvFee}
                   </Text>
                 </View>
                 <Text style={[styles.breakdownAmount, darkMode ? styles.darkText : styles.lightText]}>
-                  Rs. {gstAndTv.toLocaleString()}
+                  Rs. {formatPrice(isGas ? (activeBill.gstAmount || 158.84) : gstAndTv)}
                 </Text>
               </View>
 
@@ -711,7 +832,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
                   {t.netAmountDue}
                 </Text>
                 <Text style={styles.netTotalValue}>
-                  Rs. {activeBill.payableWithinDueDate.toLocaleString()}
+                  Rs. {formatPrice(activeBill.payableWithinDueDate)}
                 </Text>
               </View>
             </View>
@@ -728,16 +849,16 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
           {/* Section 4: 12-Month Consumption Trend (Collapsible) */}
           <AccordionSection
             id="consumptionTrend"
-            title="12-Month Consumption Trend"
-            urduTitle="12 ماہ بجلی استعمال کا رجحان"
+            title={isGas ? '12-Month Gas Consumption Trend' : '12-Month Consumption Trend'}
+            urduTitle={isGas ? '12 ماہ گیس استعمال کا رجحان' : '12 ماہ بجلی استعمال کا رجحان'}
             iconName="stats"
-            badge="kWh Trend"
+            badge={isGas ? 'HM3 Trend' : 'kWh Trend'}
             isOpen={openConsumption}
             onToggle={() => setOpenConsumption(!openConsumption)}
             darkMode={darkMode}
             isUrdu={isUrdu}
           >
-            <ConsumptionChart history={displayHistory} darkMode={darkMode} language={language} />
+            <ConsumptionChart history={displayHistory} darkMode={darkMode} language={language} isGas={isGas} />
           </AccordionSection>
 
           {/* Section 5: 12-Month Billing Archive (Collapsible) */}
@@ -752,7 +873,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
             darkMode={darkMode}
             isUrdu={isUrdu}
           >
-            <HistoryTable history={displayHistory} darkMode={darkMode} language={language} />
+            <HistoryTable history={displayHistory} darkMode={darkMode} language={language} isGas={activeBill.utilityType === 'gas'} />
           </AccordionSection>
 
           {/* Official Notices (if present) */}
@@ -793,8 +914,57 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
             />
           </AccordionSection>
 
-          {/* Save Meter Action Card (Only shown if meter is not already saved) */}
-          {!isSaved && (
+          {/* Save / Delete Meter Action Card */}
+          {isSaved ? (
+            <TouchableOpacity
+              style={[
+                styles.saveMeterCard,
+                darkMode
+                  ? { backgroundColor: '#1E1418', borderColor: 'rgba(239, 68, 68, 0.3)', borderWidth: 1 }
+                  : { backgroundColor: '#FEF2F2', borderColor: '#FECACA', borderWidth: 1 },
+              ]}
+              onPress={handleDeleteMeter}
+              activeOpacity={0.85}
+            >
+              <View style={styles.saveMeterLeft}>
+                <View
+                  style={[
+                    styles.saveMeterIconBox,
+                    { backgroundColor: darkMode ? 'rgba(239, 68, 68, 0.2)' : '#FEE2E2' },
+                  ]}
+                >
+                  <AppIcon
+                    name="trash"
+                    size={18}
+                    color="#EF4444"
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={[
+                      styles.saveMeterTitle,
+                      { color: '#EF4444' },
+                    ]}
+                  >
+                    {isUrdu ? 'محفوظ میٹر ڈیلیٹ کریں' : 'Remove Saved Meter'}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.saveMeterSub,
+                      darkMode ? styles.darkSub : styles.lightSub,
+                    ]}
+                  >
+                    {isUrdu ? 'اس میٹر کو اپنی ہوم اسکرین لسٹ سے ختم کریں' : 'Remove this meter from your saved dashboard list'}
+                  </Text>
+                </View>
+              </View>
+              <View style={[styles.saveMeterPill, { backgroundColor: '#EF4444' }]}>
+                <Text style={styles.saveMeterPillText}>
+                  {isUrdu ? 'ڈیلیٹ' : 'Delete'}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ) : (
             <TouchableOpacity
               style={[
                 styles.saveMeterCard,
@@ -849,37 +1019,17 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
 
       {/* Fixed Bottom Action Bar (Stitch 100% Match) */}
       <View style={[styles.fixedBottomBar, darkMode ? styles.fixedBottomDark : styles.fixedBottomLight]}>
-        {/* Primary / Secondary Action Buttons */}
-        <View style={styles.bottomButtons2Col}>
-          <TouchableOpacity
-            style={[styles.btnDownloadPdf, isDownloadingPdf && { opacity: 0.8 }]}
-            onPress={handleDownloadPdf}
-            disabled={isDownloadingPdf}
-            activeOpacity={0.85}
-          >
-            {isDownloadingPdf ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <AppIcon name="file-down" size={18} color="#FFFFFF" />
-            )}
-            <Text style={styles.btnDownloadPdfText}>
-              {isDownloadingPdf
-                ? (isUrdu ? 'ڈاؤن لوڈ ہو رہا ہے...' : 'Downloading...')
-                : t.downloadPdfBtnDetail}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.btnShareBill, darkMode ? styles.btnShareDark : styles.btnShareLight]}
-            onPress={handleShare}
-            activeOpacity={0.85}
-          >
-            <AppIcon name="share" size={18} color={darkMode ? '#62FF96' : '#0F1C2C'} />
-            <Text style={darkMode ? styles.btnShareTextDark : styles.btnShareTextLight}>
-              {t.shareBillBtnDetail}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {/* Primary Share Action Button */}
+        <TouchableOpacity
+          style={[styles.btnShareBill, darkMode ? styles.btnShareDark : styles.btnShareLight, { marginBottom: 8, width: '100%' }]}
+          onPress={handleShare}
+          activeOpacity={0.85}
+        >
+          <AppIcon name="share" size={18} color={darkMode ? '#62FF96' : '#0F1C2C'} />
+          <Text style={darkMode ? styles.btnShareTextDark : styles.btnShareTextLight}>
+            {t.shareBillBtnDetail}
+          </Text>
+        </TouchableOpacity>
 
         {/* Quick Action: Direct Pay Integration Bar */}
         <View style={styles.directPayCard}>
@@ -915,14 +1065,12 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
 
       <CustomPopup {...popup} darkMode={darkMode} isUrdu={isUrdu} />
 
-      {/* In-App Authentic Official Bill Modal */}
       <OfficialBillModal
         visible={showOfficialModal}
         bill={activeBill}
         language={language}
         darkMode={darkMode}
         onClose={() => setShowOfficialModal(false)}
-        onSaveToGallery={handleSaveToDevice}
       />
     </View>
   );

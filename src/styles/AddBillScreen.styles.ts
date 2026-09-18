@@ -569,7 +569,8 @@ export const styles = StyleSheet.create({
   },
   darkInput: {
     backgroundColor: '#0C2B4E',
-    borderColor: '#284E77',
+    borderColor: '#FFFFFF',
+    borderWidth: 1.5,
   },
   lightInput: {
     backgroundColor: '#FFFFFF',
@@ -592,5 +593,40 @@ export const styles = StyleSheet.create({
   },
   rtlText: {
     textAlign: 'right',
+  },
+
+  // Gas Estimation Toggle Card
+  gasOptionToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 12,
+    borderWidth: 1,
+  },
+  gasOptionToggleDark: {
+    backgroundColor: '#1E293B',
+    borderColor: '#334155',
+  },
+  gasOptionToggleLight: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#BFDBFE',
+  },
+  gasOptionToggleInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 8,
+  },
+  gasOptionToggleText: {
+    fontSize: 12,
+    fontWeight: '700',
+    flex: 1,
+  },
+  gasOptionToggleAction: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#006D35',
   },
 });
