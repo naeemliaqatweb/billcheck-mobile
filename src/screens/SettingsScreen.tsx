@@ -841,6 +841,23 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 {t.officialDisclaimerText}
               </Text>
 
+              <TouchableOpacity
+                style={{ marginTop: 10, paddingVertical: 4 }}
+                onPress={() => Linking.openURL(APP_CONFIG.officialSourcesUrl).catch(() => {})}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={{
+                    color: '#3B82F6',
+                    fontSize: 12,
+                    fontWeight: '600',
+                    textAlign: isUrdu ? 'right' : 'left',
+                  }}
+                >
+                  {t.viewOfficialSources}
+                </Text>
+              </TouchableOpacity>
+
               <View style={styles.disclaimerFooter}>
                 <Text style={styles.disclaimerFooterLeft}>
                   {t.publicGatewaySync}
