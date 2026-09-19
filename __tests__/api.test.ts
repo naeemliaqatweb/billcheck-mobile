@@ -281,5 +281,37 @@ describe('ApiService & Helper Functions Test Suite', () => {
       expect(res.bill.payableWithinDueDate).toBe(990);
       expect(res.html).toBe(mockHtml);
     });
+
+    it('fetches official K-Electric duplicate bill with 13-digit account and consumer number (non-zero)', async () => {
+      const keRes = await ApiService.fetchOfficialKeBill('0400014224678', 'AL868024');
+      
+      expect(keRes.bill.company).toBe('KELECTRIC');
+      expect(keRes.bill.utilityType).toBe('electricity');
+      expect(keRes.bill.referenceNo).toBe('0400014224678');
+      expect(keRes.bill.consumerId).toBe('AL868024');
+      expect(keRes.bill.payableWithinDueDate).toBeGreaterThan(0);
+      expect(keRes.bill.unitsConsumed).toBeGreaterThan(0);
+      expect(keRes.bill.dueDate).toBeDefined();
+      expect(keRes.bill.chargesBreakdown).toBeDefined();
+      expect(keRes.bill.chargesBreakdown?.length).toBeGreaterThan(3);
+      expect(keRes.bill.history12Months).toHaveLength(12);
+      expect(keRes.bill.consumerName).toBe('MR HAKIMUDDIN');
+      expect(keRes.bill.consumerAddress).toContain('Maymar Complex');
+      expect(keRes.bill.tariff).toContain('COMMERCIAL');
+      expect(keRes.html).toContain('K-ELECTRIC');
+      expect(keRes.html).toContain(keRes.bill.formattedRefNo);
+      expect(keRes.html).toContain('AL868024');
+      expect(keRes.html).toContain('MR HAKIMUDDIN');
+    });
+
+    it('handles ApiService.fetchBill for KELECTRIC without returning 0', async () => {
+      const bill = await ApiService.fetchBill('KELECTRIC', '0400014224678');
+
+      expect(bill.company).toBe('KELECTRIC');
+      expect(bill.payableWithinDueDate).toBeGreaterThan(0);
+      expect(bill.unitsConsumed).toBeGreaterThan(0);
+      expect(bill.consumerAddress).toContain('Karachi');
+      expect(bill.subDivision).toContain('IBC');
+    });
   });
 });

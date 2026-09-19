@@ -17,7 +17,7 @@ import { BillData } from '../../types/bill';
 import { AppIcon } from '../AppIcon';
 import { Language } from '../../i18n/translations';
 import { styles } from '../../styles/OfficialBillModal.styles';
-import { ApiService } from '../../services/api';
+import { ApiService, generateOfficialKeHtml } from '../../services/api';
 import { StorageService } from '../../services/storage';
 import { BillPdfService, generateOfficialBillTemplateHtml } from '../../services/billPdf';
 
@@ -125,12 +125,15 @@ export const OfficialBillModal: React.FC<OfficialBillModalProps> = ({
     if (!visible) return;
 
     let isMounted = true;
+    const isKE = bill.company === 'KELECTRIC' || bill.company === 'KE';
     const isGas = bill.utilityType === 'gas' || bill.company === 'SNGPL' || bill.company === 'SSGC';
     const defaultBase =
       bill.company === 'SNGPL'
         ? 'https://www.sngpl.com.pk'
         : bill.company === 'SSGC'
         ? 'https://sngpl-bill.pk'
+        : isKE
+        ? 'https://www.ke.com.pk'
         : 'https://bill.pitc.com.pk';
     setBaseUrl(defaultBase);
 
@@ -142,42 +145,44 @@ export const OfficialBillModal: React.FC<OfficialBillModalProps> = ({
         return;
       }
 
-      // Gas bills: fetch authentic portal HTML or fallback to template
-      if (isGas) {
-        setLoadingHtml(true);
-        try {
-          const res = await ApiService.fetchOfficialBillHtml(bill.company, bill.referenceNo);
-          if (res && res.html && isMounted) {
-            setOfficialHtml(res.html);
-            rawHtmlRef.current = res.html;
-            setBaseUrl(res.baseUrl);
-          } else if (isMounted) {
-            const fallbackTemplate = generateOfficialBillTemplateHtml(bill);
-            setOfficialHtml(fallbackTemplate);
-            rawHtmlRef.current = fallbackTemplate;
-          }
-        } catch {
-          if (isMounted) {
-            const fallbackTemplate = generateOfficialBillTemplateHtml(bill);
-            setOfficialHtml(fallbackTemplate);
-            rawHtmlRef.current = fallbackTemplate;
-          }
-        } finally {
-          if (isMounted) setLoadingHtml(false);
+      setLoadingHtml(true);
+      try {
+        const cleanRef = (bill.referenceNo || '').replace(/[^0-9a-zA-Z]/g, '').trim();
+
+        // 1. Check cached HTML first (saved during bill check / prefetch)
+        const cached = await StorageService.getCachedPdfHtml(bill.company, cleanRef, bill.billMonth);
+        if (cached && isMounted) {
+          setOfficialHtml(cached);
+          rawHtmlRef.current = cached;
+          setLoadingHtml(false);
+          return;
         }
-      } else {
-        // Electricity (MEPCO, LESCO, etc.): Direct live portal loading
-        setOfficialHtml(null);
-        setLoadingHtml(true);
 
-        // Safety timeout so loader never hangs
-        const timer = setTimeout(() => {
-          if (isMounted) {
-            setLoadingHtml(false);
-          }
-        }, 4000);
-
-        return () => clearTimeout(timer);
+        // 2. Fetch official HTML from ApiService
+        const res = await ApiService.fetchOfficialBillHtml(bill.company, cleanRef);
+        if (res && res.html && isMounted) {
+          setOfficialHtml(res.html);
+          rawHtmlRef.current = res.html;
+          if (res.baseUrl) setBaseUrl(res.baseUrl);
+          await StorageService.cachePdfHtml(bill.company, cleanRef, res.html, bill.billMonth);
+        } else if (isMounted) {
+          const fallbackTemplate = isKE
+            ? generateOfficialKeHtml(bill as any)
+            : generateOfficialBillTemplateHtml(bill);
+          setOfficialHtml(fallbackTemplate);
+          rawHtmlRef.current = fallbackTemplate;
+          await StorageService.cachePdfHtml(bill.company, cleanRef, fallbackTemplate, bill.billMonth);
+        }
+      } catch {
+        if (isMounted) {
+          const fallbackTemplate = isKE
+            ? generateOfficialKeHtml(bill as any)
+            : generateOfficialBillTemplateHtml(bill);
+          setOfficialHtml(fallbackTemplate);
+          rawHtmlRef.current = fallbackTemplate;
+        }
+      } finally {
+        if (isMounted) setLoadingHtml(false);
       }
     };
 

@@ -20,6 +20,7 @@ import { AddBillFormFields } from '../components/addbill/AddBillFormFields';
 import { AddBillGasSection } from '../components/addbill/AddBillGasSection';
 import { AddBillMockupGuide } from '../components/addbill/AddBillMockupGuide';
 import { AddBillActionButtons } from '../components/addbill/AddBillActionButtons';
+import { KeBillCaptchaModal } from '../components/bill/KeBillCaptchaModal';
 import { styles } from '../styles/AddBillScreen.styles';
 
 interface AddBillScreenProps {
@@ -50,10 +51,12 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
   );
   const [selectedProvider, setSelectedProvider] = useState<ProviderInfo>(defaultProvider);
   const [referenceNo, setReferenceNo] = useState('');
+  const [consumerNo, setConsumerNo] = useState('');
   const [nickname, setNickname] = useState('');
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [showRefGuideModal, setShowRefGuideModal] = useState(false);
+  const [showKeCaptchaModal, setShowKeCaptchaModal] = useState(false);
   const [popup, setPopup] = useState<PopupConfig>({
     visible: false,
     title: '',
@@ -78,6 +81,7 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
   const handlePullRefresh = () => {
     setRefreshing(true);
     setReferenceNo('');
+    setConsumerNo('');
     setNickname('');
     setSngplParams(null);
     setCurrentReading('');
@@ -99,6 +103,7 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
     setUtilityType(type);
     setSngplParams(null);
     setCurrentReading('');
+    setConsumerNo('');
     if (type === 'electricity' && selectedProvider.type !== 'electricity') {
       setSelectedProvider(ELECTRICITY_PROVIDERS[0]);
     } else if (type === 'gas' && selectedProvider.type !== 'gas') {
@@ -107,7 +112,8 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
   };
 
   const handleReferenceChange = (text: string) => {
-    const maxLen = selectedProvider.refLength || (selectedProvider.type === 'gas' ? 10 : 14);
+    const isKE = selectedProvider.code === 'KELECTRIC' || selectedProvider.code === 'KE';
+    const maxLen = isKE ? 13 : (selectedProvider.refLength || (selectedProvider.type === 'gas' ? 10 : 14));
     const clean = text.replace(/[^0-9a-zA-Z]/g, '').slice(0, maxLen);
     setReferenceNo(clean);
     if (sngplParams) {
@@ -117,7 +123,10 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
 
   const isRefValid = () => {
     const clean = referenceNo.replace(/[^0-9a-zA-Z]/g, '');
-    if (selectedProvider.type === 'gas' || selectedProvider.code === 'KELECTRIC' || selectedProvider.code === 'KE') {
+    if (selectedProvider.code === 'KELECTRIC' || selectedProvider.code === 'KE') {
+      return clean.length >= 8;
+    }
+    if (selectedProvider.type === 'gas') {
       return clean.length >= 10;
     }
     return clean.length >= 14;
@@ -227,6 +236,42 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
     }
   };
 
+  const handleKeSuccess = async (bill: BillData, _pdfUrl?: string) => {
+    setShowKeCaptchaModal(false);
+    setLoading(true);
+    try {
+      await StorageService.cacheBill(bill);
+
+      const cleanConsumer = bill.consumerName && !bill.consumerName.toUpperCase().includes('CONSUMER')
+        ? bill.consumerName.split(/[\n,]/)[0].trim()
+        : '';
+
+      const newMeter: SavedMeter = {
+        id: `meter_ke_${Date.now()}`,
+        nickname: nickname.trim() || cleanConsumer || `${selectedProvider.name} Meter`,
+        company: selectedProvider.code,
+        referenceNumber: bill.referenceNo,
+        utilityType: selectedProvider.type,
+        lastBillAmount: bill.payableWithinDueDate,
+        lastDueDate: bill.dueDate,
+        lastBillStatus: bill.billStatus,
+        lastBillMonth: bill.billMonth,
+        consumerName: bill.consumerName,
+        consumerAddress: bill.consumerAddress,
+        createdAt: new Date().toISOString(),
+      };
+
+      await StorageService.saveMeter(newMeter);
+      await NotificationService.notifyMeterAdded(newMeter, isUrdu).catch(() => {});
+      onSaveMeterComplete?.();
+      onBillChecked(bill);
+    } catch {
+      onBillChecked(bill);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleFetchBill = async () => {
     const cleanRef = referenceNo.replace(/[^0-9a-zA-Z]/g, '').trim();
 
@@ -239,6 +284,12 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
         primaryText: isUrdu ? 'ٹھیک ہے' : 'OK',
         onClose: () => setPopup((p) => ({ ...p, visible: false })),
       });
+      return;
+    }
+
+    const isKE = selectedProvider.code === 'KELECTRIC' || selectedProvider.code === 'KE';
+    if (isKE) {
+      setShowKeCaptchaModal(true);
       return;
     }
 
@@ -346,9 +397,13 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
           onChangeReferenceNo={handleReferenceChange}
           onClearReferenceNo={() => {
             setReferenceNo('');
+            setConsumerNo('');
             setSngplParams(null);
             setCurrentReading('');
           }}
+          consumerNo={consumerNo}
+          onChangeConsumerNo={(text) => setConsumerNo(text.toUpperCase())}
+          onClearConsumerNo={() => setConsumerNo('')}
           isRefValid={isRefValid()}
           nickname={nickname}
           onChangeNickname={setNickname}
@@ -474,6 +529,18 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
         onClose={() => setShowRefGuideModal(false)}
         darkMode={darkMode}
         language={language}
+      />
+
+      {/* K-Electric In-App Auto-fill & Official Portal Modal */}
+      <KeBillCaptchaModal
+        visible={showKeCaptchaModal}
+        accountNumber={referenceNo}
+        consumerNumber={consumerNo}
+        nickname={nickname}
+        darkMode={darkMode}
+        isUrdu={isUrdu}
+        onClose={() => setShowKeCaptchaModal(false)}
+        onSuccess={handleKeSuccess}
       />
 
       {/* Global Dialog */}

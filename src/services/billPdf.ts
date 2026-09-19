@@ -41,8 +41,8 @@ export const BillPdfService = {
       return `${pitcCompanies[upperCompany]}/general?${isShortRef ? 'custid' : 'refno'}=${cleanRef}`;
     }
 
-    if (upperCompany === 'KE' || upperCompany === 'K-ELECTRIC') {
-      return `https://staging.ke.com.pk:24555/v1/bills/duplicate?accountNumber=${cleanRef}`;
+    if (upperCompany === 'KE' || upperCompany === 'KELECTRIC' || upperCompany === 'K-ELECTRIC') {
+      return `https://www.ke.com.pk/customer-services/bill-and-e-services/`;
     }
 
     if (upperCompany === 'SNGPL') {
