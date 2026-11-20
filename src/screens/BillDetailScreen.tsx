@@ -28,7 +28,8 @@ import { CustomPopup, PopupConfig } from '../components/CustomPopup';
 import { AccordionSection } from '../components/bill/AccordionSection';
 import { NoticesCard } from '../components/bill/NoticesCard';
 import { OfficialPortalCard } from '../components/bill/OfficialPortalCard';
-import { OfficialBillModal } from '../components/OfficialBillModal';
+import { OfficialBillModal } from '../components/bill/OfficialBillModal';
+import { InAppOfficialPortalModal } from '../components/bill/InAppOfficialPortalModal';
 import { styles } from '../styles/BillDetailScreen.styles';
 
 interface BillDetailScreenProps {
@@ -58,6 +59,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
     message: '',
   });
   const [showOfficialModal, setShowOfficialModal] = useState<boolean>(false);
+  const [inAppPortalVisible, setInAppPortalVisible] = useState<boolean>(false);
   const [openConsumption, setOpenConsumption] = useState<boolean>(false);
   const [openArchive, setOpenArchive] = useState<boolean>(false);
   const [openPortal, setOpenPortal] = useState<boolean>(false);
@@ -233,7 +235,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
     const units = activeBill.unitsConsumed || 0;
     const amount = activeBill.payableWithinDueDate || 0;
     if (units === 0 && amount === 0) return [];
-    return generate12MonthHistory(units, amount, activeBill.billMonth || 'AUG 26', activeBill.utilityType || 'electricity');
+    return generate12MonthHistory(units, amount, activeBill.billMonth, activeBill.utilityType || 'electricity');
   }, [activeBill]);
 
   // Format fetch date
@@ -267,12 +269,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
 
 
   const handleOpenDuplicateOnline = () => {
-    const directUrl =
-      activeBill.sourceUrl ||
-      `https://bill.pitc.com.pk/${activeBill.company.toLowerCase()}bill/general?refno=${activeBill.referenceNo}`;
-    Linking.openURL(directUrl).catch(() => {
-      Linking.openURL(portalUrl);
-    });
+    setInAppPortalVisible(true);
   };
 
   const handleCopyReference = async (refNo: string) => {
@@ -477,7 +474,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
         {/* Synchronized Meta Tag Sub-bar */}
         <View style={styles.headerMetaStrip}>
           <View style={styles.metaFetchedGroup}>
-            <AppIcon name="cloud-done" size={14} color="#778598" />
+            <AppIcon name="cloud-done" size={14} color="#FFFFFF" />
             <Text style={styles.metaFetchedText}>
               {t.billFetchedAt}: {formatFetchDate()}
             </Text>
@@ -509,7 +506,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
                 resizeMode="contain"
               />
             ) : (
-              <AppIcon name="verified" size={18} color="#006D35" />
+              <AppIcon name="verified" size={18} color="#FFFFFF" />
             )}
             <Text
               style={[styles.bannerCompanyName, darkMode ? styles.darkText : styles.lightText]}
@@ -572,7 +569,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
               <View style={styles.hero2ColGrid}>
                 <View style={styles.heroInfoBox}>
                   <View style={styles.heroInfoBoxHeader}>
-                    <AppIcon name="calendar" size={13} color="#778598" />
+                    <AppIcon name="calendar" size={13} color="#FFFFFF" />
                     <Text style={styles.heroInfoBoxLabel}>{t.dueDate}</Text>
                   </View>
                   <Text style={styles.heroInfoBoxValue}>{activeBill.dueDate}</Text>
@@ -580,7 +577,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
 
                 <View style={styles.heroInfoBox}>
                   <View style={styles.heroInfoBoxHeader}>
-                    <AppIcon name="history" size={13} color="#778598" />
+                    <AppIcon name="history" size={13} color="#FFFFFF" />
                     <Text style={styles.heroInfoBoxLabel}>{t.afterDueDate}</Text>
                   </View>
                   <Text style={styles.heroInfoBoxValue}>
@@ -615,7 +612,9 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
           <View style={[styles.sectionCard, darkMode ? styles.sectionDarkCard : styles.sectionLightCard]}>
             <View style={styles.cardHeaderRow}>
               <View style={styles.cardTitleGroup}>
-                <AppIcon name="person" size={18} color="#006D35" />
+                <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#006D35', justifyContent: 'center', alignItems: 'center', marginRight: 8 }}>
+                  <AppIcon name="person" size={16} color="#FFFFFF" />
+                </View>
                 <Text style={[styles.cardTitleText, darkMode ? styles.darkText : styles.lightText]}>
                   {t.consumerDetails}
                 </Text>
@@ -758,7 +757,9 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
           <View style={[styles.sectionCard, darkMode ? styles.sectionDarkCard : styles.sectionLightCard]}>
             <View style={styles.cardHeaderRow}>
               <View style={styles.cardTitleGroup}>
-                <AppIcon name="receipt-long" size={18} color="#006D35" />
+                <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#006D35', justifyContent: 'center', alignItems: 'center', marginRight: 8 }}>
+                  <AppIcon name="receipt-long" size={16} color="#FFFFFF" />
+                </View>
                 <Text style={[styles.cardTitleText, darkMode ? styles.darkText : styles.lightText]}>
                   {isGas ? (isUrdu ? 'ٹیرف اور ٹیکس کی تفصیلات' : 'Gas Tariff & Tax Breakdown') : t.tariffTaxBreakdown}
                 </Text>
@@ -840,7 +841,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
 
           {/* Institutional Guarantee Note */}
           <View style={[styles.guaranteeCard, darkMode ? styles.guaranteeDark : styles.guaranteeLight]}>
-            <AppIcon name="shield" size={18} color="#778598" />
+            <AppIcon name="shield" size={18} color="#FFFFFF" />
             <Text style={[styles.guaranteeText, darkMode ? styles.darkSub : styles.lightSub]}>
               {t.institutionalGuarantee}
             </Text>
@@ -893,13 +894,13 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
             </AccordionSection>
           )}
 
-          {/* Official Portal & Verification */}
+          {/* Online Portal & Verification */}
           <AccordionSection
             id="portal"
-            title="Official Portal & Verification"
-            urduTitle="سرکاری پورٹل اور لائیو تصدیق"
+            title="Online Portal & Verification"
+            urduTitle="آن لائن پورٹل اور تصدیق"
             iconName="globe"
-            badge="Official"
+            badge="Portal"
             isOpen={openPortal}
             onToggle={() => setOpenPortal(!openPortal)}
             darkMode={darkMode}
@@ -911,6 +912,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
               officialSite={officialSite}
               darkMode={darkMode}
               isUrdu={isUrdu}
+              onOpenPortal={() => setInAppPortalVisible(true)}
             />
           </AccordionSection>
 
@@ -1025,7 +1027,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
           onPress={handleShare}
           activeOpacity={0.85}
         >
-          <AppIcon name="share" size={18} color={darkMode ? '#62FF96' : '#0F1C2C'} />
+          <AppIcon name="share" size={18} color="#FFFFFF" />
           <Text style={darkMode ? styles.btnShareTextDark : styles.btnShareTextLight}>
             {t.shareBillBtnDetail}
           </Text>
@@ -1034,7 +1036,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
         {/* Quick Action: Direct Pay Integration Bar */}
         <View style={styles.directPayCard}>
           <View style={styles.directPayLeft}>
-            <AppIcon name="wallet" size={16} color="#62FF96" />
+            <AppIcon name="wallet" size={16} color="#FFFFFF" />
             <Text style={styles.directPayLabel}>{t.payDirectlyOnline}</Text>
           </View>
           <View style={styles.directPayChipsRow}>
@@ -1071,6 +1073,18 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
         language={language}
         darkMode={darkMode}
         onClose={() => setShowOfficialModal(false)}
+      />
+
+      <InAppOfficialPortalModal
+        visible={inAppPortalVisible}
+        url={portalUrl}
+        providerName={providerFullName}
+        providerCode={activeBill.company}
+        accountNumber={activeBill.referenceNo}
+        consumerNumber={activeBill.consumerId}
+        darkMode={darkMode}
+        isUrdu={isUrdu}
+        onClose={() => setInAppPortalVisible(false)}
       />
     </View>
   );

@@ -13,8 +13,6 @@ export const PROVIDER_LOGOS: Record<string, ImageSourcePropType> = {
   QESCO: require('../assets/images/logos/qesco.png'),
   TESCO: require('../assets/images/logos/tesco.png'),
   PITC: require('../assets/images/logos/pitc.png'),
-  KELECTRIC: require('../assets/images/logos/kelectric.png'),
-  KE: require('../assets/images/logos/ke.png'),
   SNGPL: require('../assets/images/logos/sngpl.png'),
   SSGC: require('../assets/images/logos/ssgc.png'),
 };

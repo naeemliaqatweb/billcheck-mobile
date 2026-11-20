@@ -202,7 +202,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
   useEffect(() => {
     loadTrendHistory();
-  }, [loadTrendHistory]);
+    // Proactively check for newly released bills in the background
+    NotificationService.autoSyncSavedMeters(isUrdu)
+      .then((newNotifs) => {
+        if (newNotifs.length > 0) {
+          onRefreshSaved();
+        }
+      })
+      .catch(() => {});
+  }, [loadTrendHistory, isUrdu, onRefreshSaved]);
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -223,7 +231,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const handleCheckSavedBill = async (meter: SavedMeter) => {
     // 1. Instant cache check first (<5ms open time)
     const cachedBill = await StorageService.getCachedBill(meter.company, meter.referenceNumber);
-    if (cachedBill && !cachedBill.isMockData) {
+    if (cachedBill && !cachedBill.isMockData && cachedBill.payableWithinDueDate > 0 && cachedBill.payableWithinDueDate < 100000000) {
       onBillChecked(cachedBill);
       // Background sync fresh data if needed
       ApiService.fetchBill(meter.company, meter.referenceNumber, true)
@@ -278,9 +286,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       visible: true,
       type: 'warning',
       title: isUrdu ? 'میٹر حذف کریں؟' : 'Delete Saved Meter?',
-      message: `${t.deleteConfirm}\n(${getMeterDisplayName(meter)} - ${meter.referenceNumber})`,
-      primaryText: isUrdu ? 'ہاں، ڈیلیٹ کریں' : 'Yes, Delete',
-      secondaryText: isUrdu ? 'کینسل' : 'Cancel',
+      message: isUrdu
+        ? `کیا آپ واقعی "${meter.nickname}" کو حذف کرنا چاہتے ہیں؟`
+        : `Are you sure you want to delete "${meter.nickname}"?`,
+      primaryText: isUrdu ? 'حذف کریں' : 'Delete',
+      secondaryText: isUrdu ? 'منسوخ' : 'Cancel',
       onPrimaryPress: async () => {
         setPopup((p) => ({ ...p, visible: false }));
         await StorageService.deleteMeter(meter.id);
@@ -296,9 +306,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     try {
       // 1. Check local cache first for full BillData
       let bill = await StorageService.getCachedBill(meter.company, meter.referenceNumber);
-      if (!bill) {
+      if (!bill || !bill.payableWithinDueDate || bill.payableWithinDueDate <= 0) {
         try {
-          bill = await ApiService.fetchBill(meter.company, meter.referenceNumber, false);
+          bill = await ApiService.fetchBill(meter.company, meter.referenceNumber, true);
           if (bill) {
             await StorageService.cacheBill(bill);
           }

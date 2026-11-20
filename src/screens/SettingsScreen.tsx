@@ -77,8 +77,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       type: 'info',
       title: isUrdu ? 'رازداری کی پالیسی (Privacy Policy)' : 'Privacy Policy & Data Security',
       message: isUrdu
-        ? `${APP_CONFIG.nameUrdu} صارفین کی رازداری کا مکمل احترام کرتا ہے۔ ہم کوئی بھی ذاتی ڈیٹا، شناختی کارڈ نمبر یا پاس ورڈ اکٹھا نہیں کرتے۔ تمام ریفرنس نمبرز اور بلز صرف آپ کے موبائل کی لوکل میموری میں محفوظ رہتے ہیں۔\n\nمکمل سرکاری رازداری کی پالیسی آن لائن پڑھنے کے لیے نیچے دیے گئے بٹن پر کلک کریں۔`
-        : `${APP_CONFIG.name} strictly respects consumer privacy. We operate under zero-retention architecture. No personal data, CNICs, or passwords are harvested or stored on external servers. All saved meters remain exclusively in your local device storage.\n\nTap below to read the complete official Privacy Policy online.`,
+        ? `${APP_CONFIG.nameUrdu} صارفین کی رازداری کا مکمل احترام کرتا ہے۔ ہم کوئی بھی ذاتی ڈیٹا، شناختی کارڈ نمبر یا پاس ورڈ اکٹھا نہیں کرتے۔ تمام ریفرنس نمبرز اور بلز صرف آپ کے موبائل کی لوکل میموری میں محفوظ رہتے ہیں۔\n\nمکمل رازداری کی پالیسی آن لائن پڑھنے کے لیے نیچے دیے گئے بٹن پر کلک کریں۔`
+        : `${APP_CONFIG.name} strictly respects consumer privacy. We operate under zero-retention architecture. No personal data, CNICs, or passwords are harvested or stored on external servers. All saved meters remain exclusively in your local device storage.\n\nTap below to read the complete Privacy Policy online.`,
       primaryText: isUrdu ? 'پالیسی کھولیں ↗' : 'Open Policy ↗',
       secondaryText: isUrdu ? 'بند کریں' : 'Close',
       onPrimary: () => {
@@ -121,8 +121,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       type: 'info',
       title: isUrdu ? 'ہنگامی ہیلپ لائن ڈائریکٹری' : 'Emergency Helpline Directory',
       message: isUrdu
-        ? '• LESCO (لاہور): 118 / 042-99204033\n• K-Electric (کراچی): 118 / 021-99000\n• IESCO (اسلام آباد): 118 / 051-9252937\n• FESCO (فیصل آباد): 118 / 041-9220184\n• MEPCO (ملتان): 118 / 061-9220313\n• SNGPL (سوئی گیس): 1199\n• SSGC (سوئی سدرن): 1199'
-        : '• LESCO (Lahore): 118 / 042-99204033\n• K-Electric (Karachi): 118 / 021-99000\n• IESCO (Islamabad): 118 / 051-9252937\n• FESCO (Faisalabad): 118 / 041-9220184\n• MEPCO (Multan): 118 / 061-9220313\n• SNGPL Gas: 1199\n• SSGC Gas: 1199',
+        ? '• LESCO (لاہور): 118 / 042-99204033\n• IESCO (اسلام آباد): 118 / 051-9252937\n• FESCO (فیصل آباد): 118 / 041-9220184\n• MEPCO (ملتان): 118 / 061-9220313\n• GEPCO (گوجرانوالہ): 118 / 055-9200516\n• SNGPL (سوئی گیس): 1199\n• SSGC (سوئی سدرن): 1199'
+        : '• LESCO (Lahore): 118 / 042-99204033\n• IESCO (Islamabad): 118 / 051-9252937\n• FESCO (Faisalabad): 118 / 041-9220184\n• MEPCO (Multan): 118 / 061-9220313\n• GEPCO (Gujranwala): 118 / 055-9200516\n• SNGPL Gas: 1199\n• SSGC Gas: 1199',
       primaryText: isUrdu ? 'بند کریں' : 'Close',
       onClose: () => setPopup((p) => ({ ...p, visible: false })),
     });

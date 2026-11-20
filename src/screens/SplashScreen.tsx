@@ -15,7 +15,7 @@ interface SplashScreenProps {
   minDuration?: number;
 }
 
-const FEEDS_CHIPS = ['LESCO', 'K-ELECTRIC', 'IESCO', 'SNGPL', 'SSGC'];
+const FEEDS_CHIPS = ['LESCO', 'MEPCO', 'IESCO', 'SNGPL', 'SSGC'];
 
 export const SplashScreen: React.FC<SplashScreenProps> = ({
   onFinish,

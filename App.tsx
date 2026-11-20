@@ -4,6 +4,7 @@ import {
   View,
   Text,
   TouchableOpacity,
+  AppState,
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { HomeScreen } from './src/screens/HomeScreen';
@@ -89,6 +90,41 @@ export default function App() {
 
   useEffect(() => {
     loadInitialData();
+
+    // Auto-sync whenever user resumes/switches to the app
+    const subscription = AppState.addEventListener('change', async (nextState) => {
+      if (nextState === 'active') {
+        try {
+          const freshLang = await StorageService.getLanguage();
+          const newNotifs = await NotificationService.autoSyncSavedMeters(freshLang === 'ur');
+          if (newNotifs.length > 0) {
+            const freshMeters = await StorageService.getSavedMeters();
+            setSavedMeters(freshMeters);
+          }
+        } catch {
+          // ignore
+        }
+      }
+    });
+
+    // Periodic background sync interval (every 5 minutes while app is running)
+    const syncInterval = setInterval(async () => {
+      try {
+        const freshLang = await StorageService.getLanguage();
+        const newNotifs = await NotificationService.autoSyncSavedMeters(freshLang === 'ur');
+        if (newNotifs.length > 0) {
+          const freshMeters = await StorageService.getSavedMeters();
+          setSavedMeters(freshMeters);
+        }
+      } catch {
+        // ignore
+      }
+    }, 5 * 60 * 1000);
+
+    return () => {
+      subscription.remove();
+      clearInterval(syncInterval);
+    };
   }, [loadInitialData]);
 
   const handleToggleLanguage = async (newLang: Language) => {

@@ -14,7 +14,7 @@ import { Language } from '../i18n/translations';
 import { AdBanner } from '../components/AdBanner';
 import { AppIcon } from '../components/AppIcon';
 import { StorageService } from '../services/storage';
-import { ApiService, sanitizeBillingMonth, generate12MonthHistory } from '../services/api';
+import { ApiService, sanitizeBillingMonth, generate12MonthHistory, parsePitcBillHistory } from '../services/api';
 import { getMeterDisplayName } from '../utils/meterUtils';
 import { AnalyticsTelemetryChart } from '../components/analytics/AnalyticsTelemetryChart';
 import { AnalyticsBentoGrid } from '../components/analytics/AnalyticsBentoGrid';
@@ -84,11 +84,27 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
     setLoading(true);
     setSelectedMeterId(meter.id);
     try {
-      const cached = await StorageService.getCachedBill(meter.company, meter.referenceNumber);
-      if (cached && cached.history12Months && cached.history12Months.length > 0) {
-        setActiveBill(cached);
-        setLoading(false);
-        return;
+      let cached = await StorageService.getCachedBill(meter.company, meter.referenceNumber);
+      if (cached) {
+        const html = await StorageService.getCachedPdfHtml(meter.company, meter.referenceNumber, cached.billMonth);
+        if (html && (html.includes('history-row') || html.includes('history-cell'))) {
+          const realHistory = parsePitcBillHistory(
+            html,
+            cached.billMonth,
+            cached.unitsConsumed,
+            cached.payableWithinDueDate,
+            cached.billStatus === 'paid'
+          );
+          if (realHistory && realHistory.length > 0) {
+            cached = { ...cached, history12Months: realHistory };
+            await StorageService.cacheBill(cached);
+          }
+        }
+        if (cached.history12Months && cached.history12Months.length > 0) {
+          setActiveBill(cached);
+          setLoading(false);
+          return;
+        }
       }
 
       const fresh = await ApiService.fetchBill(meter.company, meter.referenceNumber, false);
@@ -140,10 +156,32 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
         utilityType === 'gas' ? isGasBill(currentBill) : !isGasBill(currentBill)
       );
 
-      if (isCurrentMatching && currentBill?.history12Months && currentBill.history12Months.length > 0) {
-        setActiveBill(currentBill);
-        setSelectedMeterId(`${currentBill.company}_${currentBill.referenceNo}`);
-        return;
+      if (isCurrentMatching && currentBill) {
+        let billToSet = currentBill;
+        if (billToSet.company && billToSet.referenceNo) {
+          try {
+            const html = await StorageService.getCachedPdfHtml(billToSet.company, billToSet.referenceNo, billToSet.billMonth);
+            if (html && (html.includes('history-row') || html.includes('history-cell'))) {
+              const realHistory = parsePitcBillHistory(
+                html,
+                billToSet.billMonth,
+                billToSet.unitsConsumed,
+                billToSet.payableWithinDueDate,
+                billToSet.billStatus === 'paid'
+              );
+              if (realHistory && realHistory.length > 0) {
+                billToSet = { ...billToSet, history12Months: realHistory };
+              }
+            }
+          } catch {
+            // ignore
+          }
+        }
+        if (billToSet.history12Months && billToSet.history12Months.length > 0) {
+          setActiveBill(billToSet);
+          setSelectedMeterId(`${billToSet.company}_${billToSet.referenceNo}`);
+          return;
+        }
       }
 
       if (matchingMeters.length > 0) {
@@ -216,17 +254,17 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
     });
   };
 
-  // Build enriched history with strict chronological ordering & deduplication anchored at AUG 26
+  // Build enriched history with strict chronological ordering & deduplication
   const historyData: BillMonthHistory[] = useMemo(() => {
     if (!activeBill) {
       return [];
     }
 
+    const MON_MAP: Record<string, number> = {
+      JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5,
+      JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11,
+    };
     const MON_ABBR = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-    const now = new Date();
-    const maxM = (now.getMonth() - 1 + 12) % 12; // 7 = August (in Sep 2026)
-    const maxY = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear(); // 2026
-    const maxTimestamp = maxY * 12 + maxM;
 
     let list: BillMonthHistory[] = [];
 
@@ -241,10 +279,10 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
           yNum = parts[1].length === 2 ? 2000 + parseInt(parts[1], 10) : parseInt(parts[1], 10);
         }
         if (!yNum || isNaN(yNum)) {
-          yNum = maxY;
+          yNum = new Date().getFullYear();
         }
 
-        const validMIdx = mIdx !== -1 ? mIdx : maxM;
+        const validMIdx = mIdx !== -1 ? mIdx : 0;
         const label = `${MON_ABBR[validMIdx]} ${String(yNum).slice(-2)}`;
 
         return {
@@ -255,47 +293,61 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
       });
     }
 
-    // Bind current active bill data (amount e.g. 2596, units) to latest billing month (AUG 26)
-    const activeMonthLabel = sanitizeBillingMonth(activeBill.billMonth);
-    const existsIdx = list.findIndex((h) => (h.month || '').trim().toUpperCase() === activeMonthLabel);
+    // Ensure current active bill month is present in the list with authentic amounts
+    if (activeBill.billMonth && (activeBill.unitsConsumed !== undefined || activeBill.payableWithinDueDate !== undefined)) {
+      const activeMonthLabel = sanitizeBillingMonth(activeBill.billMonth);
+      const existsIdx = list.findIndex((h) => (h.month || '').trim().toUpperCase() === activeMonthLabel);
 
-    if (existsIdx !== -1) {
-      list[existsIdx] = {
-        ...list[existsIdx],
-        units: activeBill.unitsConsumed || list[existsIdx].units,
-        amount: activeBill.payableWithinDueDate || list[existsIdx].amount,
-        status: activeBill.billStatus === 'paid' ? 'paid' : 'unpaid',
-      };
-    } else if (activeBill.unitsConsumed || activeBill.payableWithinDueDate) {
-      list.push({
-        month: activeMonthLabel,
-        year: maxY,
-        units: activeBill.unitsConsumed || 0,
-        amount: activeBill.payableWithinDueDate || 0,
-        status: activeBill.billStatus === 'paid' ? 'paid' : 'unpaid',
-      });
+      if (existsIdx !== -1) {
+        list[existsIdx] = {
+          ...list[existsIdx],
+          units: activeBill.unitsConsumed !== undefined && activeBill.unitsConsumed > 0 ? activeBill.unitsConsumed : list[existsIdx].units,
+          amount: activeBill.payableWithinDueDate !== undefined && activeBill.payableWithinDueDate > 0 ? activeBill.payableWithinDueDate : list[existsIdx].amount,
+          status: activeBill.billStatus === 'paid' ? 'paid' : 'unpaid',
+        };
+      } else {
+        const parts = activeMonthLabel.split(' ');
+        const yStr = parts[1] || '';
+        const year = yStr ? 2000 + parseInt(yStr, 10) : new Date().getFullYear();
+        list.push({
+          month: activeMonthLabel,
+          year,
+          units: activeBill.unitsConsumed || 0,
+          amount: activeBill.payableWithinDueDate || 0,
+          status: activeBill.billStatus === 'paid' ? 'paid' : 'unpaid',
+        });
+      }
     }
 
-    // Filter out unissued future months (> August 2026)
-    const valid = list.filter((item) => {
-      const parts = (item.month || '').trim().toUpperCase().split(/[\s\-_]+/);
-      const mIdx = MON_ABBR.findIndex((abbr) => (parts[0] || '').startsWith(abbr));
-      const yStr = parts[1] || '';
-      const yNum = item.year || (yStr ? parseInt(`20${yStr}`, 10) : maxY);
-      if (mIdx === -1) return true;
-      const ts = yNum * 12 + mIdx;
-      return ts <= maxTimestamp;
-    });
+    if (list.length > 0) {
+      // Sort chronologically (oldest to newest)
+      list.sort((a, b) => {
+        const getTimestamp = (item: BillMonthHistory) => {
+          const parts = (item.month || '').trim().toUpperCase().split(/[\s\-_]+/);
+          const mStr = parts[0] || '';
+          const mIdx = MON_MAP[mStr] !== undefined ? MON_MAP[mStr] : 0;
+          const y = item.year || (parts[1] ? 2000 + parseInt(parts[1], 10) : 2026);
+          return y * 12 + mIdx;
+        };
+        return getTimestamp(a) - getTimestamp(b);
+      });
 
-    if (valid.length > 0) {
-      return valid.slice(-12);
+      // Calculate month-over-month diff percentages
+      for (let i = 1; i < list.length; i++) {
+        const prev = list[i - 1].units;
+        if (prev > 0) {
+          list[i].unitsDiffPercentage = Math.round(((list[i].units - prev) / prev) * 100);
+        }
+      }
+
+      return list.slice(-12);
     }
 
     if (activeBill.unitsConsumed || activeBill.payableWithinDueDate) {
       return generate12MonthHistory(
         activeBill.unitsConsumed || 0,
         activeBill.payableWithinDueDate || 0,
-        activeBill.billMonth || 'AUG 26',
+        activeBill.billMonth,
         activeBill.utilityType || 'electricity'
       );
     }

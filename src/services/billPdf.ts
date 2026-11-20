@@ -41,16 +41,12 @@ export const BillPdfService = {
       return `${pitcCompanies[upperCompany]}/general?${isShortRef ? 'custid' : 'refno'}=${cleanRef}`;
     }
 
-    if (upperCompany === 'KE' || upperCompany === 'KELECTRIC' || upperCompany === 'K-ELECTRIC') {
-      return `https://www.ke.com.pk/customer-services/bill-and-e-services/`;
-    }
-
     if (upperCompany === 'SNGPL') {
-      return `https://www.sngpl.com.pk/viewbill?consumer=${cleanRef}`;
+      return `https://www.sngpl.com.pk/`;
     }
 
     if (upperCompany === 'SSGC') {
-      return `https://www.ssgc.com.pk/web/view-bill/?cust_id=${cleanRef}`;
+      return `https://viewbill.ssgc.com.pk/`;
     }
 
     return `https://bill.pitc.com.pk/lescobill`;
@@ -104,14 +100,23 @@ export const BillPdfService = {
   async saveOfficialBillDirectPdf(
     bill: Partial<BillData> & { company: string; referenceNo: string },
     htmlContent?: string | null,
-    customBaseUrl?: string
+    customBaseUrl?: string,
+    directPdfUrl?: string | null
   ): Promise<{ success: boolean; filePath?: string }> {
     const cleanRef = bill.referenceNo.replace(/[^0-9a-zA-Z]/g, '').trim();
     const fileName = `Official_Bill_${bill.company}_${cleanRef}`;
     const month = bill.billMonth || bill.billingMonth;
+    const targetPdfUrl = directPdfUrl || (bill.sourceUrl && bill.sourceUrl.includes('.pdf') ? bill.sourceUrl : null);
 
     try {
       if (Platform.OS === 'android' && BillNotificationModule) {
+        if (targetPdfUrl && typeof BillNotificationModule.downloadAndSavePdfFile === 'function') {
+          const filePath = await BillNotificationModule.downloadAndSavePdfFile(targetPdfUrl, fileName);
+          if (filePath) {
+            return { success: true, filePath: typeof filePath === 'string' ? filePath : undefined };
+          }
+        }
+
         let htmlToSave = htmlContent;
         let baseUrl = customBaseUrl || (bill.company === 'SNGPL' ? 'https://www.sngpl.com.pk' : 'https://bill.pitc.com.pk');
 
@@ -156,14 +161,21 @@ export const BillPdfService = {
   async shareOfficialBillDirectPdf(
     bill: Partial<BillData> & { company: string; referenceNo: string },
     htmlContent?: string | null,
-    customBaseUrl?: string
+    customBaseUrl?: string,
+    directPdfUrl?: string | null
   ): Promise<{ success: boolean }> {
     const cleanRef = bill.referenceNo.replace(/[^0-9a-zA-Z]/g, '').trim();
     const fileName = `Official_Bill_${bill.company}_${cleanRef}`;
     const month = bill.billMonth || bill.billingMonth;
+    const targetPdfUrl = directPdfUrl || (bill.sourceUrl && bill.sourceUrl.includes('.pdf') ? bill.sourceUrl : null);
 
     try {
       if (Platform.OS === 'android' && BillNotificationModule) {
+        if (targetPdfUrl && typeof BillNotificationModule.sharePdfFromUrl === 'function') {
+          const shared = await BillNotificationModule.sharePdfFromUrl(targetPdfUrl, fileName);
+          if (shared) return { success: true };
+        }
+
         let htmlToShare = htmlContent;
         let baseUrl = customBaseUrl || (bill.company === 'SNGPL' ? 'https://www.sngpl.com.pk' : 'https://bill.pitc.com.pk');
 
@@ -405,7 +417,7 @@ export function generateOfficialBillTemplateHtml(bill: Partial<BillData> & { com
     <div class="header">
       <div>
         <h1>${bill.company} DUPLICATE BILL</h1>
-        <div class="header-sub">GOVERNMENT OF PAKISTAN • MINISTRY OF ENERGY (POWER DIVISION)</div>
+        <div class="header-sub">ONLINE CONSUMER DUPLICATE BILL COPY</div>
       </div>
       <div class="status-badge">${isPaid ? 'PAID / ادا شدہ' : 'UNPAID / غیر ادا'}</div>
     </div>
@@ -414,7 +426,7 @@ export function generateOfficialBillTemplateHtml(bill: Partial<BillData> & { com
       <div class="section">
         <div class="row"><span class="label">Reference No:</span><span class="val">${cleanRef}</span></div>
         <div class="row"><span class="label">Consumer Name:</span><span class="val">${bill.consumerName}</span></div>
-        <div class="row"><span class="label">Address:</span><span class="val">${bill.consumerAddress || 'Lahore, Pakistan'}</span></div>
+        <div class="row"><span class="label">Address:</span><span class="val">${bill.consumerAddress || 'Pakistan'}</span></div>
         <div class="row"><span class="label">Tariff:</span><span class="val">${bill.tariff || 'A-1a(01)'}</span></div>
         <div class="row"><span class="label">Connected Load:</span><span class="val">${bill.load || '1.0 kW'}</span></div>
       </div>
@@ -439,7 +451,7 @@ export function generateOfficialBillTemplateHtml(bill: Partial<BillData> & { com
     </div>
 
     <div class="footer">
-      <div>Official verified duplicate copy retrieved via BillCheck PK. Valid for payment via 1Link, EasyPaisa, JazzCash & Banks.</div>
+      <div>Duplicate copy retrieved via BillCheck PK for consumer reference. Valid for payment via 1Link, EasyPaisa, JazzCash & Banks.</div>
       <div class="barcode-box">||| |||| || |||||| | |||| ||||| ${bill.referenceNo}</div>
     </div>
   </div>

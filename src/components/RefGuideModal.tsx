@@ -72,8 +72,8 @@ export const RefGuideModal: React.FC<RefGuideModalProps> = ({
                   ]}
                 >
                   {isUrdu
-                    ? 'سرکاری بل کی اصل تصویر اور رہنمائی'
-                    : 'Official Utility Bill Sample Guide'}
+                    ? 'بل کی تصویری رہنمائی اور حوالہ نمبر'
+                    : 'Utility Bill Sample Guide'}
                 </Text>
               </View>
             </View>
@@ -202,8 +202,8 @@ export const RefGuideModal: React.FC<RefGuideModalProps> = ({
                   ]}
                 >
                   {isUrdu
-                    ? '2. کنزیومر آئی ڈی (CONSUMER ID) — کے الیکٹرک / گیس'
-                    : '2. Consumer ID (CONSUMER ID) — K-Electric & Gas'}
+                    ? '2. کنزیومر آئی ڈی (CONSUMER ID) — سوئی گیس بلز'
+                    : '2. Consumer ID (CONSUMER ID) — SNGPL & SSGC Gas'}
                 </Text>
               </View>
               <Text
@@ -214,8 +214,8 @@ export const RefGuideModal: React.FC<RefGuideModalProps> = ({
                 ]}
               >
                 {isUrdu
-                  ? 'ریفرنس نمبر کے بالکل نیچے "CONSUMER ID" (مثلاً 10036225) درج ہے۔ کے-الیکٹرک اور سوئی گیس بلز کے لیے اپنا کنزیومر آئی ڈی / اکاؤنٹ نمبر درج کریں۔'
-                  : 'Directly below the reference number, you will find the "CONSUMER ID" (e.g. 10036225). Use this number for K-Electric and Gas bills.'}
+                  ? 'سوئی گیس (SNGPL / SSGC) بلز کے لیے اپنا 10 یا 11 ہندسوں کا کنزیومر نمبر درج کریں۔'
+                  : 'For Sui Gas (SNGPL / SSGC) bills, enter your 10 or 11-digit Consumer Number.'}
               </Text>
             </View>
 
@@ -236,8 +236,8 @@ export const RefGuideModal: React.FC<RefGuideModalProps> = ({
                   ]}
                 >
                   {isUrdu
-                    ? 'تمام پاکستانی کمپنیاں: لیسکو، میپکو، فیسکو، گیپکو، آئیسکو، پیسکو، حیسکو، کے-الیکٹرک اور سوئی گیس۔'
-                    : 'Supported for all DISCOs: LESCO, MEPCO, FESCO, GEPCO, IESCO, PESCO, HESCO, K-Electric, SNGPL.'}
+                    ? 'تمام پاکستانی کمپنیاں: لیسکو، میپکو، فیسکو، گیپکو، آئیسکو، پیسکو، حیسکو، سیپکو، کیسکو اور سوئی گیس۔'
+                    : 'Supported for all DISCOs: LESCO, MEPCO, FESCO, GEPCO, IESCO, PESCO, HESCO, SEPCO, QESCO, SNGPL, SSGC.'}
                 </Text>
               </View>
             </View>

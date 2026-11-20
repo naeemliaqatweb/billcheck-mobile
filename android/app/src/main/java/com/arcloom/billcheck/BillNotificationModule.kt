@@ -1,5 +1,6 @@
 package com.arcloom.billcheck
 
+import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -34,6 +35,8 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 import java.io.File
 import java.io.FileOutputStream
+import java.net.HttpURLConnection
+import java.net.URL
 
 class BillNotificationModule(private val reactContext: ReactApplicationContext) :
     ReactContextBaseJavaModule(reactContext) {
@@ -182,6 +185,98 @@ class BillNotificationModule(private val reactContext: ReactApplicationContext) 
             val notificationManager = NotificationManagerCompat.from(reactContext)
             val notifId = (tag?.hashCode() ?: System.currentTimeMillis().toInt()) and 0x7FFFFFFF
             notificationManager.notify(notifId, builder.build())
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.resolve(false)
+        }
+    }
+
+    @ReactMethod
+    fun scheduleLocalNotification(
+        id: String,
+        title: String,
+        message: String,
+        timestampEpochMs: Double,
+        tag: String?,
+        promise: Promise
+    ) {
+        try {
+            val alarmManager = reactContext.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
+            if (alarmManager == null) {
+                promise.resolve(false)
+                return
+            }
+
+            val triggerTime = timestampEpochMs.toLong()
+            if (triggerTime <= System.currentTimeMillis()) {
+                promise.resolve(false)
+                return
+            }
+
+            val notifId = (id.hashCode() and 0x7FFFFFFF)
+            val intent = Intent(reactContext, BillAlarmReceiver::class.java).apply {
+                putExtra("title", title)
+                putExtra("message", message)
+                putExtra("tag", tag ?: id)
+                putExtra("notifId", notifId)
+            }
+
+            val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            } else {
+                PendingIntent.FLAG_UPDATE_CURRENT
+            }
+
+            val pendingIntent = PendingIntent.getBroadcast(
+                reactContext,
+                notifId,
+                intent,
+                flags
+            )
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerTime,
+                    pendingIntent
+                )
+            } else {
+                alarmManager.set(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerTime,
+                    pendingIntent
+                )
+            }
+
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.resolve(false)
+        }
+    }
+
+    @ReactMethod
+    fun cancelScheduledNotification(
+        id: String,
+        promise: Promise
+    ) {
+        try {
+            val alarmManager = reactContext.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
+            if (alarmManager != null) {
+                val notifId = (id.hashCode() and 0x7FFFFFFF)
+                val intent = Intent(reactContext, BillAlarmReceiver::class.java)
+                val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                } else {
+                    PendingIntent.FLAG_UPDATE_CURRENT
+                }
+                val pendingIntent = PendingIntent.getBroadcast(
+                    reactContext,
+                    notifId,
+                    intent,
+                    flags
+                )
+                alarmManager.cancel(pendingIntent)
+            }
             promise.resolve(true)
         } catch (e: Exception) {
             promise.resolve(false)
@@ -539,6 +634,127 @@ class BillNotificationModule(private val reactContext: ReactApplicationContext) 
         } catch (e: Exception) {
             promise.resolve(false)
         }
+    }
+
+    @ReactMethod
+    fun downloadAndSavePdfFile(pdfUrl: String, fileName: String, promise: Promise) {
+        Thread {
+            try {
+                val safeFileName = fileName.replace("[^a-zA-Z0-9_.-]".toRegex(), "_")
+                val pdfFileName = if (safeFileName.endsWith(".pdf", ignoreCase = true)) safeFileName else "$safeFileName.pdf"
+
+                val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                if (!downloadsDir.exists()) downloadsDir.mkdirs()
+                var targetFile = File(downloadsDir, pdfFileName)
+                if (!downloadsDir.canWrite()) {
+                    val fallbackDir = reactContext.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: reactContext.filesDir
+                    targetFile = File(fallbackDir, pdfFileName)
+                }
+
+                val url = URL(pdfUrl)
+                val connection = url.openConnection() as HttpURLConnection
+                connection.requestMethod = "GET"
+                connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36")
+                connection.connectTimeout = 15000
+                connection.readTimeout = 15000
+                connection.connect()
+
+                if (connection.responseCode == HttpURLConnection.HTTP_OK) {
+                    val input = connection.inputStream
+                    val output = FileOutputStream(targetFile)
+                    val buffer = ByteArray(4096)
+                    var bytesRead: Int
+                    while (input.read(buffer).also { bytesRead = it } != -1) {
+                        output.write(buffer, 0, bytesRead)
+                    }
+                    output.flush()
+                    output.close()
+                    input.close()
+                    connection.disconnect()
+
+                    MediaScannerConnection.scanFile(
+                        reactContext,
+                        arrayOf(targetFile.absolutePath),
+                        arrayOf("application/pdf"),
+                        null
+                    )
+
+                    Handler(Looper.getMainLooper()).post {
+                        Toast.makeText(
+                            reactContext,
+                            "Official Bill PDF saved to Downloads: $pdfFileName",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+
+                    promise.resolve(targetFile.absolutePath)
+                } else {
+                    promise.resolve(false)
+                }
+            } catch (e: Exception) {
+                promise.resolve(false)
+            }
+        }.start()
+    }
+
+    @ReactMethod
+    fun sharePdfFromUrl(pdfUrl: String, fileName: String, promise: Promise) {
+        Thread {
+            try {
+                val safeFileName = fileName.replace("[^a-zA-Z0-9_.-]".toRegex(), "_")
+                val pdfFileName = if (safeFileName.endsWith(".pdf", ignoreCase = true)) safeFileName else "$safeFileName.pdf"
+
+                val shareDir = File(reactContext.cacheDir, "shared_bills")
+                if (!shareDir.exists()) shareDir.mkdirs()
+                val targetFile = File(shareDir, pdfFileName)
+
+                val url = URL(pdfUrl)
+                val connection = url.openConnection() as HttpURLConnection
+                connection.requestMethod = "GET"
+                connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36")
+                connection.connectTimeout = 15000
+                connection.readTimeout = 15000
+                connection.connect()
+
+                if (connection.responseCode == HttpURLConnection.HTTP_OK) {
+                    val input = connection.inputStream
+                    val output = FileOutputStream(targetFile)
+                    val buffer = ByteArray(4096)
+                    var bytesRead: Int
+                    while (input.read(buffer).also { bytesRead = it } != -1) {
+                        output.write(buffer, 0, bytesRead)
+                    }
+                    output.flush()
+                    output.close()
+                    input.close()
+                    connection.disconnect()
+
+                    Handler(Looper.getMainLooper()).post {
+                        val uri = FileProvider.getUriForFile(
+                            reactContext,
+                            "${reactContext.packageName}.fileprovider",
+                            targetFile
+                        )
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "application/pdf"
+                            putExtra(Intent.EXTRA_STREAM, uri)
+                            putExtra(Intent.EXTRA_SUBJECT, pdfFileName)
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        val chooser = Intent.createChooser(shareIntent, "Share Official Bill PDF").apply {
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        reactContext.startActivity(chooser)
+                    }
+                    promise.resolve(true)
+                } else {
+                    promise.resolve(false)
+                }
+            } catch (e: Exception) {
+                promise.resolve(false)
+            }
+        }.start()
     }
 
     @ReactMethod

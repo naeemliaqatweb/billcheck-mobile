@@ -10,6 +10,7 @@ interface OfficialPortalCardProps {
   officialSite: string;
   darkMode: boolean;
   isUrdu: boolean;
+  onOpenPortal?: () => void;
 }
 
 export const OfficialPortalCard: React.FC<OfficialPortalCardProps> = ({
@@ -18,6 +19,7 @@ export const OfficialPortalCard: React.FC<OfficialPortalCardProps> = ({
   officialSite,
   darkMode,
   isUrdu,
+  onOpenPortal,
 }) => {
   const handleShareRef = async (text: string, label: string) => {
     try {
@@ -33,8 +35,8 @@ export const OfficialPortalCard: React.FC<OfficialPortalCardProps> = ({
     <View style={styles.portalCard}>
       <Text style={[styles.portalDesc, darkMode ? styles.darkText : styles.lightText, isUrdu && styles.rtlText]}>
         {isUrdu
-          ? 'یہ ڈیٹا براہ راست سرکاری بجلی/گیس پورٹل سے حاصل کیا گیا ہے۔ گوگل پلے پالیسی کے مطابق آپ اپنا حوالہ نمبر استعمال کر کے سرکاری پورٹل پر بھی لائیو تصدیق کر سکتے ہیں:'
-          : 'This bill data is verified directly with the official utility company. As per Google Play Store transparency guidelines, you can cross-verify and view your live bill directly on the official portal:'}
+          ? 'یہ ڈیٹا آن لائن بجلی/گیس پورٹل سے حاصل کیا گیا ہے۔ گوگل پلے پالیسی کے مطابق آپ اپنا حوالہ نمبر استعمال کر کے متعلقہ پورٹل پر بھی لائیو تصدیق کر سکتے ہیں:'
+          : 'This bill data is retrieved from online utility portals. As per Google Play Store transparency guidelines, you can cross-verify and view your live bill directly on the public portal:'}
       </Text>
 
       {/* Reference & Consumer ID Box */}
@@ -91,13 +93,19 @@ export const OfficialPortalCard: React.FC<OfficialPortalCardProps> = ({
       {/* Direct Portal Link Button */}
       <TouchableOpacity
         style={styles.openPortalPrimaryBtn}
-        onPress={() => Linking.openURL(portalUrl)}
+        onPress={() => {
+          if (onOpenPortal) {
+            onOpenPortal();
+          } else {
+            Linking.openURL(portalUrl);
+          }
+        }}
         activeOpacity={0.8}
       >
         <View style={styles.btnRowSm}>
           <AppIcon name="globe" size={17} color="#FFFFFF" />
           <Text style={styles.openPortalPrimaryText}>
-            {isUrdu ? 'لائیو سرکاری پورٹل کھولیں' : 'Open Official Bill Portal'}
+            {isUrdu ? 'آن لائن پبلک پورٹل کھولیں' : 'Open Online Bill Portal'}
           </Text>
         </View>
         <Text style={styles.portalSubBtnText} numberOfLines={1}>
@@ -115,7 +123,7 @@ export const OfficialPortalCard: React.FC<OfficialPortalCardProps> = ({
           <View style={styles.btnRowSm}>
             <AppIcon name="business" size={15} color={darkMode ? '#62FF96' : '#0C2B4E'} />
             <Text style={[styles.openPortalSecondaryText, darkMode ? styles.darkText : styles.lightText]}>
-              {bill.company} {isUrdu ? 'کی آفیشل ویب سائٹ وزٹ کریں' : 'Official Website'}
+              {bill.company} {isUrdu ? 'ویب سائٹ وزٹ کریں' : 'Portal Website'}
             </Text>
             <AppIcon name="chevron-right" size={14} color={darkMode ? '#94A3B8' : '#64748B'} />
           </View>
@@ -127,12 +135,12 @@ export const OfficialPortalCard: React.FC<OfficialPortalCardProps> = ({
         <View style={styles.btnRowSm}>
           <AppIcon name="shield" size={14} color="#006D35" />
           <Text style={styles.sourceCitationHeader}>
-            {isUrdu ? 'پبلک انفارمیشن ڈس کلیمر' : 'Government Information Transparency'}
+            {isUrdu ? 'پبلک انفارمیشن ڈس کلیمر' : 'Non-Affiliation & Transparency Notice'}
           </Text>
         </View>
         <Text style={[styles.sourceCitationText, darkMode ? styles.darkSub : styles.lightSub]}>
           {isUrdu 
-            ? 'یہ ایپلیکیشن کسی سرکاری ادارے سے وابستہ نہیں ہے۔ تمام ڈیٹا عوامی طور پر دستیاب وزارت توانائی / PITC پورٹلز سے براہ راست صارفین کی سہولت کے لیے دکھایا جاتا ہے۔'
+            ? 'یہ ایپلیکیشن کسی سرکاری ادارے سے وابستہ نہیں ہے۔ تمام ڈیٹا عوامی طور پر دستیاب PITC پورٹلز سے براہ راست صارفین کی سہولت کے لیے دکھایا جاتا ہے۔'
             : 'This app is independently developed and is NOT affiliated with, authorized, or endorsed by any government entity or DISCO. Data is retrieved from official public web portals for consumer facilitation.'}
         </Text>
       </View>

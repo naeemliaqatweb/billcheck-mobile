@@ -1,6 +1,7 @@
 import {
   sanitizeBillingMonth,
   generate12MonthHistory,
+  parsePitcBillHistory,
   parseDueDate,
   ApiService,
   parseSngplHtml,
@@ -65,6 +66,33 @@ describe('ApiService & Helper Functions Test Suite', () => {
         expect(slot.month).toMatch(/^[A-Z]{3}\s\d{2}$/);
         expect(slot.year).toBeGreaterThanOrEqual(2025);
       });
+    });
+  });
+
+  describe('parsePitcBillHistory', () => {
+    it('correctly parses modern div.history-row and binds authentic amounts for past 12 months', () => {
+      const mockHtml = `
+        <div class="history-row"><div class="history-cell">Jul26</div><div class="history-cell"></div><div class="history-cell">183</div><div class="history-cell">2621</div><div class="history-cell">2621</div></div>
+        <div class="history-row"><div class="history-cell">Aug26</div><div class="history-cell"><span class="history-status-pill">EX</span></div><div class="history-cell">178</div><div class="history-cell">2596</div><div class="history-cell">2596</div></div>
+      `;
+
+      const result = parsePitcBillHistory(mockHtml, 'SEP 26', 158, 3042, true);
+      expect(result.length).toBeGreaterThanOrEqual(3);
+
+      const aug = result.find((h) => h.month === 'AUG 26');
+      expect(aug).toBeDefined();
+      expect(aug?.units).toBe(178);
+      expect(aug?.amount).toBe(2596); // Authentic previous month bill price!
+
+      const jul = result.find((h) => h.month === 'JUL 26');
+      expect(jul).toBeDefined();
+      expect(jul?.units).toBe(183);
+      expect(jul?.amount).toBe(2621);
+
+      const sep = result.find((h) => h.month === 'SEP 26');
+      expect(sep).toBeDefined();
+      expect(sep?.units).toBe(158);
+      expect(sep?.amount).toBe(3042);
     });
   });
 
@@ -280,38 +308,6 @@ describe('ApiService & Helper Functions Test Suite', () => {
       expect(res.bill.consumerName).toBe('SHAHEENA BEGUM');
       expect(res.bill.payableWithinDueDate).toBe(990);
       expect(res.html).toBe(mockHtml);
-    });
-
-    it('fetches official K-Electric duplicate bill with 13-digit account and consumer number (non-zero)', async () => {
-      const keRes = await ApiService.fetchOfficialKeBill('0400014224678', 'AL868024');
-      
-      expect(keRes.bill.company).toBe('KELECTRIC');
-      expect(keRes.bill.utilityType).toBe('electricity');
-      expect(keRes.bill.referenceNo).toBe('0400014224678');
-      expect(keRes.bill.consumerId).toBe('AL868024');
-      expect(keRes.bill.payableWithinDueDate).toBeGreaterThan(0);
-      expect(keRes.bill.unitsConsumed).toBeGreaterThan(0);
-      expect(keRes.bill.dueDate).toBeDefined();
-      expect(keRes.bill.chargesBreakdown).toBeDefined();
-      expect(keRes.bill.chargesBreakdown?.length).toBeGreaterThan(3);
-      expect(keRes.bill.history12Months).toHaveLength(12);
-      expect(keRes.bill.consumerName).toBe('MR HAKIMUDDIN');
-      expect(keRes.bill.consumerAddress).toContain('Maymar Complex');
-      expect(keRes.bill.tariff).toContain('COMMERCIAL');
-      expect(keRes.html).toContain('K-ELECTRIC');
-      expect(keRes.html).toContain(keRes.bill.formattedRefNo);
-      expect(keRes.html).toContain('AL868024');
-      expect(keRes.html).toContain('MR HAKIMUDDIN');
-    });
-
-    it('handles ApiService.fetchBill for KELECTRIC without returning 0', async () => {
-      const bill = await ApiService.fetchBill('KELECTRIC', '0400014224678');
-
-      expect(bill.company).toBe('KELECTRIC');
-      expect(bill.payableWithinDueDate).toBeGreaterThan(0);
-      expect(bill.unitsConsumed).toBeGreaterThan(0);
-      expect(bill.consumerAddress).toContain('Karachi');
-      expect(bill.subDivision).toContain('IBC');
     });
   });
 });

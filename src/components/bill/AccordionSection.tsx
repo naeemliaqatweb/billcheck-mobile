@@ -34,8 +34,8 @@ export const AccordionSection: React.FC<AccordionSectionProps> = ({
         activeOpacity={0.7}
       >
         <View style={styles.accordionTitleRow}>
-          <View style={[styles.accordionIconBox, { backgroundColor: darkMode ? '#132033' : '#EFF4FF' }]}>
-            <AppIcon name={iconName} size={18} color="#006D35" />
+          <View style={[styles.accordionIconBox, { backgroundColor: darkMode ? '#006D35' : '#E8F5E9' }]}>
+            <AppIcon name={iconName} size={18} color={darkMode ? '#FFFFFF' : '#006D35'} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.accordionTitle, darkMode ? styles.darkText : styles.lightText]}>
@@ -52,14 +52,14 @@ export const AccordionSection: React.FC<AccordionSectionProps> = ({
         <View style={styles.accordionRightRow}>
           {badge && (
             <View style={[styles.badgePill, darkMode ? styles.darkBadgePill : styles.lightBadgePill]}>
-              <Text style={styles.badgePillText}>{badge}</Text>
+              <Text style={[styles.badgePillText, darkMode ? styles.darkBadgePillText : styles.lightBadgePillText]}>{badge}</Text>
             </View>
           )}
           <View style={[styles.chevronBox, isOpen && styles.chevronBoxActive]}>
             <AppIcon
               name={isOpen ? 'chevron-up' : 'chevron-down'}
               size={15}
-              color={darkMode ? '#94A3B8' : '#64748B'}
+              color={darkMode ? '#FFFFFF' : '#475569'}
             />
           </View>
         </View>
@@ -102,9 +102,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   accordionIconBox: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 8,
@@ -136,18 +136,23 @@ const styles = StyleSheet.create({
   badgePillText: {
     fontSize: 11,
     fontWeight: '700',
+  },
+  darkBadgePillText: {
+    color: '#62FF96',
+  },
+  lightBadgePillText: {
     color: '#006D35',
   },
   chevronBox: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: 'rgba(148, 163, 184, 0.12)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   chevronBoxActive: {
-    backgroundColor: 'rgba(0, 109, 53, 0.15)',
+    backgroundColor: 'rgba(0, 109, 53, 0.25)',
   },
   accordionBody: {
     paddingHorizontal: 14,

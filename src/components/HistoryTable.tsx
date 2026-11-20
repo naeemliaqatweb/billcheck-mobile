@@ -41,7 +41,7 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({
 
     let cleanList = [...history];
     if (hasCorruptDuplicates) {
-      cleanList = generate12MonthHistory(history[0]?.units || 28, history[0]?.amount || 1200, 'AUG 26', isGas ? 'gas' : 'electricity');
+      cleanList = generate12MonthHistory(history[0]?.units || 28, history[0]?.amount || 1200, history[0]?.month, isGas ? 'gas' : 'electricity');
     }
 
     return cleanList.sort((a, b) => {

@@ -20,7 +20,7 @@ import { AddBillFormFields } from '../components/addbill/AddBillFormFields';
 import { AddBillGasSection } from '../components/addbill/AddBillGasSection';
 import { AddBillMockupGuide } from '../components/addbill/AddBillMockupGuide';
 import { AddBillActionButtons } from '../components/addbill/AddBillActionButtons';
-import { KeBillCaptchaModal } from '../components/bill/KeBillCaptchaModal';
+import { InAppOfficialPortalModal } from '../components/bill/InAppOfficialPortalModal';
 import { styles } from '../styles/AddBillScreen.styles';
 
 interface AddBillScreenProps {
@@ -56,7 +56,17 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [showRefGuideModal, setShowRefGuideModal] = useState(false);
-  const [showKeCaptchaModal, setShowKeCaptchaModal] = useState(false);
+  const [inAppPortal, setInAppPortal] = useState<{
+    visible: boolean;
+    url: string;
+    providerName: string;
+    providerCode: string;
+  }>({
+    visible: false,
+    url: '',
+    providerName: '',
+    providerCode: '',
+  });
   const [popup, setPopup] = useState<PopupConfig>({
     visible: false,
     title: '',
@@ -112,8 +122,7 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
   };
 
   const handleReferenceChange = (text: string) => {
-    const isKE = selectedProvider.code === 'KELECTRIC' || selectedProvider.code === 'KE';
-    const maxLen = isKE ? 13 : (selectedProvider.refLength || (selectedProvider.type === 'gas' ? 10 : 14));
+    const maxLen = selectedProvider.refLength || (selectedProvider.type === 'gas' ? 10 : 14);
     const clean = text.replace(/[^0-9a-zA-Z]/g, '').slice(0, maxLen);
     setReferenceNo(clean);
     if (sngplParams) {
@@ -123,9 +132,6 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
 
   const isRefValid = () => {
     const clean = referenceNo.replace(/[^0-9a-zA-Z]/g, '');
-    if (selectedProvider.code === 'KELECTRIC' || selectedProvider.code === 'KE') {
-      return clean.length >= 8;
-    }
     if (selectedProvider.type === 'gas') {
       return clean.length >= 10;
     }
@@ -236,42 +242,6 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
     }
   };
 
-  const handleKeSuccess = async (bill: BillData, _pdfUrl?: string) => {
-    setShowKeCaptchaModal(false);
-    setLoading(true);
-    try {
-      await StorageService.cacheBill(bill);
-
-      const cleanConsumer = bill.consumerName && !bill.consumerName.toUpperCase().includes('CONSUMER')
-        ? bill.consumerName.split(/[\n,]/)[0].trim()
-        : '';
-
-      const newMeter: SavedMeter = {
-        id: `meter_ke_${Date.now()}`,
-        nickname: nickname.trim() || cleanConsumer || `${selectedProvider.name} Meter`,
-        company: selectedProvider.code,
-        referenceNumber: bill.referenceNo,
-        utilityType: selectedProvider.type,
-        lastBillAmount: bill.payableWithinDueDate,
-        lastDueDate: bill.dueDate,
-        lastBillStatus: bill.billStatus,
-        lastBillMonth: bill.billMonth,
-        consumerName: bill.consumerName,
-        consumerAddress: bill.consumerAddress,
-        createdAt: new Date().toISOString(),
-      };
-
-      await StorageService.saveMeter(newMeter);
-      await NotificationService.notifyMeterAdded(newMeter, isUrdu).catch(() => {});
-      onSaveMeterComplete?.();
-      onBillChecked(bill);
-    } catch {
-      onBillChecked(bill);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleFetchBill = async () => {
     const cleanRef = referenceNo.replace(/[^0-9a-zA-Z]/g, '').trim();
 
@@ -287,26 +257,11 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
       return;
     }
 
-    const isKE = selectedProvider.code === 'KELECTRIC' || selectedProvider.code === 'KE';
-    if (isKE) {
-      setShowKeCaptchaModal(true);
-      return;
-    }
-
     setLoading(true);
 
     try {
-      // 1. Check if we have fresh cached bill first
-      let bill: BillData | null = await StorageService.getCachedBill(selectedProvider.code, cleanRef);
-
-      // 2. Fetch live bill if not in cache
-      if (!bill || bill.isMockData) {
-        try {
-          bill = await ApiService.fetchBill(selectedProvider.code, cleanRef);
-        } catch {
-          bill = createInitializedBill(selectedProvider.code, cleanRef);
-        }
-      }
+      // Fetch live bill directly from official server
+      const bill: BillData = await ApiService.fetchBill(selectedProvider.code, cleanRef, true);
 
       await StorageService.cacheBill(bill);
 
@@ -335,8 +290,40 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
 
       onBillChecked(bill);
     } catch {
-      const fallbackBill = createInitializedBill(selectedProvider.code, cleanRef);
-      onBillChecked(fallbackBill);
+      // Graceful fallback: save meter and open bill view so user is never blocked
+      try {
+        const initBill = createInitializedBill(selectedProvider.code, cleanRef);
+        initBill.consumerName = nickname.trim() || `${selectedProvider.name} Consumer`;
+
+        const newMeter: SavedMeter = {
+          id: `meter_${selectedProvider.code.toLowerCase()}_${Date.now()}`,
+          nickname: nickname.trim() || `${selectedProvider.name} (${cleanRef.slice(-6)})`,
+          company: selectedProvider.code,
+          referenceNumber: cleanRef,
+          utilityType: selectedProvider.type,
+          lastBillAmount: initBill.payableWithinDueDate,
+          lastDueDate: initBill.dueDate,
+          lastBillStatus: 'unpaid',
+          lastBillMonth: initBill.billMonth,
+          consumerName: initBill.consumerName,
+          consumerAddress: initBill.consumerAddress,
+          createdAt: new Date().toISOString(),
+        };
+
+        await StorageService.saveMeter(newMeter);
+        await StorageService.cacheBill(initBill);
+        await NotificationService.notifyMeterAdded(newMeter, isUrdu).catch(() => {});
+        onSaveMeterComplete?.();
+        onBillChecked(initBill);
+      } catch {
+        const officialUrl = selectedProvider.portalUrl || `https://bill.pitc.com.pk/${selectedProvider.code.toLowerCase()}bill`;
+        setInAppPortal({
+          visible: true,
+          url: officialUrl,
+          providerName: selectedProvider.name,
+          providerCode: selectedProvider.code,
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -520,6 +507,20 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
               : t.getBillCta
           }
           encryptedNoticeText={t.encryptedNotice}
+          onOpenInAppPortal={() => {
+            const officialUrl = selectedProvider.portalUrl || (selectedProvider.type === 'gas' ? 'https://www.sngpl.com.pk/' : `https://bill.pitc.com.pk/${selectedProvider.code.toLowerCase()}bill`);
+            setInAppPortal({
+              visible: true,
+              url: officialUrl,
+              providerName: selectedProvider.name,
+              providerCode: selectedProvider.code,
+            });
+          }}
+          openInAppPortalText={
+            isUrdu
+              ? `🌐 ایپ میں ${selectedProvider.name} پورٹل کھولیں`
+              : `🌐 Open ${selectedProvider.code} In-App Portal`
+          }
         />
       </ScrollView>
 
@@ -531,16 +532,18 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
         language={language}
       />
 
-      {/* K-Electric In-App Auto-fill & Official Portal Modal */}
-      <KeBillCaptchaModal
-        visible={showKeCaptchaModal}
+      {/* In-App Live Official Utility Portal Modal */}
+      <InAppOfficialPortalModal
+        visible={inAppPortal.visible}
+        url={inAppPortal.url}
+        providerName={inAppPortal.providerName}
+        providerCode={inAppPortal.providerCode}
         accountNumber={referenceNo}
         consumerNumber={consumerNo}
         nickname={nickname}
         darkMode={darkMode}
         isUrdu={isUrdu}
-        onClose={() => setShowKeCaptchaModal(false)}
-        onSuccess={handleKeSuccess}
+        onClose={() => setInAppPortal((p) => ({ ...p, visible: false }))}
       />
 
       {/* Global Dialog */}

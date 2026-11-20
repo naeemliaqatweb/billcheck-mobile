@@ -145,19 +145,6 @@ export const ELECTRICITY_PROVIDERS: ProviderInfo[] = [
     portalUrl: 'https://bill.pitc.com.pk/tescobill',
     officialSite: 'https://tesco.gov.pk/',
   },
-  {
-    code: 'KELECTRIC',
-    name: 'K-Electric',
-    fullName: 'K-Electric Karachi',
-    type: 'electricity',
-    region: 'Karachi, Dhabeji, Gharo, Hub',
-    refLength: 13,
-    refPlaceholder: '0400012345678',
-    badgeColor: '#16A34A',
-    iconName: 'flash',
-    portalUrl: 'https://www.ke.com.pk/',
-    officialSite: 'https://www.ke.com.pk/',
-  },
 ];
 
 export const GAS_PROVIDERS: ProviderInfo[] = [
@@ -179,7 +166,7 @@ export const GAS_PROVIDERS: ProviderInfo[] = [
     name: 'SSGC',
     fullName: 'Sui Southern Gas Company',
     type: 'gas',
-    region: 'Sindh, Balochistan, Karachi',
+    region: 'Sindh & Balochistan',
     refLength: 10,
     refPlaceholder: '1234567890',
     badgeColor: '#E11D48',

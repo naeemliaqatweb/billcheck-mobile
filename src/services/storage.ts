@@ -194,6 +194,9 @@ export const StorageService = {
       const json = await AsyncStorage.getItem(key);
       if (!json) return null;
       const parsed = JSON.parse(json);
+      if (parsed.isMockData || !parsed.payableWithinDueDate || parsed.payableWithinDueDate <= 0 || parsed.payableWithinDueDate > 100000000) {
+        return null; // Ignore corrupted, zero-amount, or mock cache
+      }
       if (parsed.fetchedAt) {
         const ageMs = Date.now() - new Date(parsed.fetchedAt).getTime();
         const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;

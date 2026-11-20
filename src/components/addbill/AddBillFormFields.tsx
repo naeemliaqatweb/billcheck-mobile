@@ -52,17 +52,10 @@ export const AddBillFormFields: React.FC<AddBillFormFieldsProps> = ({
   labels,
 }) => {
   const logo = getProviderLogo(selectedProvider.code);
-  const isKE = selectedProvider.code === 'KELECTRIC' || selectedProvider.code === 'KE';
 
-  const refLabel = isKE
-    ? (isUrdu ? '13 ہندسوں کا اکاؤنٹ نمبر' : '13-Digit Account Number')
-    : selectedProvider.type === 'gas'
-      ? labels.enterConsumerIdLabel
-      : labels.enter14DigitRef;
-
-  const keNotice = isUrdu
-    ? 'کے الیکٹرک بل کے اوپر دائیں کونے سے 13 ہندسوں کا اکاؤنٹ نمبر درج کریں'
-    : 'Enter 13-digit Account Number from top right of your KE bill';
+  const refLabel = selectedProvider.type === 'gas'
+    ? labels.enterConsumerIdLabel
+    : labels.enter14DigitRef;
 
   return (
     <View style={[styles.formCard, darkMode ? styles.darkCard : styles.lightCard]}>
@@ -191,12 +184,12 @@ export const AddBillFormFields: React.FC<AddBillFormFieldsProps> = ({
               darkMode ? styles.darkText : styles.lightText,
               isUrdu && styles.rtlText,
             ]}
-            placeholder={isKE ? '0400014224678' : (selectedProvider.refPlaceholder || '04 11223 0987600')}
+            placeholder={selectedProvider.refPlaceholder || '04 11223 0987600'}
             placeholderTextColor={darkMode ? '#64748B' : '#94A3B8'}
             value={referenceNo}
             onChangeText={onChangeReferenceNo}
             keyboardType="numeric"
-            maxLength={isKE ? 13 : (selectedProvider.refLength || (selectedProvider.type === 'gas' ? 10 : 14))}
+            maxLength={selectedProvider.refLength || (selectedProvider.type === 'gas' ? 10 : 14)}
           />
           {referenceNo.length > 0 && (
             <TouchableOpacity onPress={onClearReferenceNo} activeOpacity={0.7}>
@@ -212,7 +205,7 @@ export const AddBillFormFields: React.FC<AddBillFormFieldsProps> = ({
               darkMode ? styles.darkSub : styles.lightSub,
             ]}
           >
-            {isKE ? keNotice : labels.refFormatNotice}
+            {labels.refFormatNotice}
           </Text>
           {isRefValid ? (
             <Text
@@ -221,82 +214,11 @@ export const AddBillFormFields: React.FC<AddBillFormFieldsProps> = ({
                 darkMode && styles.validStatusTextDark,
               ]}
             >
-              ● {isKE ? (isUrdu ? 'اکاؤنٹ نمبر درست ہے' : 'Account Number Valid') : labels.refDigitsValid}
+              ● {labels.refDigitsValid}
             </Text>
           ) : null}
         </View>
       </View>
-
-      {/* Field 2b: Consumer Number (Specifically for K-Electric) */}
-      {isKE && (
-        <View style={styles.fieldGroup}>
-          <View style={styles.fieldLabelRow}>
-            <View style={styles.fieldLabelLeft}>
-              <AppIcon name="person" size={16} color="#0284C7" />
-              <Text
-                style={[
-                  styles.fieldLabel,
-                  darkMode ? styles.darkText : styles.lightText,
-                  isUrdu && styles.rtlText,
-                ]}
-              >
-                {isUrdu ? 'کنزیومر نمبر' : 'Consumer Number'}
-              </Text>
-            </View>
-            <View style={[styles.fieldBadge, darkMode ? styles.darkBox : styles.lightBox]}>
-              <Text
-                style={[
-                  styles.fieldBadgeText,
-                  darkMode ? styles.darkSub : styles.lightSub,
-                ]}
-              >
-                {isUrdu ? 'بل شناختی کوڈ' : 'Consumer ID'}
-              </Text>
-            </View>
-          </View>
-
-          <View
-            style={[
-              styles.inputWrap,
-              darkMode ? styles.darkInput : styles.lightInput,
-              consumerNo.length >= 6 && { borderColor: '#0284C7' },
-            ]}
-          >
-            <TextInput
-              style={[
-                styles.textInput,
-                styles.monoInput,
-                darkMode ? styles.darkText : styles.lightText,
-                isUrdu && styles.rtlText,
-              ]}
-              placeholder="AL868024"
-              placeholderTextColor={darkMode ? '#64748B' : '#94A3B8'}
-              value={consumerNo}
-              onChangeText={onChangeConsumerNo}
-              autoCapitalize="characters"
-              maxLength={10}
-            />
-            {consumerNo.length > 0 && onClearConsumerNo && (
-              <TouchableOpacity onPress={onClearConsumerNo} activeOpacity={0.7}>
-                <AppIcon name="close" size={18} color={darkMode ? '#94A3B8' : '#64748B'} />
-              </TouchableOpacity>
-            )}
-          </View>
-
-          <View style={styles.validationHelperRow}>
-            <Text
-              style={[
-                styles.formatText,
-                darkMode ? styles.darkSub : styles.lightSub,
-              ]}
-            >
-              {isUrdu
-                ? 'کے الیکٹرک بل پر درج کنزیومر نمبر (جیسے AL868024)'
-                : 'Consumer Number from your KE bill (e.g. AL868024)'}
-            </Text>
-          </View>
-        </View>
-      )}
 
       {/* Field 3: Bill Nickname (Optional) */}
       <View style={styles.fieldGroup}>

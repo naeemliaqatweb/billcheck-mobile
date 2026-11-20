@@ -8,7 +8,7 @@ import { getProviderLogo, hasLocalLogo } from '../src/constants/providerLogos';
 
 describe('Utility Providers & Logos Test Suite', () => {
   describe('Electricity Providers', () => {
-    it('should have all 11 major Pakistani electricity companies configured', () => {
+    it('should have all 10 major Pakistani electricity companies configured', () => {
       const expectedCodes = [
         'LESCO',
         'MEPCO',
@@ -20,9 +20,8 @@ describe('Utility Providers & Logos Test Suite', () => {
         'SEPCO',
         'QESCO',
         'TESCO',
-        'KELECTRIC',
       ];
-      expect(ELECTRICITY_PROVIDERS.length).toBe(11);
+      expect(ELECTRICITY_PROVIDERS.length).toBe(10);
       const codes = ELECTRICITY_PROVIDERS.map((p) => p.code);
       expectedCodes.forEach((expected) => {
         expect(codes).toContain(expected);
@@ -38,12 +37,7 @@ describe('Utility Providers & Logos Test Suite', () => {
         expect(provider.region).toBeTruthy();
         expect(provider.portalUrl).toMatch(/^https?:\/\//);
         expect(provider.officialSite).toMatch(/^https?:\/\//);
-
-        if (provider.code === 'KELECTRIC') {
-          expect(provider.refLength).toBe(13);
-        } else {
-          expect(provider.refLength).toBe(14);
-        }
+        expect(provider.refLength).toBe(14);
       });
     });
   });
