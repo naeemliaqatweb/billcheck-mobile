@@ -73,8 +73,51 @@ export const InAppOfficialPortalModal: React.FC<InAppOfficialPortalModalProps> =
         if (!doc) return;
         try {
 
+          var queryVal = acc || cons;
+          var isCustomerNum = queryVal.length <= 10;
+
+          // 1. PITC Search (LESCO, MEPCO, FESCO, GEPCO, IESCO, PESCO, etc.)
+          var rbCust = doc.getElementById('rbSearchByList_1') || doc.querySelector('input[name="rbSearchByList"][value="appno"]');
+          var rbRef = doc.getElementById('rbSearchByList_0') || doc.querySelector('input[name="rbSearchByList"][value="refno"]');
+          if (isCustomerNum && rbCust && !rbCust.checked) {
+            rbCust.checked = true;
+            try { rbCust.click(); } catch(ce) {}
+          } else if (!isCustomerNum && rbRef && !rbRef.checked) {
+            rbRef.checked = true;
+            try { rbRef.click(); } catch(ce) {}
+          }
+
+          var pitcSearchInput = doc.getElementById('searchTextBox') || doc.querySelector('input[name="searchTextBox"]');
+          if (pitcSearchInput && (!pitcSearchInput.value || pitcSearchInput.value !== queryVal) && queryVal) {
+            pitcSearchInput.value = queryVal;
+            pitcSearchInput.dispatchEvent(new Event('input', { bubbles: true }));
+            pitcSearchInput.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+
+          // 2. LESCO Direct Portal (CheckBill.asp)
+          var lescoCust = doc.querySelector('input[name="txtCustID"]');
+          if (lescoCust && isCustomerNum && (!lescoCust.value || lescoCust.value !== queryVal) && queryVal) {
+            lescoCust.value = queryVal;
+            lescoCust.dispatchEvent(new Event('input', { bubbles: true }));
+            lescoCust.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+
+          var lescoBatch = doc.querySelector('input[name="txtBatchNo"]');
+          var lescoSubDiv = doc.querySelector('input[name="txtSubDiv"]');
+          var lescoRef = doc.querySelector('input[name="txtRefNo"]');
+          if (lescoBatch && !isCustomerNum && queryVal.length >= 14) {
+            lescoBatch.value = queryVal.slice(0, 2);
+            if (lescoSubDiv) lescoSubDiv.value = queryVal.slice(2, 7);
+            if (lescoRef) {
+              var rVal = /[A-Za-z]$/.test(queryVal) ? queryVal.slice(7, -1) : queryVal.slice(7);
+              lescoRef.value = rVal;
+            }
+          }
+
           // 3. Captcha Input scroll & focus
-          var captchaInput = doc.getElementById('txtimgcode') || 
+          var captchaInput = doc.getElementById('captchaInput') ||
+                             doc.getElementById('code') ||
+                             doc.getElementById('txtimgcode') || 
                              doc.querySelector('input[name*="code" i]') ||
                              doc.querySelector('input[name*="captcha" i]') ||
                              doc.querySelector('input[placeholder*="character" i]') ||
@@ -85,6 +128,7 @@ export const InAppOfficialPortalModal: React.FC<InAppOfficialPortalModalProps> =
               captchaInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
               captchaInput.style.border = '2px solid #16A34A';
               captchaInput.style.backgroundColor = '#F0FDF4';
+              captchaInput.focus();
             } catch(se) {}
           }
 

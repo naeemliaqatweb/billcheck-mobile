@@ -290,41 +290,32 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
 
       onBillChecked(bill);
     } catch {
-      // Graceful fallback: save meter and open bill view so user is never blocked
-      try {
-        const initBill = createInitializedBill(selectedProvider.code, cleanRef);
-        initBill.consumerName = nickname.trim() || `${selectedProvider.name} Consumer`;
+      // Live automated lookup could not reach provider server or requires CAPTCHA verification
+      // Open in-app official portal directly with account prefilled and CAPTCHA focused
+      const officialUrl =
+        selectedProvider.code === 'LESCO'
+          ? 'https://bill.lesco.gov.pk:36269/Modules/CustomerBillN/CheckBill.asp'
+          : selectedProvider.portalUrl || `https://bill.pitc.com.pk/${selectedProvider.code.toLowerCase()}bill`;
 
-        const newMeter: SavedMeter = {
-          id: `meter_${selectedProvider.code.toLowerCase()}_${Date.now()}`,
-          nickname: nickname.trim() || `${selectedProvider.name} (${cleanRef.slice(-6)})`,
-          company: selectedProvider.code,
-          referenceNumber: cleanRef,
-          utilityType: selectedProvider.type,
-          lastBillAmount: initBill.payableWithinDueDate,
-          lastDueDate: initBill.dueDate,
-          lastBillStatus: 'unpaid',
-          lastBillMonth: initBill.billMonth,
-          consumerName: initBill.consumerName,
-          consumerAddress: initBill.consumerAddress,
-          createdAt: new Date().toISOString(),
-        };
+      setInAppPortal({
+        visible: true,
+        url: officialUrl,
+        providerName: selectedProvider.name,
+        providerCode: selectedProvider.code,
+      });
 
-        await StorageService.saveMeter(newMeter);
-        await StorageService.cacheBill(initBill);
-        await NotificationService.notifyMeterAdded(newMeter, isUrdu).catch(() => {});
-        onSaveMeterComplete?.();
-        onBillChecked(initBill);
-      } catch {
-        const officialUrl = selectedProvider.portalUrl || `https://bill.pitc.com.pk/${selectedProvider.code.toLowerCase()}bill`;
-        setInAppPortal({
-          visible: true,
-          url: officialUrl,
-          providerName: selectedProvider.name,
-          providerCode: selectedProvider.code,
-        });
-      }
-    } finally {
+      setPopup({
+        visible: true,
+        type: 'info',
+        title: isUrdu ? 'سرکاری پورٹل ویریفیکیشن' : 'Official Portal Verification',
+        message: isUrdu
+          ? `${selectedProvider.name} کے سرور پر سیکیورٹی کوڈ (CAPTCHA) درکار ہے۔ براہ کرم پورٹل پر کوڈ درج کر کے اپنا اصل بل چیک کریں۔`
+          : `${selectedProvider.name} server requires a security verification (CAPTCHA). Please solve the code in the official portal to view your authentic bill.`,
+        primaryText: isUrdu ? 'ٹھیک ہے' : 'OK',
+        onClose: () => setPopup((p) => ({ ...p, visible: false })),
+      });
+    }
+ finally {
       setLoading(false);
     }
   };
