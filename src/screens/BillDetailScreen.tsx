@@ -13,7 +13,7 @@ import {
   ToastAndroid,
   Image,
 } from 'react-native';
-import { BillData } from '../types/bill';
+import { BillData, SavedMeter } from '../types/bill';
 import { TRANSLATIONS, Language } from '../i18n/translations';
 import { ConsumptionChart } from '../components/ConsumptionChart';
 import { HistoryTable } from '../components/HistoryTable';

@@ -291,6 +291,8 @@ export const BillPdfService = {
       fileName,
     };
   },
+
+  generateOfficialBillTemplateHtml,
 };
 
 /**

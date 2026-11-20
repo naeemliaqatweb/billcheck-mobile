@@ -19,7 +19,7 @@ import { Language } from '../../i18n/translations';
 import { styles } from '../../styles/OfficialBillModal.styles';
 import { ApiService } from '../../services/api';
 import { StorageService } from '../../services/storage';
-import { BillPdfService } from '../../services/billPdf';
+import { BillPdfService, generateOfficialBillTemplateHtml } from '../../services/billPdf';
 
 interface OfficialBillModalProps {
   visible: boolean;
@@ -197,14 +197,14 @@ export const OfficialBillModal: React.FC<OfficialBillModalProps> = ({
           if (res.baseUrl) setBaseUrl(res.baseUrl);
           await StorageService.cachePdfHtml(bill.company, cleanRef, res.html, bill.billMonth);
         } else if (isMounted) {
-          const templateHtml = BillPdfService.generateOfficialBillTemplateHtml(bill);
+          const templateHtml = generateOfficialBillTemplateHtml(bill);
           setOfficialHtml(templateHtml);
           rawHtmlRef.current = templateHtml;
           await StorageService.cachePdfHtml(bill.company, cleanRef, templateHtml, bill.billMonth);
         }
       } catch {
         if (isMounted) {
-          const templateHtml = BillPdfService.generateOfficialBillTemplateHtml(bill);
+          const templateHtml = generateOfficialBillTemplateHtml(bill);
           setOfficialHtml(templateHtml);
           rawHtmlRef.current = templateHtml;
         }
@@ -312,7 +312,7 @@ export const OfficialBillModal: React.FC<OfficialBillModalProps> = ({
           <View style={[styles.webViewWrapper, viewMode !== 'official' && { display: 'none' }]}>
             <WebView
               source={{
-                html: officialHtml || BillPdfService.generateOfficialBillTemplateHtml(bill),
+                html: officialHtml || (bill ? generateOfficialBillTemplateHtml(bill) : '<!DOCTYPE html><html><body></body></html>'),
                 baseUrl: (officialHtml && officialHtml.includes('cdnjs')) ? 'https://cdnjs.cloudflare.com' : baseUrl,
               }}
               style={styles.webView}
