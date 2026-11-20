@@ -60,6 +60,8 @@ export const OfficialBillModal: React.FC<OfficialBillModalProps> = ({
       ? 'https://viewbill.ssgc.com.pk'
       : bill.company === 'SNGPL'
       ? 'https://www.sngpl.com.pk'
+      : bill.company === 'LESCO'
+      ? 'https://bill.lesco.gov.pk:36260'
       : 'https://bill.pitc.com.pk'
   );
   const [viewMode, setViewMode] = useState<'official' | 'summary'>('official');
@@ -162,6 +164,8 @@ export const OfficialBillModal: React.FC<OfficialBillModalProps> = ({
         ? 'https://viewbill.ssgc.com.pk'
         : bill.company === 'SNGPL'
         ? 'https://www.sngpl.com.pk'
+        : bill.company === 'LESCO'
+        ? 'https://bill.lesco.gov.pk:36260'
         : 'https://bill.pitc.com.pk';
     setBaseUrl(defaultBase);
 
@@ -177,9 +181,11 @@ export const OfficialBillModal: React.FC<OfficialBillModalProps> = ({
       try {
         const cleanRef = (bill.referenceNo || '').replace(/[^0-9a-zA-Z]/g, '').trim();
 
-        // 1. Check cached HTML first
+        // 1. Check cached HTML first (bypass if LESCO has broken relative image path)
         const cached = await StorageService.getCachedPdfHtml(bill.company, cleanRef, bill.billMonth);
-        if (cached && isMounted) {
+        const isBrokenLescoCache = bill.company === 'LESCO' && cached && cached.includes('src="Images/GEN_ND_1.png"');
+        if (cached && !isBrokenLescoCache && isMounted) {
+          if (bill.company === 'LESCO') setBaseUrl('https://bill.lesco.gov.pk:36260');
           setOfficialHtml(cached);
           rawHtmlRef.current = cached;
           setLoadingHtml(false);

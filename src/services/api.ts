@@ -478,8 +478,37 @@ export const ApiService = {
       clearTimeout(timer);
 
       if (r4.ok) {
-        const html = await r4.text();
+        let html = await r4.text();
         if (html && (html.includes('Bill') || html.includes('LESCO') || html.length > 1000)) {
+          // Rewrite relative paths to absolute URLs so background images & styles render perfectly
+          html = html
+            .replace(/src=["']Images\//gi, 'src="https://bill.lesco.gov.pk:36260/Images/')
+            .replace(/href=["']\.\/zoom\//gi, 'href="https://bill.lesco.gov.pk:36260/zoom/')
+            .replace(/href=["']zoom\//gi, 'href="https://bill.lesco.gov.pk:36260/zoom/')
+            .replace(/src=["']\.\/zoom\//gi, 'src="https://bill.lesco.gov.pk:36260/zoom/')
+            .replace(/<meta content="width=device-width[^"]*" name="viewport" \/>/i, '<meta name="viewport" content="width=885, initial-scale=0.45, user-scalable=yes" />');
+
+          if (!html.includes('<base')) {
+            html = html.replace(/<head[^>]*>/i, '<head><base href="https://bill.lesco.gov.pk:36260/">');
+          }
+
+          // Inject styling so the 885px official bill template centers and scales nicely
+          const viewportFixStyle = `
+<style>
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    background: #525659 !important;
+  }
+  #page1-div {
+    margin: 10px auto !important;
+    background: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+  }
+</style>`;
+          html = html.replace('</head>', `${viewportFixStyle}</head>`);
+
           return html;
         }
       }
