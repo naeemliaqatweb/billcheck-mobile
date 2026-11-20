@@ -390,13 +390,116 @@ export const ApiService = {
    * Fetches the complete, authentic duplicate bill HTML directly from utility company portal (e.g. PITC)
    * with super-fast direct GET path (<400ms) and instant fallback.
    */
+  /**
+   * Fetches official printable LESCO bill HTML with automated CAPTCHA extraction
+   */
+  async fetchOfficialLescoBillHtml(cleanRef: string): Promise<string | null> {
+    try {
+      const isCustId = cleanRef.length <= 10;
+      let postBody: string;
+
+      if (isCustId) {
+        postBody = `txtCustID=${encodeURIComponent(cleanRef)}&btnViewMenu=Customer+Menu`;
+      } else {
+        const batch = cleanRef.slice(0, 2);
+        const subdiv = cleanRef.slice(2, 7);
+        const refno = cleanRef.slice(7, 14);
+        const ru = cleanRef.slice(14, 15).toUpperCase() || 'U';
+        postBody = `txtBatchNo=${batch}&txtSubDiv=${subdiv}&txtRefNo=${refno}&cmbRU=${ru}&btnViewMenu=Customer+Menu`;
+      }
+
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 12000);
+
+      const r1 = await fetch('https://bill.lesco.gov.pk:36269/Modules/CustomerBillN/CustomerMenu.asp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: postBody,
+        signal: controller.signal,
+      });
+
+      const cookie = r1.headers.get('set-cookie') || '';
+      const t1 = await r1.text();
+
+      const batch = (t1.match(/name="nBatchNo" value="(\d+)"/) || [])[1];
+      const subdiv = (t1.match(/name="nSubDiv" value="(\d+)"/) || [])[1];
+      const refno = (t1.match(/name="nRefNo" value="(\d+)"/) || [])[1];
+      const ru = (t1.match(/name="strRU" value="([^"]+)"/) || [])[1] || 'U';
+
+      if (!batch || !subdiv || !refno) {
+        clearTimeout(timer);
+        return null;
+      }
+
+      // Grab automated captcha code from codeimage.asp 302 redirect
+      const r2 = await fetch('https://bill.lesco.gov.pk:36269/Modules/CustomerBillN/codeimage.asp', {
+        headers: { Cookie: cookie },
+        signal: controller.signal,
+      });
+      const loc = r2.headers.get('location') || '';
+      const t2 = await r2.text();
+      const captchaCode = (loc + t2).match(/code=([^&"]+)/)?.[1];
+      if (!captchaCode) {
+        clearTimeout(timer);
+        return null;
+      }
+
+      // Submit BillPrint.asp with session and extracted code
+      await fetch('https://bill.lesco.gov.pk:36269/Modules/CustomerBillN/BillPrint.asp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', Cookie: cookie },
+        body: `nBatchNo=${batch}&nSubDiv=${subdiv}&nRefNo=${refno}&strRU=${ru}&nCustID=&code=${captchaCode}&MSpTp=`,
+        signal: controller.signal,
+      });
+
+      // Obtain final full printable bill HTML from Bill.aspx
+      const r4 = await fetch('https://bill.lesco.gov.pk:36260/Bill.aspx', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `BatchNo=${batch}&SubDiv=${subdiv}&RefNo=${refno}&RU=${ru}&CapCode=${captchaCode}`,
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+
+      if (r4.ok) {
+        const html = await r4.text();
+        if (html && (html.includes('Bill') || html.includes('LESCO') || html.length > 1000)) {
+          return html;
+        }
+      }
+    } catch {
+      // fallback
+    }
+    return null;
+  },
+
+  /**
+   * Fetches the complete, authentic duplicate bill HTML directly from utility company portal
+   * with automated CAPTCHA extraction and super-fast fallback.
+   */
   async fetchOfficialBillHtml(
     company: string,
     referenceNumber: string
   ): Promise<{ success: boolean; html: string; baseUrl: string; pdfUrl?: string } | null> {
     const cleanRef = referenceNumber.replace(/[^0-9a-zA-Z]/g, '').trim();
 
-    // SNGPL Official Duplicate Bill
+    // 1. LESCO Official Duplicate Bill with automated CAPTCHA extraction
+    if (company.toUpperCase() === 'LESCO') {
+      try {
+        const lescoHtml = await this.fetchOfficialLescoBillHtml(cleanRef);
+        if (lescoHtml) {
+          return {
+            success: true,
+            html: lescoHtml,
+            baseUrl: 'https://bill.lesco.gov.pk:36260/',
+          };
+        }
+      } catch {
+        // fallback
+      }
+    }
+
+    // 2. SNGPL Official Duplicate Bill
     if (company.toUpperCase() === 'SNGPL') {
       try {
         const sngplRes = await this.fetchOfficialSngplBill(cleanRef);
@@ -412,7 +515,7 @@ export const ApiService = {
       }
     }
 
-    // SSGC Official Duplicate Bill (rendered via embedded authentic PDF)
+    // 3. SSGC Official Duplicate Bill (rendered via embedded authentic PDF)
     if (company.toUpperCase() === 'SSGC') {
       try {
         const cached = await StorageService.getCachedPdfHtml('SSGC', cleanRef);
@@ -437,9 +540,31 @@ export const ApiService = {
       }
     }
 
-    // 1. Direct on-device PITC scraper (Bypasses cloud restrictions, ultra fast <500ms)
+    // 4. Backend Cloud scraper /api/bills/pdf
+    try {
+      const pdfEndpoint = BACKEND_URLS[0].replace('/api/bills', '/api/bills/pdf');
+      const backendRes = await fetch(pdfEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ company, referenceNumber: cleanRef }),
+      });
+      if (backendRes.ok) {
+        const json = await backendRes.json();
+        if (json.success && json.html) {
+          return {
+            success: true,
+            html: json.html,
+            baseUrl: company.toUpperCase() === 'LESCO' ? 'https://bill.lesco.gov.pk:36260/' : 'https://bill.pitc.com.pk',
+          };
+        }
+      }
+    } catch {
+      // fallback
+    }
+
+    // 5. Direct on-device PITC scraper
     const directHtml = await fetchDirectFromPitcRawHtml(company, cleanRef);
-    if (directHtml) {
+    if (directHtml && !directHtml.includes('captchaInput')) {
       return {
         success: true,
         html: directHtml,

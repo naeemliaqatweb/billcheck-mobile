@@ -108,7 +108,7 @@ export const SavedBillsScreen: React.FC<SavedBillsScreenProps> = ({
       secondaryText: isUrdu ? 'منسوخ' : 'Cancel',
       onPrimaryPress: async () => {
         setPopup((p) => ({ ...p, visible: false }));
-        await StorageService.deleteMeter(meter.id);
+        await StorageService.deleteMeter(meter.id, meter.company);
         onRefreshSaved();
       },
       onClose: () => setPopup((p) => ({ ...p, visible: false })),

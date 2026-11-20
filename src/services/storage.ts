@@ -12,8 +12,53 @@ const KEYS = {
   NOTIFICATIONS: '@pakbill_notifications',
 };
 
+/**
+ * Helper to determine if two meter records or bill/meter queries refer to the exact same utility meter.
+ * Handles:
+ * - Direct ID match
+ * - Canonical 14-digit reference number match
+ * - Consumer ID match (e.g. 8-10 digit customer ID used interchangeably with 14-digit reference number)
+ * - Identical non-generic consumer name under the same company
+ */
+export function areSameMeter(
+  m1: { company?: string; referenceNumber?: string; consumerId?: string; id?: string; consumerName?: string },
+  m2: { company?: string; referenceNumber?: string; consumerId?: string; id?: string; consumerName?: string }
+): boolean {
+  if (!m1 || !m2) return false;
+
+  // 1. Company must match if both are present
+  if (m1.company && m2.company && m1.company.toUpperCase() !== m2.company.toUpperCase()) {
+    return false;
+  }
+
+  // 2. Exact same ID
+  if (m1.id && m2.id && m1.id === m2.id) return true;
+
+  const r1 = (m1.referenceNumber || '').replace(/[^0-9a-zA-Z]/g, '').toUpperCase();
+  const r2 = (m2.referenceNumber || '').replace(/[^0-9a-zA-Z]/g, '').toUpperCase();
+  if (r1 && r2 && r1 === r2) return true;
+
+  const c1 = (m1.consumerId || '').replace(/[^0-9a-zA-Z]/g, '').toUpperCase();
+  const c2 = (m2.consumerId || '').replace(/[^0-9a-zA-Z]/g, '').toUpperCase();
+  if (c1 && c2 && c1 === c2) return true;
+
+  // 3. Cross-match: consumerId of one matches referenceNumber of the other
+  if (c1 && r2 && c1 === r2) return true;
+  if (r1 && c2 && r1 === c2) return true;
+
+  // 4. Consumer name match under the same company (ignoring placeholders)
+  const n1 = (m1.consumerName || '').trim().toUpperCase();
+  const n2 = (m2.consumerName || '').trim().toUpperCase();
+  const isGeneric = (n: string) => !n || n.includes('CONSUMER') || n.includes('METER') || n.includes('REGISTERED');
+  if (!isGeneric(n1) && !isGeneric(n2) && n1 === n2) {
+    return true;
+  }
+
+  return false;
+}
+
 export const StorageService = {
-  // Get all saved meters (purges any legacy dummy/seed meters & auto-reconciles stale amounts)
+  // Get all saved meters (purges any legacy dummy/seed meters, auto-deduplicates & auto-reconciles stale amounts)
   async getSavedMeters(): Promise<SavedMeter[]> {
     try {
       const json = await AsyncStorage.getItem(KEYS.SAVED_METERS);
@@ -39,14 +84,45 @@ export const StorageService = {
       );
 
       let hasChanges = false;
-      for (let i = 0; i < realMeters.length; i++) {
-        const m = realMeters[i];
+
+      // Deduplicate meters: merge any duplicate records for the same meter
+      const deduplicated: SavedMeter[] = [];
+      for (const m of realMeters) {
+        const existingIdx = deduplicated.findIndex((d) => areSameMeter(d, m));
+        if (existingIdx === -1) {
+          deduplicated.push(m);
+        } else {
+          hasChanges = true;
+          const existing = deduplicated[existingIdx];
+          // Keep the best reference number (prefer 14-digit over shorter customer ID)
+          const bestRef =
+            m.referenceNumber && m.referenceNumber.length > existing.referenceNumber.length
+              ? m.referenceNumber
+              : existing.referenceNumber;
+          const bestConsumerId = m.consumerId || existing.consumerId;
+          deduplicated[existingIdx] = {
+            ...existing,
+            ...m,
+            referenceNumber: bestRef,
+            consumerId: bestConsumerId,
+            consumerName: m.consumerName || existing.consumerName,
+            consumerAddress: m.consumerAddress || existing.consumerAddress,
+            lastBillAmount: m.lastBillAmount !== undefined ? m.lastBillAmount : existing.lastBillAmount,
+            lastDueDate: m.lastDueDate || existing.lastDueDate,
+            lastBillStatus: m.lastBillStatus || existing.lastBillStatus,
+            lastBillMonth: m.lastBillMonth || existing.lastBillMonth,
+          };
+        }
+      }
+
+      for (let i = 0; i < deduplicated.length; i++) {
+        const m = deduplicated[i];
         const cleanRef = m.referenceNumber.replace(/[^0-9a-zA-Z]/g, '');
 
         // Specifically check if SNGPL meter 39008111096 has old 1659 estimate
         if (m.company === 'SNGPL' && cleanRef === '39008111096') {
           if (m.lastBillAmount !== 990 || m.consumerName !== 'SHAHEENA BEGUM') {
-            realMeters[i] = {
+            deduplicated[i] = {
               ...m,
               lastBillAmount: 990,
               lastBillMonth: 'AUG 26',
@@ -65,19 +141,19 @@ export const StorageService = {
             const cachedBill: BillData = JSON.parse(cachedJson);
             if (cachedBill && !cachedBill.isMockData && cachedBill.payableWithinDueDate) {
               const shouldUpdate =
-                (cachedBill.payableWithinDueDate && realMeters[i].lastBillAmount !== cachedBill.payableWithinDueDate) ||
-                (cachedBill.consumerName && !cachedBill.consumerName.includes('Consumer') && realMeters[i].consumerName !== cachedBill.consumerName) ||
-                (cachedBill.billStatus && realMeters[i].lastBillStatus !== cachedBill.billStatus);
+                (cachedBill.payableWithinDueDate && deduplicated[i].lastBillAmount !== cachedBill.payableWithinDueDate) ||
+                (cachedBill.consumerName && !cachedBill.consumerName.includes('Consumer') && deduplicated[i].consumerName !== cachedBill.consumerName) ||
+                (cachedBill.billStatus && deduplicated[i].lastBillStatus !== cachedBill.billStatus);
 
               if (shouldUpdate) {
-                realMeters[i] = {
-                  ...realMeters[i],
+                deduplicated[i] = {
+                  ...deduplicated[i],
                   lastBillAmount: cachedBill.payableWithinDueDate,
-                  lastDueDate: cachedBill.dueDate || realMeters[i].lastDueDate,
-                  lastBillStatus: cachedBill.billStatus || realMeters[i].lastBillStatus,
-                  lastBillMonth: cachedBill.billMonth || realMeters[i].lastBillMonth,
-                  consumerName: cachedBill.consumerName || realMeters[i].consumerName,
-                  consumerAddress: cachedBill.consumerAddress || realMeters[i].consumerAddress,
+                  lastDueDate: cachedBill.dueDate || deduplicated[i].lastDueDate,
+                  lastBillStatus: cachedBill.billStatus || deduplicated[i].lastBillStatus,
+                  lastBillMonth: cachedBill.billMonth || deduplicated[i].lastBillMonth,
+                  consumerName: cachedBill.consumerName || deduplicated[i].consumerName,
+                  consumerAddress: cachedBill.consumerAddress || deduplicated[i].consumerAddress,
                 };
                 hasChanges = true;
               }
@@ -88,10 +164,10 @@ export const StorageService = {
         }
       }
 
-      if (realMeters.length !== meters.length || hasChanges) {
-        await AsyncStorage.setItem(KEYS.SAVED_METERS, JSON.stringify(realMeters));
+      if (deduplicated.length !== meters.length || hasChanges) {
+        await AsyncStorage.setItem(KEYS.SAVED_METERS, JSON.stringify(deduplicated));
       }
-      return realMeters;
+      return deduplicated;
     } catch {
       return [];
     }
@@ -111,22 +187,26 @@ export const StorageService = {
   async saveMeter(meter: SavedMeter): Promise<boolean> {
     try {
       const meters = await this.getSavedMeters();
-      const cleanMeterRef = meter.referenceNumber.replace(/[^0-9a-zA-Z]/g, '');
-      const index = meters.findIndex(
-        (m) =>
-          m.company === meter.company &&
-          (m.id === meter.id || m.referenceNumber.replace(/[^0-9a-zA-Z]/g, '') === cleanMeterRef)
-      );
+      const index = meters.findIndex((m) => areSameMeter(m, meter));
       if (index >= 0) {
+        const existing = meters[index];
+        const bestRef =
+          meter.referenceNumber && meter.referenceNumber.length > existing.referenceNumber.length
+            ? meter.referenceNumber
+            : existing.referenceNumber;
+        const bestConsumerId = meter.consumerId || existing.consumerId;
+
         meters[index] = {
-          ...meters[index],
+          ...existing,
           ...meter,
-          consumerName: meter.consumerName || meters[index].consumerName,
-          consumerAddress: meter.consumerAddress || meters[index].consumerAddress,
-          lastBillAmount: meter.lastBillAmount !== undefined ? meter.lastBillAmount : meters[index].lastBillAmount,
-          lastDueDate: meter.lastDueDate || meters[index].lastDueDate,
-          lastBillStatus: meter.lastBillStatus || meters[index].lastBillStatus,
-          lastBillMonth: meter.lastBillMonth || meters[index].lastBillMonth,
+          referenceNumber: bestRef,
+          consumerId: bestConsumerId,
+          consumerName: meter.consumerName || existing.consumerName,
+          consumerAddress: meter.consumerAddress || existing.consumerAddress,
+          lastBillAmount: meter.lastBillAmount !== undefined ? meter.lastBillAmount : existing.lastBillAmount,
+          lastDueDate: meter.lastDueDate || existing.lastDueDate,
+          lastBillStatus: meter.lastBillStatus || existing.lastBillStatus,
+          lastBillMonth: meter.lastBillMonth || existing.lastBillMonth,
         };
       } else {
         meters.unshift(meter);
@@ -139,10 +219,21 @@ export const StorageService = {
   },
 
   // Delete a saved meter
-  async deleteMeter(id: string): Promise<boolean> {
+  async deleteMeter(idOrRef: string, company?: string): Promise<boolean> {
     try {
       const meters = await this.getSavedMeters();
-      const filtered = meters.filter((m) => m.id !== id);
+      const cleanTarget = idOrRef.replace(/[^0-9a-zA-Z]/g, '').toUpperCase();
+      const filtered = meters.filter((m) => {
+        if (m.id === idOrRef) return false;
+        if (company && m.company.toUpperCase() === company.toUpperCase()) {
+          const cleanRef = (m.referenceNumber || '').replace(/[^0-9a-zA-Z]/g, '').toUpperCase();
+          const cleanCid = (m.consumerId || '').replace(/[^0-9a-zA-Z]/g, '').toUpperCase();
+          if (cleanRef === cleanTarget || (cleanCid && cleanCid === cleanTarget)) {
+            return false;
+          }
+        }
+        return true;
+      });
       await AsyncStorage.setItem(KEYS.SAVED_METERS, JSON.stringify(filtered));
       return true;
     } catch {

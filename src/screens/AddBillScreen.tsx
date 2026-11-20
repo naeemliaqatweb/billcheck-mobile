@@ -210,10 +210,11 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
       await StorageService.cacheBill(bill);
 
       const newMeter: SavedMeter = {
-        id: `meter_sngpl_${Date.now()}`,
+        id: `meter_sngpl_${cleanRef}`,
         nickname: nickname.trim() || `${selectedProvider.name} (${cleanRef})`,
         company: selectedProvider.code,
         referenceNumber: cleanRef,
+        consumerId: cleanRef,
         utilityType: 'gas',
         lastBillAmount: bill.payableWithinDueDate,
         lastDueDate: bill.dueDate,
@@ -269,11 +270,17 @@ export const AddBillScreen: React.FC<AddBillScreenProps> = ({
         ? bill.consumerName.split(/[\n,]/)[0].trim()
         : '';
 
+      const canonicalRef = (bill.referenceNo && bill.referenceNo.trim().length >= 10)
+        ? bill.referenceNo.trim()
+        : cleanRef;
+      const consumerId = bill.consumerId || (cleanRef.length <= 10 ? cleanRef : undefined);
+
       const newMeter: SavedMeter = {
-        id: `meter_${selectedProvider.code.toLowerCase()}_${Date.now()}`,
+        id: `meter_${selectedProvider.code.toLowerCase()}_${canonicalRef.replace(/[^0-9a-zA-Z]/g, '')}`,
         nickname: nickname.trim() || cleanConsumer || `${selectedProvider.name} Meter`,
         company: selectedProvider.code,
-        referenceNumber: cleanRef,
+        referenceNumber: canonicalRef,
+        consumerId: consumerId,
         utilityType: selectedProvider.type,
         lastBillAmount: bill.payableWithinDueDate,
         lastDueDate: bill.dueDate,

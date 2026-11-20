@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StorageService } from '../src/services/storage';
 import { SavedMeter, BillData } from '../src/types/bill';
 
@@ -99,6 +100,80 @@ describe('StorageService Test Suite', () => {
       await StorageService.clearAllSavedMeters();
       list = await StorageService.getSavedMeters();
       expect(list.length).toBe(0);
+    });
+
+    it('deduplicates meters added with customer ID vs 14-digit reference number', async () => {
+      // 1. User adds meter with 8-digit Customer ID
+      const meterFromCustomerId: SavedMeter = {
+        id: 'meter_lesco_1700000001',
+        nickname: 'LESCO Meter',
+        company: 'LESCO',
+        referenceNumber: '10036225',
+        consumerId: '10036225',
+        consumerName: 'ZOHRA NIGGAR W/O MIAN MOHSIN RAZA',
+        utilityType: 'electricity',
+        lastBillAmount: 1957,
+        lastDueDate: '13 NOV 26',
+        lastBillMonth: 'OCT 26',
+        createdAt: new Date().toISOString(),
+      };
+      await StorageService.saveMeter(meterFromCustomerId);
+
+      let saved = await StorageService.getSavedMeters();
+      expect(saved.length).toBe(1);
+
+      // 2. User or BillDetailScreen saves meter with 14-digit Reference Number
+      const meterFromFullRef: SavedMeter = {
+        id: 'meter_lesco_15115371598719U',
+        nickname: 'ZOHRA NIGGAR',
+        company: 'LESCO',
+        referenceNumber: '15115371598719U',
+        consumerId: '10036225',
+        consumerName: 'ZOHRA NIGGAR W/O MIAN MOHSIN RAZA',
+        utilityType: 'electricity',
+        lastBillAmount: 1957,
+        lastDueDate: '13 NOV 26',
+        lastBillMonth: 'OCT 26',
+        createdAt: new Date().toISOString(),
+      };
+      await StorageService.saveMeter(meterFromFullRef);
+
+      // Must remain exactly 1 meter, updated with canonical 14-digit reference number
+      saved = await StorageService.getSavedMeters();
+      expect(saved.length).toBe(1);
+      expect(saved[0].referenceNumber).toBe('15115371598719U');
+      expect(saved[0].consumerId).toBe('10036225');
+      expect(saved[0].consumerName).toBe('ZOHRA NIGGAR W/O MIAN MOHSIN RAZA');
+    });
+
+    it('auto-deduplicates pre-existing duplicate meters in storage', async () => {
+      const rawDuplicates = [
+        {
+          id: 'meter_1',
+          nickname: 'Meter 1',
+          company: 'LESCO',
+          referenceNumber: '10036225',
+          consumerName: 'ZOHRA NIGGAR',
+          utilityType: 'electricity',
+        },
+        {
+          id: 'meter_2',
+          nickname: 'Meter 2',
+          company: 'LESCO',
+          referenceNumber: '15115371598719U',
+          consumerId: '10036225',
+          consumerName: 'ZOHRA NIGGAR',
+          utilityType: 'electricity',
+        },
+      ];
+
+      // Simulate corrupted/duplicate storage
+      await AsyncStorage.setItem('@pakbill_saved_meters', JSON.stringify(rawDuplicates));
+
+      // getSavedMeters should merge duplicates into 1
+      const cleaned = await StorageService.getSavedMeters();
+      expect(cleaned.length).toBe(1);
+      expect(cleaned[0].referenceNumber).toBe('15115371598719U');
     });
   });
 

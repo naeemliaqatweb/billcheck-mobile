@@ -18,7 +18,7 @@ import { TRANSLATIONS, Language } from '../i18n/translations';
 import { ConsumptionChart } from '../components/ConsumptionChart';
 import { HistoryTable } from '../components/HistoryTable';
 import { AdBanner } from '../components/AdBanner';
-import { StorageService } from '../services/storage';
+import { StorageService, areSameMeter } from '../services/storage';
 import { NotificationService } from '../services/notification';
 import { ApiService, sanitizeBillingMonth, generate12MonthHistory } from '../services/api';
 import { ALL_PROVIDERS } from '../constants/providers';
@@ -75,11 +75,13 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
     const checkSavedStatus = async () => {
       try {
         const saved = await StorageService.getSavedMeters();
-        const cleanRef = (activeBill.referenceNo || '').replace(/[^0-9a-zA-Z]/g, '').trim();
-        const alreadyExists = saved.some(
-          (m) =>
-            m.company === activeBill.company &&
-            m.referenceNumber.replace(/[^0-9a-zA-Z]/g, '').trim() === cleanRef
+        const alreadyExists = saved.some((m) =>
+          areSameMeter(m, {
+            company: activeBill.company,
+            referenceNumber: activeBill.referenceNo,
+            consumerId: activeBill.consumerId,
+            consumerName: activeBill.consumerName,
+          })
         );
         if (isMounted) {
           setIsSaved(alreadyExists);
@@ -92,7 +94,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [activeBill.company, activeBill.referenceNo]);
+  }, [activeBill.company, activeBill.referenceNo, activeBill.consumerId, activeBill.consumerName]);
 
   // Background live sync for initialized or incomplete bills
   useEffect(() => {
@@ -111,11 +113,13 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
             setActiveBill(fresh);
 
             const saved = await StorageService.getSavedMeters();
-            const cleanRef = (activeBill.referenceNo || '').replace(/[^0-9a-zA-Z]/g, '').trim();
-            const meterIndex = saved.findIndex(
-              (m) =>
-                m.company === activeBill.company &&
-                m.referenceNumber.replace(/[^0-9a-zA-Z]/g, '').trim() === cleanRef
+            const meterIndex = saved.findIndex((m) =>
+              areSameMeter(m, {
+                company: activeBill.company,
+                referenceNumber: activeBill.referenceNo,
+                consumerId: activeBill.consumerId,
+                consumerName: activeBill.consumerName,
+              })
             );
             if (meterIndex !== -1) {
               const updatedMeter = {
@@ -138,7 +142,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [activeBill.company, activeBill.referenceNo, activeBill.payableWithinDueDate, activeBill.consumerName, onSaveMeterComplete]);
+  }, [activeBill.company, activeBill.referenceNo, activeBill.consumerId, activeBill.payableWithinDueDate, activeBill.consumerName, onSaveMeterComplete]);
 
   const handlePullRefresh = async () => {
     setRefreshing(true);
@@ -201,9 +205,13 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
   useEffect(() => {
     if (activeBill && activeBill.company && activeBill.referenceNo) {
       StorageService.getSavedMeters().then((meters) => {
-        const cleanRef = activeBill.referenceNo.replace(/[^0-9a-zA-Z]/g, '');
-        const existing = meters.find(
-          (m) => m.company === activeBill.company && m.referenceNumber.replace(/[^0-9a-zA-Z]/g, '') === cleanRef
+        const existing = meters.find((m) =>
+          areSameMeter(m, {
+            company: activeBill.company,
+            referenceNumber: activeBill.referenceNo,
+            consumerId: activeBill.consumerId,
+            consumerName: activeBill.consumerName,
+          })
         );
         if (
           existing &&
@@ -313,11 +321,14 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
       ? activeBill.consumerName.split(/[\n,]/)[0].trim()
       : `${activeBill.company} Meter`;
 
-    const savedMeterObj = {
-      id: `${activeBill.company}_${activeBill.referenceNo}`,
+    const canonicalRef = activeBill.referenceNo || '';
+
+    const savedMeterObj: SavedMeter = {
+      id: `meter_${activeBill.company.toLowerCase()}_${canonicalRef.replace(/[^0-9a-zA-Z]/g, '')}`,
       nickname: cleanConsumer,
       company: activeBill.company,
-      referenceNumber: activeBill.referenceNo,
+      referenceNumber: canonicalRef,
+      consumerId: activeBill.consumerId,
       utilityType: activeBill.utilityType,
       consumerName: activeBill.consumerName,
       consumerAddress: activeBill.consumerAddress,
@@ -359,11 +370,14 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
       ? activeBill.consumerName.split(/[\n,]/)[0].trim()
       : `${activeBill.company} Meter`;
 
+    const canonicalRef = activeBill.referenceNo || '';
+
     await StorageService.saveMeter({
-      id: `${activeBill.company}_${activeBill.referenceNo}`,
+      id: `meter_${activeBill.company.toLowerCase()}_${canonicalRef.replace(/[^0-9a-zA-Z]/g, '')}`,
       nickname: cleanConsumer,
       company: activeBill.company,
-      referenceNumber: activeBill.referenceNo,
+      referenceNumber: canonicalRef,
+      consumerId: activeBill.consumerId,
       utilityType: activeBill.utilityType,
       consumerName: activeBill.consumerName,
       consumerAddress: activeBill.consumerAddress,
@@ -388,17 +402,19 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
       secondaryText: isUrdu ? 'کینسل' : 'Cancel',
       onPrimaryPress: async () => {
         setPopup((p) => ({ ...p, visible: false }));
-        const cleanRef = (activeBill.referenceNo || '').replace(/[^0-9a-zA-Z]/g, '').trim();
         const saved = await StorageService.getSavedMeters();
-        const target = saved.find(
-          (m) =>
-            m.company === activeBill.company &&
-            m.referenceNumber.replace(/[^0-9a-zA-Z]/g, '').trim() === cleanRef
+        const target = saved.find((m) =>
+          areSameMeter(m, {
+            company: activeBill.company,
+            referenceNumber: activeBill.referenceNo,
+            consumerId: activeBill.consumerId,
+            consumerName: activeBill.consumerName,
+          })
         );
         if (target) {
-          await StorageService.deleteMeter(target.id);
+          await StorageService.deleteMeter(target.id, activeBill.company);
         } else {
-          await StorageService.deleteMeter(`${activeBill.company}_${activeBill.referenceNo}`);
+          await StorageService.deleteMeter(activeBill.referenceNo, activeBill.company);
         }
         setIsSaved(false);
         onSaveMeterComplete?.();
