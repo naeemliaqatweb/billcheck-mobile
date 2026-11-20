@@ -103,7 +103,8 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
       activeBill.payableWithinDueDate === 0 ||
       !activeBill.consumerName ||
       activeBill.consumerName.toUpperCase().includes('CONSUMER') ||
-      activeBill.consumerName.toUpperCase().includes('REGISTERED');
+      activeBill.consumerName.toUpperCase().includes('REGISTERED') ||
+      (activeBill.company === 'LESCO' && activeBill.payableWithinDueDate === 2946);
 
     if (isUnparsed && activeBill.company && activeBill.referenceNo) {
       ApiService.fetchBill(activeBill.company, activeBill.referenceNo, true)

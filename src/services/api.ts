@@ -280,6 +280,22 @@ export const ApiService = {
       }
     }
 
+    // ── Direct LESCO Duplicate Bill Scraper (Bypasses Cloud Geo-Blocking) ────
+    if (company.toUpperCase() === 'LESCO') {
+      try {
+        const lescoBill = await fetchDirectLescoBill(cleanRef);
+        if (lescoBill && lescoBill.payableWithinDueDate > 0) {
+          await StorageService.cacheBill(lescoBill);
+          if (cleanRef !== lescoBill.referenceNo) {
+            await StorageService.cacheBill({ ...lescoBill, referenceNo: cleanRef });
+          }
+          return lescoBill;
+        }
+      } catch (err) {
+        console.warn('Official LESCO on-device fetch failed, falling back to API Gateway:', err);
+      }
+    }
+
     // ── Live API call (Cloud Vercel) ──────────────────────────────────────────
     const requestPayload = {
       company,
@@ -421,10 +437,10 @@ export const ApiService = {
       const cookie = r1.headers.get('set-cookie') || '';
       const t1 = await r1.text();
 
-      const batch = (t1.match(/name="nBatchNo" value="(\d+)"/) || [])[1];
-      const subdiv = (t1.match(/name="nSubDiv" value="(\d+)"/) || [])[1];
-      const refno = (t1.match(/name="nRefNo" value="(\d+)"/) || [])[1];
-      const ru = (t1.match(/name="strRU" value="([^"]+)"/) || [])[1] || 'U';
+      const batch = (t1.match(/name=["']nBatchNo["']\s+value=["']([^"']+)["']/i) || [])[1];
+      const subdiv = (t1.match(/name=["']nSubDiv["']\s+value=["']([^"']+)["']/i) || [])[1];
+      const refno = (t1.match(/name=["']nRefNo["']\s+value=["']([^"']+)["']/i) || [])[1];
+      const ru = (t1.match(/name=["']strRU["']\s+value=["']([^"']+)["']/i) || [])[1] || 'U';
 
       if (!batch || !subdiv || !refno) {
         clearTimeout(timer);
@@ -438,7 +454,7 @@ export const ApiService = {
       });
       const loc = r2.headers.get('location') || '';
       const t2 = await r2.text();
-      const captchaCode = (loc + t2).match(/code=([^&"]+)/)?.[1];
+      const captchaCode = (loc + t2 + (r2.url || '')).match(/code=([^&"']+)/)?.[1];
       if (!captchaCode) {
         clearTimeout(timer);
         return null;
