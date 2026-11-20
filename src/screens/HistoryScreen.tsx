@@ -651,7 +651,7 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
             </>
           )}
 
-          <AdBanner darkMode={darkMode} language={language} />
+          <AdBanner darkMode={darkMode} language={language} app="spendsense" />
         </View>
       </ScrollView>
 

@@ -913,7 +913,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
         {/* ── 7. Optional Ad / Promotion Banner ── */}
         <View style={{ marginTop: 14 }}>
-          <AdBanner darkMode={darkMode} language={language} />
+          <AdBanner darkMode={darkMode} language={language} app="filervault" />
         </View>
       </ScrollView>
 

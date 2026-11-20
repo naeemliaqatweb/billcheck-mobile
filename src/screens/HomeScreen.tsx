@@ -545,7 +545,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </View>
 
           <DisclaimerBanner language={language} darkMode={darkMode} />
-          <AdBanner darkMode={darkMode} language={language} />
+          <AdBanner darkMode={darkMode} language={language} app="spendsense" />
           <View style={styles.bottomSpacer} />
         </View>
       </ScrollView>

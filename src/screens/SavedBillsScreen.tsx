@@ -527,7 +527,7 @@ export const SavedBillsScreen: React.FC<SavedBillsScreenProps> = ({
             </Text>
           </View>
 
-          <AdBanner darkMode={darkMode} language={language} />
+          <AdBanner darkMode={darkMode} language={language} app="filervault" />
         </View>
       </ScrollView>
 

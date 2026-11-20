@@ -1015,7 +1015,7 @@ export const BillDetailScreen: React.FC<BillDetailScreenProps> = ({
             </TouchableOpacity>
           )}
 
-          <AdBanner darkMode={darkMode} language={language} />
+          <AdBanner darkMode={darkMode} language={language} app="filervault" />
         </View>
       </ScrollView>
 
